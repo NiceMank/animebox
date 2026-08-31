@@ -1,0 +1,31 @@
+/// Progression d'une synchronisation en cours (simulation locale).
+class SyncProgress {
+  const SyncProgress({
+    required this.fraction,
+    required this.phase,
+    required this.analyzedPosts,
+    required this.totalPosts,
+  });
+
+  /// Avancement de 0 à 1.
+  final double fraction;
+
+  /// Phase actuelle (« Analyzing publications... », …).
+  final String phase;
+
+  /// Publications analysées jusqu'ici.
+  final int analyzedPosts;
+
+  /// Total attendu pour cette passe.
+  final int totalPosts;
+
+  int get percent => (fraction * 100).round();
+
+  SyncProgress copyWith({double? fraction, String? phase, int? analyzedPosts, int? totalPosts}) =>
+      SyncProgress(
+        fraction: fraction ?? this.fraction,
+        phase: phase ?? this.phase,
+        analyzedPosts: analyzedPosts ?? this.analyzedPosts,
+        totalPosts: totalPosts ?? this.totalPosts,
+      );
+}

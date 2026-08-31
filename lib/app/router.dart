@@ -5,6 +5,11 @@ import '../features/details/anime_details_screen.dart';
 import '../features/episodes/episode_list_screen.dart';
 import '../features/player/player_screen.dart';
 import '../features/quality/quality_select_screen.dart';
+import '../features/telegram/data/services/telegram_service.dart';
+import '../features/telegram/screens/source_add_screen.dart';
+import '../features/telegram/screens/source_detail_screen.dart';
+import '../features/telegram/screens/sources_screen.dart';
+import '../features/telegram/screens/sync_screen.dart';
 
 /// Routes nommées de l'application.
 abstract final class AppRoutes {
@@ -21,6 +26,18 @@ abstract final class AppRoutes {
 
   /// Lecteur vidéo — argument : [EpisodeRouteArgs].
   static const String player = '/player';
+
+  /// Mes sources Telegram — aucun argument.
+  static const String sources = '/sources';
+
+  /// Détail d'une source — argument : id de la source (String).
+  static const String sourceDetails = '/sources/details';
+
+  /// Ajout d'une source — aucun argument.
+  static const String sourceAdd = '/sources/add';
+
+  /// Synchronisation — aucun argument.
+  static const String sync = '/sync';
 }
 
 /// Arguments d'une route animé simple.
@@ -47,7 +64,7 @@ class EpisodeRouteArgs {
 abstract final class AppRouter {
   AppRouter._();
 
-  static RouteFactory onGenerateRoute(AnimeRepository repository) {
+  static RouteFactory onGenerateRoute(AnimeRepository repository, TelegramService telegramService) {
     return (RouteSettings settings) {
       switch (settings.name) {
         case AppRoutes.animeDetails:
@@ -73,6 +90,27 @@ abstract final class AppRouter {
           return MaterialPageRoute<void>(
             settings: settings,
             builder: (_) => PlayerScreen(repository: repository, animeId: args.animeId, episodeId: args.episodeId),
+          );
+        case AppRoutes.sources:
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => SourcesScreen(service: telegramService),
+          );
+        case AppRoutes.sourceDetails:
+          final String sourceId = settings.arguments as String;
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => SourceDetailScreen(service: telegramService, sourceId: sourceId),
+          );
+        case AppRoutes.sourceAdd:
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => SourceAddScreen(service: telegramService),
+          );
+        case AppRoutes.sync:
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => SyncScreen(service: telegramService),
           );
         default:
           return null;

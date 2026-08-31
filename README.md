@@ -3,8 +3,8 @@
 Application mobile **Android** (Flutter) qui transformera vos canaux Telegram d'animés en une
 bibliothèque organisée : détection automatique des titres, saisons, épisodes, qualités et langues.
 
-> **Étape actuelle : 2 — Épisodes, choix de qualité et lecteur vidéo** (données toujours mockées,
-> sans Telegram ni backend).
+> **Étape actuelle : 3 — Sources Telegram (mock), synchronisation simulée et bibliothèque**
+> (toujours sans API Telegram réelle ni backend).
 
 ## État du projet
 
@@ -14,18 +14,21 @@ bibliothèque organisée : détection automatique des titres, saisons, épisodes
 | Accueil (carousel, 🔥 Nouveaux épisodes, ⭐ Mes animés, ▶ Continuer) | ✅ |
 | Recherche (champ + 6 filtres) | ✅ |
 | Fiche animé (onglets Épisodes / Détails, Favoris / Reprendre / Suivre) | ✅ |
-| **Liste des épisodes** (bannière animé, saisons + spéciaux, tri, badges NOUVEAU) | ✅ |
-| **Choix qualité / langue** (QualityOption, LanguageOption, actions simulées) | ✅ |
-| **Lecteur vidéo** (contrôles, progression persistée, prochain épisode, lecture auto) | ✅ |
-| Progression de lecture locale (« Reprendre à … ») | ✅ |
-| Telegram, moteur Python, backend, streaming réel, téléchargement réel | ⏳ étapes suivantes |
+| Liste des épisodes (saisons + spéciaux, tri, badges NOUVEAU) | ✅ |
+| Choix qualité / langue (QualityOption, LanguageOption, actions simulées) | ✅ |
+| Lecteur vidéo (contrôles, progression persistée, prochain épisode, lecture auto) | ✅ |
+| **Mes sources Telegram** (liste, ajout avec validation locale, détails, activation/suppression) | ✅ |
+| **Synchronisation simulée** (progression animée, statistiques, historique détaillé) | ✅ |
+| **Bibliothèque complète** (Favoris, Suivis, Continuer, Récemment ajoutés, Tous — tri + grille/liste) | ✅ |
+| **EpisodeGroupingService** (regroupement des qualités : 1 épisode = plusieurs publications) | ✅ |
+| API Telegram réelle, backend, moteur Python, téléchargement réel | ⏳ étapes suivantes |
 
 ## Parcours de navigation
 
 ```
-Accueil → Fiche animé → Liste des épisodes (écran 4)
-                      → Choix qualité/langue (écran 5) → Lecteur (écran 6)
-Lecteur → Épisodes (retour à la liste) · Qualité (retour à l'écran 5) · Prochain épisode → écran 5
+Profil → Mes sources Telegram → Détail d'une source · Ajouter une source · Synchronisation
+Bibliothèque → Animé → Épisodes → Qualité → Lecteur
+Bibliothèque → Continuer → Lecteur (reprise) · Récemment ajoutés → Qualité
 ```
 
 ## Lancer le projet
@@ -35,7 +38,7 @@ Lecteur → Épisodes (retour à la liste) · Qualité (retour à l'écran 5) ·
 
 flutter pub get        # dépendances
 flutter run            # lancer sur un appareil/émulateur Android
-flutter test           # 30 tests (modèles, dépôt, navigation, épisodes, lecteur)
+flutter test           # 46 tests (modèles, services, navigation, écrans)
 flutter analyze        # analyse statique (0 problème)
 flutter build apk --debug   # APK de débogage
 ```
@@ -44,50 +47,50 @@ flutter build apk --debug   # APK de débogage
 
 ```
 lib/
-├── main.dart                     # Point d'entrée (injection du dépôt)
-├── app/                          # Racine MaterialApp, thème, routes nommées (4 routes)
-├── core/theme/                   # Palette sombre/violet + thème global
+├── main.dart                     # Point d'entrée (injection des services)
+├── app/                          # Racine MaterialApp, thème, routes nommées (9 routes)
+├── core/
+│   ├── theme/                    # Palette sombre/violet + thème global
+│   └── utils/formats.dart        # Formatage (nombres, dates, temps relatif)
 ├── features/
-│   ├── anime/data/
-│   │   ├── models/               # Anime, Season, Episode, EpisodeQuality, VideoQuality,
-│   │   │                         # LibraryEntry, PlaybackProgress, PlaybackSettings, SearchFilters
-│   │   ├── mock/                 # Données de démonstration (4 animés, vignettes, tailles fictives)
-│   │   └── repositories/         # Interface AnimeRepository + implémentation mockée notifiable
-│   ├── home/                     # Accueil (héros, cartes, continuer)
-│   ├── search/                   # Recherche + filtres
-│   ├── details/                  # Fiche animé (onglets Épisodes / Détails)
-│   ├── episodes/                 # ÉCRAN 4 — liste des épisodes (saisons, tri, spéciaux)
-│   ├── quality/                  # ÉCRAN 5 — choix qualité + langue + actions
-│   ├── player/                   # ÉCRAN 6 — lecteur + PlaybackController simulé
-│   ├── library/                  # Bibliothèque (favoris, suivis)
-│   ├── downloads/                # Placeholder Téléchargements
-│   └── profile/                  # Placeholder Profil
+│   ├── anime/data/               # Modèles, données mockées, dépôt (interface + mock notifiable)
+│   ├── home/  search/  details/  episodes/  quality/  player/   # Écrans 1-6
+│   ├── library/
+│   │   ├── screens/...           # ÉCRAN 9 — bibliothèque (catégories, tri, grille/liste)
+│   │   └── services/library_service.dart   # Regroupement logique des catégories
+│   ├── telegram/
+│   │   ├── data/
+│   │   │   ├── models/           # TelegramSource, SourceStatus, SyncStats,
+│   │   │   │                     # SyncProgress, SyncHistoryEntry
+│   │   │   └── services/
+│   │   │       ├── telegram_service.dart          # Contrat (remplaçable par le vrai service)
+│   │   │       ├── mock_telegram_service.dart     # Simulation locale (sync animée)
+│   │   │       └── episode_grouping_service.dart  # Regroupement publications → épisodes
+│   │   └── screens/              # ÉCRAN 7 — sources, ajout, détails ; ÉCRAN 8 — synchronisation
+│   ├── downloads/  profile/      # Placeholders + accès aux sources
 ├── navigation/                   # Coquille principale + barre de navigation basse
-└── shared/widgets/               # Composants réutilisables (EpisodeCard, QualityOption,
-                                  # LanguageOption, SeasonSelector, VideoControls, ActionButton,
-                                  # PlayerProgressSlider, EpisodeThumbnail…)
+└── shared/widgets/               # Composants réutilisables
 ```
 
-### Points clés de l'étape 2
+### Points clés de l'étape 3
 
-- **Structure des données** : un épisode regroupe ses qualités (`Episode.qualities` → `EpisodeQuality`
-  avec qualité, résolution, taille mockée, langue, sous-titres, disponibilité). Aucune duplication
-  d'épisode : 1080p/720p/480p/360p appartiennent au même épisode.
-- **Progression de lecture** séparée de l'interface (`LibraryEntry.progressMap` +
-  `AnimeRepository.recordProgress`) : prête à être persistée en base de données ; « Reprendre à … »
-  alimente déjà l'accueil et le lecteur.
-- **Lecteur** : `PlaybackController` simulé (ticker 500 ms, play/pause, seek ±10 s, barre glissable,
-  plein écran via orientations) — remplaçable par un vrai player sans toucher aux écrans.
-- **Lecture automatique** : structure prête (compte à rebours + bascule dans les paramètres), logique
-  complexe volontairement différée.
-- **Boutons Telegram / Téléchargement** : comportements simulés (SnackBar / feuille d'information),
-  aucun vrai lien.
-- **Modèles prêts pour Telegram** : la prochaine étape ajoutera `telegramMessageId`,
-  `telegramChannelId`, `telegramMessageLink`, `fileId` à `EpisodeQuality` (non utilisés aujourd'hui).
+- **Séparation service/interface** : les écrans dépendent de l'interface `TelegramService` ;
+  remplacer `MockTelegramService` par le vrai service (API Telegram + backend) ne touchera
+  pas aux écrans. Idem pour `LibraryService` et `EpisodeGroupingService`.
+- **Synchronisation simulée** : progression animée (Analyzing publications… → Regroupement
+  des doublons… → Analyse terminée), statistiques qui évoluent, historique par jour avec
+  résumé détaillé au tap.
+- **Regroupement des qualités** : `EpisodeGroupingService` transforme plusieurs publications
+  (1080p + 720p + 480p du même épisode) en UN SEUL épisode — logique prête pour le vrai moteur.
+- **Modèles prêts pour Telegram** : `TelegramSource` réserve `telegramChannelId` et
+  `accessHash` (non utilisés) ; `RawPublication` réserve `messageId` et `messageLink`.
+- **Bibliothèque** : 5 catégories, 5 tris, vue grille/liste ; « Continuer » ouvre directement
+  le lecteur à la position enregistrée ; « Suivis » montre la progression par saison et le
+  badge NOUVEAU.
 
 ## Prochaines étapes (à valider une par une)
 
-1. Connexion Telegram + ajout de canaux comme sources
-2. Moteur de détection (titre, saison, épisode, qualité, langue, sous-titres)
-3. API backend + remplacement du dépôt mocké
-4. Lecture réelle, téléchargement, notifications, synchronisation
+1. Connexion à l'API Telegram réelle (API_ID / API_HASH, session utilisateur)
+2. Analyse réelle des publications des canaux (branchement d'`EpisodeGroupingService`)
+3. Backend + remplacement des dépôts mockés par l'API
+4. Lecture réelle, téléchargement, notifications

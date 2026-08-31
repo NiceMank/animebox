@@ -78,6 +78,11 @@ class MockAnimeRepository extends ChangeNotifier implements AnimeRepository {
   @override
   List<Anime> get latestReleases => List.unmodifiable(_anime.where((Anime anime) => anime.latestEpisode != null));
 
+  /// Derniers épisodes détectés (mock) : Solo Leveling S2E09, Jujutsu Kaisen
+  /// S2E17 et One Piece E1150.
+  @override
+  List<String> get recentEpisodeIds => const ['solo-leveling', 'jujutsu-kaisen', 'one-piece'];
+
   @override
   List<Anime> search(String query, {SearchFilters filters = SearchFilters.empty}) {
     final String normalizedQuery = _normalize(query.trim());

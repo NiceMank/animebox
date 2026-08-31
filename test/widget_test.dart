@@ -42,7 +42,7 @@ void main() {
 
     await tester.tap(find.text('Bibliothèque'));
     await tester.pumpAndSettle();
-    expect(find.text('❤️ Favoris'), findsOneWidget);
+    expect(find.text('⭐ Favoris'), findsOneWidget);
 
     await tester.tap(find.text('Téléchargements'));
     await tester.pumpAndSettle();

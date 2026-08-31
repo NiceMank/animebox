@@ -25,6 +25,9 @@ abstract class AnimeRepository implements Listenable {
   /// Animés ayant au moins un épisode disponible (ordre : curation locale).
   List<Anime> get latestReleases;
 
+  /// Ids des animés ayant reçu récemment un nouvel épisode (ordre récent).
+  List<String> get recentEpisodeIds;
+
   /// Recherche locale : mots-clés (insensibles à la casse/aux accents)
   /// combinés aux filtres optionnels.
   List<Anime> search(String query, {SearchFilters filters = SearchFilters.empty});
