@@ -23,14 +23,14 @@ void main() {
 
     expect(find.text('ANIMEBOX'), findsOneWidget);
     expect(find.text('SOLO LEVELING'), findsOneWidget); // carte héros
-    expect(find.text('🔥 Nouveaux épisodes'), findsOneWidget);
+    expect(find.text('Nouveaux épisodes'), findsOneWidget);
 
     final Finder scrollable = find.byType(Scrollable).first;
-    await tester.scrollUntilVisible(find.text('⭐ Mes animés'), 250, scrollable: scrollable);
-    expect(find.text('⭐ Mes animés'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Mes animés'), 250, scrollable: scrollable);
+    expect(find.text('Mes animés'), findsOneWidget);
 
-    await tester.scrollUntilVisible(find.text('▶ Continuer'), 250, scrollable: scrollable);
-    expect(find.text('▶ Continuer'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Continuer'), 250, scrollable: scrollable);
+    expect(find.text('Continuer'), findsOneWidget);
   });
 
   testWidgets('la navigation basse change de section', (WidgetTester tester) async {
@@ -42,7 +42,7 @@ void main() {
 
     await tester.tap(find.text('Bibliothèque'));
     await tester.pumpAndSettle();
-    expect(find.text('⭐ Favoris'), findsOneWidget);
+    expect(find.text('Favoris'), findsOneWidget);
 
     await tester.tap(find.text('Téléchargements'));
     await tester.pumpAndSettle();
@@ -50,7 +50,7 @@ void main() {
 
     await tester.tap(find.text('Profil'));
     await tester.pumpAndSettle();
-    expect(find.text('Connecter Telegram'), findsOneWidget);
+    expect(find.text('Connexion Telegram'), findsOneWidget);
   });
 
   testWidgets('recherche locale : « solo » filtre les résultats et ouvre la fiche', (WidgetTester tester) async {

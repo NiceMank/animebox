@@ -18,6 +18,7 @@ class SyncProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool determinate = progress.fraction != null;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -51,14 +52,15 @@ class SyncProgressCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Text('${progress.percent} %', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+              if (progress.percent != null)
+                Text('${progress.percent} %', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
             ],
           ),
           const SizedBox(height: 14),
           ClipRRect(
             borderRadius: BorderRadius.circular(5),
             child: LinearProgressIndicator(
-              value: progress.fraction.clamp(0, 1),
+              value: determinate ? progress.fraction!.clamp(0, 1) : null,
               minHeight: 8,
               backgroundColor: AppColors.divider,
               valueColor: AlwaysStoppedAnimation<Color>(finished ? AppColors.success : AppColors.primary),
@@ -66,14 +68,22 @@ class SyncProgressCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            '${formatCount(progress.analyzedPosts)} / ${formatCount(progress.totalPosts)} publications',
+            progress.totalPosts > 0
+                ? '${formatCount(progress.analyzedPosts)} / ${formatCount(progress.totalPosts)} publications'
+                : 'Analyse en cours…',
             style: Theme.of(context).textTheme.labelSmall,
           ),
           if (finished && resultEpisodes != null) ...[
             const SizedBox(height: 10),
-            Text(
-              '✓ $resultEpisodes nouveaux épisodes détectés.',
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.success),
+            Row(
+              children: [
+                const Icon(Icons.check_circle_outline_rounded, size: 16, color: AppColors.success),
+                const SizedBox(width: 6),
+                Text(
+                  '$resultEpisodes nouveaux épisodes détectés.',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.success),
+                ),
+              ],
             ),
           ],
         ],

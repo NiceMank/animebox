@@ -6,10 +6,12 @@ import '../features/episodes/episode_list_screen.dart';
 import '../features/player/player_screen.dart';
 import '../features/quality/quality_select_screen.dart';
 import '../features/telegram/data/services/telegram_service.dart';
+import '../features/telegram/screens/publications_screen.dart';
 import '../features/telegram/screens/source_add_screen.dart';
 import '../features/telegram/screens/source_detail_screen.dart';
 import '../features/telegram/screens/sources_screen.dart';
 import '../features/telegram/screens/sync_screen.dart';
+import '../features/telegram/screens/telegram_connect_screen.dart';
 
 /// Routes nommées de l'application.
 abstract final class AppRoutes {
@@ -38,6 +40,12 @@ abstract final class AppRoutes {
 
   /// Synchronisation — aucun argument.
   static const String sync = '/sync';
+
+  /// Connexion Telegram — aucun argument.
+  static const String telegramConnect = '/telegram/connect';
+
+  /// Publications récentes d'une source — argument : id (String).
+  static const String sourcePublications = '/sources/publications';
 }
 
 /// Arguments d'une route animé simple.
@@ -111,6 +119,17 @@ abstract final class AppRouter {
           return MaterialPageRoute<void>(
             settings: settings,
             builder: (_) => SyncScreen(service: telegramService),
+          );
+        case AppRoutes.telegramConnect:
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => TelegramConnectScreen(service: telegramService),
+          );
+        case AppRoutes.sourcePublications:
+          final String sourceId = settings.arguments as String;
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => PublicationsScreen(service: telegramService, sourceId: sourceId),
           );
         default:
           return null;

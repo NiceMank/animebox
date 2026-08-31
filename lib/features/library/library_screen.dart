@@ -16,11 +16,11 @@ import 'widgets/recent_episode_card.dart';
 
 /// Catégories de la bibliothèque.
 enum LibraryCategory {
-  favorites('⭐ Favoris', Icons.favorite_rounded),
-  followed('❤️ Suivis', Icons.favorite_outline_rounded),
-  continueWatching('▶ Continuer', Icons.play_circle_outline_rounded),
-  recent('🆕 Récemment ajoutés', Icons.fiber_new_rounded),
-  all('📺 Tous les animés', Icons.grid_view_rounded);
+  favorites('Favoris', Icons.favorite_rounded),
+  followed('Suivis', Icons.favorite_outline_rounded),
+  continueWatching('Continuer', Icons.play_circle_outline_rounded),
+  recent('Récemment ajoutés', Icons.fiber_new_rounded),
+  all('Tous les animés', Icons.grid_view_rounded);
 
   const LibraryCategory(this.label, this.icon);
   final String label;
@@ -162,14 +162,25 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: selected ? Colors.transparent : AppColors.divider),
                         ),
-                        child: Text(
-                          category.label,
-                          maxLines: 1,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: selected ? Colors.white : AppColors.textSecondary,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              category.icon,
+                              size: 15,
+                              color: selected ? Colors.white : AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              category.label,
+                              maxLines: 1,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: selected ? Colors.white : AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );

@@ -8,9 +8,10 @@ import '../../../shared/widgets/telegram_source_card.dart';
 import '../data/models/source_status.dart';
 import '../data/models/telegram_source.dart';
 import '../data/services/telegram_service.dart';
+import '../../../app/router.dart';
 
-/// Détails d'une source : statistiques et actions (synchroniser, activer/
-/// désactiver, paramètres, supprimer).
+/// Détails d'une source : statistiques, synchronisation, interruption
+/// auto-sync, publications récentes et suppression (avec confirmation).
 class SourceDetailScreen extends StatefulWidget {
   const SourceDetailScreen({super.key, required this.service, required this.sourceId});
 
@@ -22,6 +23,26 @@ class SourceDetailScreen extends StatefulWidget {
 }
 
 class _SourceDetailScreenState extends State<SourceDetailScreen> {
+  bool _syncing = false;
+
+  Future<void> _syncNow(TelegramSource source) async {
+    setState(() => _syncing = true);
+    try {
+      await widget.service.syncSource(sourceId: source.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Synchronisation terminée.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('La synchronisation a échoué. Réessayez.')),
+      );
+    } finally {
+      if (mounted) setState(() => _syncing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final TelegramService service = widget.service;
@@ -35,8 +56,16 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     return ListenableBuilder(
       listenable: service,
       builder: (BuildContext context, Widget? child) {
-        final TelegramSource source = service.sourceById(widget.sourceId)!;
-        final bool syncing = source.status == SourceStatus.syncing;
+        // Re-testé à chaque notification : la source peut disparaître
+        // (suppression) pendant que l'écran est encore affiché.
+        final TelegramSource? source = service.sourceById(widget.sourceId);
+        if (source == null) {
+          return Scaffold(
+            appBar: AppBar(),
+            body: const Center(child: Text('Source introuvable', style: TextStyle(color: AppColors.textMuted))),
+          );
+        }
+        final bool syncing = source.status == SourceStatus.syncing || _syncing;
 
         return Scaffold(
           appBar: AppBar(
@@ -46,15 +75,6 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
               onPressed: () => Navigator.of(context).maybePop(),
             ),
             title: Text(source.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700)),
-            actions: [
-              IconButton(
-                tooltip: 'Paramètres de la source',
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Paramètres avancés : prochaine étape.')),
-                ),
-                icon: const Icon(Icons.settings_outlined, size: 21),
-              ),
-            ],
           ),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(20, 6, 20, 40),
@@ -76,25 +96,57 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                   StatTile(label: 'Auto-sync', value: formatAutoSyncInterval(source.autoSyncInterval), icon: Icons.autorenew_rounded),
                 ],
               ),
+              const SizedBox(height: 16),
+              // Synchronisation automatique : modifie l'état enregistré
+              // (la vraie exécution périodique viendra dans une prochaine étape).
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.divider),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.autorenew_rounded, size: 20, color: AppColors.textSecondary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Synchronisation automatique', style: Theme.of(context).textTheme.titleSmall),
+                          Text(
+                            source.syncEnabled ? 'Activée' : 'Désactivée',
+                            style: Theme.of(context).textTheme.labelSmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: source.syncEnabled,
+                      activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
+                      activeThumbColor: AppColors.primaryBright,
+                      onChanged: (bool enabled) =>
+                          widget.service.setSourceEnabled(source.id, enabled),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 22),
               PrimaryButton(
                 label: syncing ? 'Synchronisation en cours…' : 'Synchroniser maintenant',
                 icon: Icons.sync_rounded,
-                onTap: syncing
-                    ? null
-                    : () {
-                        service.syncSource(sourceId: source.id);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Synchronisation lancée…')),
-                        );
-                      },
+                onTap: syncing ? null : () => _syncNow(source),
               ),
               const SizedBox(height: 10),
               PrimaryButton(
-                label: source.syncEnabled ? 'Désactiver la source' : 'Activer la source',
-                icon: source.syncEnabled ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                label: 'Publications récentes',
+                icon: Icons.article_outlined,
                 outlined: true,
-                onTap: () => service.setSourceEnabled(source.id, !source.syncEnabled),
+                onTap: () => Navigator.of(context).pushNamed(
+                  AppRoutes.sourcePublications,
+                  arguments: source.id,
+                ),
               ),
               const SizedBox(height: 10),
               PrimaryButton(
@@ -116,10 +168,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       builder: (BuildContext context) => AlertDialog(
         backgroundColor: AppColors.surfaceAlt,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: const Text('Supprimer la source ?', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-        content: Text(
-          '« ${source.name} » (@${source.username}) sera retirée de vos sources.',
-          style: const TextStyle(fontSize: 13.5, height: 1.5, color: AppColors.textSecondary),
+        title: const Text('Supprimer cette source ?', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        content: const Text(
+          'Les données associées à cette source pourront également être supprimées selon les règles de conservation définies par l\'application.',
+          style: TextStyle(fontSize: 13.5, height: 1.5, color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -134,8 +186,8 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       ),
     );
     if (confirmed == true && mounted) {
-      widget.service.removeSource(source.id);
-      Navigator.of(context).maybePop();
+      await widget.service.removeSource(source.id);
+      if (mounted) Navigator.of(context).maybePop();
     }
   }
 }

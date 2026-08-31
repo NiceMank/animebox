@@ -1,7 +1,7 @@
 name: animebox
-description: "AnimeBox — bibliothèque d'animés alimentée par Telegram (étape 3 : sources Telegram, synchronisation, bibliothèque)."
+description: "AnimeBox — bibliothèque d'animés alimentée par Telegram (étape 4 : intégration réelle de Telegram via le backend API)."
 publish_to: 'none'
-version: 0.3.0+3
+version: 0.4.0+4
 
 environment:
   sdk: ^3.13.0
@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  http: ^1.2.2
+  flutter_secure_storage: ^9.2.2
 
 dev_dependencies:
   flutter_test:

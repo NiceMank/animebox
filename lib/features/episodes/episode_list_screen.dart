@@ -243,7 +243,7 @@ class _Banner extends StatelessWidget {
                       children: [
                         for (final String genre in anime.genres.take(2))
                           _MetaChip(label: genre),
-                        _MetaChip(label: '★ ${anime.rating.toStringAsFixed(1)}', accent: true),
+                        _MetaChip(label: anime.rating.toStringAsFixed(1), icon: Icons.star_rounded, accent: true),
                         _MetaChip(label: '${anime.year}'),
                         _MetaChip(label: '${anime.episodeDurationMin} min/ép'),
                         StatusPill(anime.status.label, color: AppColors.success),
@@ -261,9 +261,10 @@ class _Banner extends StatelessWidget {
 }
 
 class _MetaChip extends StatelessWidget {
-  const _MetaChip({required this.label, this.accent = false});
+  const _MetaChip({required this.label, this.icon, this.accent = false});
 
   final String label;
+  final IconData? icon;
   final bool accent;
 
   @override
@@ -275,13 +276,22 @@ class _MetaChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: accent ? AppColors.primary.withValues(alpha: 0.5) : Colors.transparent),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 10.5,
-          fontWeight: FontWeight.w600,
-          color: accent ? AppColors.primaryBright : AppColors.textSecondary,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 11, color: accent ? AppColors.primaryBright : AppColors.textSecondary),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: accent ? AppColors.primaryBright : AppColors.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }

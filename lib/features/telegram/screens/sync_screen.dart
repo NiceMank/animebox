@@ -11,14 +11,42 @@ import '../data/models/sync_history_entry.dart';
 import '../data/services/telegram_service.dart';
 
 /// Écran 8 — Synchronisation : état du moteur, statistiques globales,
-/// simulation de synchronisation avec progression, historique détaillé.
-class SyncScreen extends StatelessWidget {
+/// synchronisation avec progression, historique détaillé.
+class SyncScreen extends StatefulWidget {
   const SyncScreen({super.key, required this.service});
 
   final TelegramService service;
 
   @override
+  State<SyncScreen> createState() => _SyncScreenState();
+}
+
+class _SyncScreenState extends State<SyncScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // En mode backend : recharge statistiques et historique depuis l'API.
+    widget.service.loadStats().catchError((Object _) {});
+  }
+
+  Future<void> _syncNow() async {
+    try {
+      await widget.service.syncAll();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Synchronisation terminée.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('La synchronisation a échoué. Réessayez.')),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final TelegramService service = widget.service;
     return ListenableBuilder(
       listenable: service,
       builder: (BuildContext context, Widget? child) {
@@ -42,7 +70,7 @@ class SyncScreen extends StatelessWidget {
               if (service.currentProgress != null)
                 SyncProgressCard(
                   progress: service.currentProgress!,
-                  finished: service.currentProgress!.fraction >= 1,
+                  finished: (service.currentProgress!.fraction ?? 0) >= 1,
                   resultEpisodes: service.stats.newEpisodes,
                 ),
               if (service.currentProgress != null) const SizedBox(height: 16),
@@ -73,14 +101,7 @@ class SyncScreen extends StatelessWidget {
               PrimaryButton(
                 label: syncing ? 'Synchronisation en cours…' : 'Synchroniser maintenant',
                 icon: Icons.sync_rounded,
-                onTap: syncing
-                    ? null
-                    : () {
-                        service.syncAll();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Synchronisation lancée…')),
-                        );
-                      },
+                onTap: syncing ? null : _syncNow,
               ),
               const SizedBox(height: 26),
               Text('Historique', style: Theme.of(context).textTheme.titleMedium),

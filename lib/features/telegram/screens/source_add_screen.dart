@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/primary_button.dart';
-import '../data/models/source_status.dart';
-import '../data/models/telegram_source.dart';
+import '../data/models/api_exception.dart';
+import '../data/models/resolved_channel.dart';
+import '../data/models/telegram_input.dart';
 import '../data/services/telegram_service.dart';
-import 'widgets/source_preview_card.dart';
 
-/// Écran d'ajout d'une source Telegram (validation locale uniquement).
+/// Écran d'ajout d'une source Telegram.
+///
+/// La saisie est validée localement, puis la résolution réelle (canal
+/// introuvable, inaccessible, accessible) est déléguée au backend via
+/// [TelegramService.resolveChannel]. Un aperçu est affiché avant l'ajout.
 class SourceAddScreen extends StatefulWidget {
   const SourceAddScreen({super.key, required this.service});
 
@@ -20,8 +24,9 @@ class SourceAddScreen extends StatefulWidget {
 class _SourceAddScreenState extends State<SourceAddScreen> {
   final TextEditingController _controller = TextEditingController();
   String? _error;
-  String _username = '';
-  String _name = '';
+  bool _checking = false;
+  bool _adding = false;
+  ResolvedChannel? _preview;
 
   @override
   void dispose() {
@@ -29,74 +34,61 @@ class _SourceAddScreenState extends State<SourceAddScreen> {
     super.dispose();
   }
 
-  /// Valide la saisie : @username, https://t.me/xxx ou xxx acceptés.
-  /// Retourne null si valide, sinon le message d'erreur.
-  String? _validate(String input) {
-    final String trimmed = input.trim();
-    if (trimmed.isEmpty) return 'Veuillez saisir une source.';
-
-    String candidate = trimmed;
-    if (candidate.startsWith('@')) candidate = candidate.substring(1);
-    final Uri? uri = Uri.tryParse(candidate);
-    if (uri != null && uri.host.isNotEmpty && candidate.startsWith('http')) {
-      // Liens : https://t.me/animechannel
-      if (uri.host != 't.me') return 'Format de source invalide.';
-      candidate = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : '';
-    } else if (candidate.contains('/')) {
-      return 'Format de source invalide.';
-    }
-
-    // Username Telegram : lettres, chiffres et underscores (3 à 32).
-    final RegExp valid = RegExp(r'^[A-Za-z][A-Za-z0-9_]{2,31}$');
-    if (!valid.hasMatch(candidate)) return 'Format de source invalide.';
-    return null;
-  }
-
-  void _onChanged(String value) {
-    setState(() {
-      _error = null;
-      _username = '';
-    });
-  }
-
-  void _preview() {
-    final String trimmed = _controller.text.trim();
-    final String? error = _validate(trimmed);
-    if (error != null) {
+  Future<void> _previewSource() async {
+    // 1. Validation locale (message immédiat, sans réseau).
+    final String username;
+    try {
+      username = TelegramInputParser.parse(_controller.text);
+    } on ApiException catch (error) {
       setState(() {
-        _error = error;
-        _username = '';
+        _error = error.displayMessage;
+        _preview = null;
       });
       return;
     }
-    String username = trimmed.startsWith('@') ? trimmed.substring(1) : trimmed;
-    final Uri? uri = Uri.tryParse(username);
-    if (uri != null && uri.host.isNotEmpty && username.startsWith('http')) {
-      username = uri.pathSegments.first;
-    }
+
+    // 2. Résolution via le backend (vérification de l'accessibilité).
     setState(() {
+      _checking = true;
       _error = null;
-      _username = username;
-      _name = username.replaceAll('_', ' ').split(' ').map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}').join(' ');
     });
+    try {
+      final ResolvedChannel channel = await widget.service.resolveChannel(username);
+      if (!mounted) return;
+      setState(() => _preview = channel);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _preview = null;
+        _error = error.displayMessage;
+      });
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
   }
 
-  void _add() {
-    if (_username.isEmpty) {
-      _preview();
-      return;
+  Future<void> _addSource() async {
+    final ResolvedChannel? preview = _preview;
+    if (preview == null) return;
+    setState(() => _adding = true);
+    try {
+      await widget.service.addSource(name: preview.title, username: preview.username);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Source « ${preview.title} » ajoutée.')),
+      );
+      Navigator.of(context).pop(true);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _adding = false;
+        _error = error.displayMessage;
+      });
     }
-    final TelegramSource source = widget.service.addSource(name: _name, username: _username);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Source « ${source.name} » ajoutée.')),
-    );
-    Navigator.of(context).maybePop();
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool showPreview = _username.isNotEmpty;
-
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -116,8 +108,10 @@ class _SourceAddScreenState extends State<SourceAddScreen> {
           const SizedBox(height: 16),
           TextField(
             controller: _controller,
-            onChanged: _onChanged,
-            onSubmitted: (_) => _preview(),
+            onChanged: (_) {
+              if (_error != null) setState(() => _error = null);
+            },
+            onSubmitted: (_) => _previewSource(),
             style: const TextStyle(color: AppColors.textPrimary, fontSize: 14.5),
             cursorColor: AppColors.primary,
             decoration: InputDecoration(
@@ -135,33 +129,150 @@ class _SourceAddScreenState extends State<SourceAddScreen> {
                 borderRadius: BorderRadius.circular(16),
                 borderSide: const BorderSide(color: AppColors.primary),
               ),
-              errorText: _error,
-              errorStyle: const TextStyle(fontSize: 11.5, color: AppColors.danger),
             ),
           ),
-          const SizedBox(height: 16),
-          PrimaryButton(label: 'Vérifier', icon: Icons.search_rounded, onTap: _preview),
-          if (showPreview) ...[
+          const SizedBox(height: 14),
+          PrimaryButton(
+            label: _checking ? 'Vérification…' : 'Vérifier',
+            icon: Icons.search_rounded,
+            onTap: _checking ? null : _previewSource,
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.danger.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.danger.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline_rounded, size: 19, color: AppColors.danger),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(_error!, style: const TextStyle(fontSize: 12.5, height: 1.45, color: AppColors.textPrimary)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (_preview != null) ...[
             const SizedBox(height: 24),
             Text('Aperçu de la source', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 10),
-            SourcePreviewCard(
-              source: TelegramSource(
-                id: 'preview',
-                name: _name,
-                username: _username,
-                status: widget.service.simulatedSourceStatus ?? SourceStatus.active,
-              ),
-            ),
+            _PreviewCard(channel: _preview!, onAdd: _adding ? null : _addSource, adding: _adding),
             const SizedBox(height: 8),
             const Text(
-              'La vérification réelle du canal sera effectuée lors de la connexion à l\'API Telegram (prochaine étape).',
+              'La source sera synchronisée depuis votre compte Telegram connecté.',
               style: TextStyle(fontSize: 11.5, height: 1.45, color: AppColors.textMuted),
             ),
-            const SizedBox(height: 20),
-            PrimaryButton(label: 'Ajouter la source', icon: Icons.add_rounded, onTap: _add),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Aperçu du canal résolu par le backend (photo, titre, @username,
+/// description) avec le bouton d'ajout.
+class _PreviewCard extends StatelessWidget {
+  const _PreviewCard({required this.channel, required this.onAdd, required this.adding});
+
+  final ResolvedChannel channel;
+  final VoidCallback? onAdd;
+  final bool adding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.45)),
+        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 6))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _ChannelAvatar(channel: channel),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      channel.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 2),
+                    Text('@${channel.username}', style: Theme.of(context).textTheme.labelSmall),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
+                ),
+                child: Text(
+                  channel.kind.label,
+                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.success),
+                ),
+              ),
+            ],
+          ),
+          if (channel.description != null && channel.description!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              channel.description!,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12.5, height: 1.45, color: AppColors.textSecondary),
+            ),
+          ],
+          const SizedBox(height: 16),
+          PrimaryButton(
+            label: adding ? 'Ajout en cours…' : 'Ajouter cette source',
+            icon: Icons.add_rounded,
+            onTap: onAdd,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChannelAvatar extends StatelessWidget {
+  const _ChannelAvatar({required this.channel});
+
+  final ResolvedChannel channel;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget fallback = Container(
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(colors: AppColors.primaryGradient),
+      ),
+      padding: const EdgeInsets.all(11),
+      child: const Icon(Icons.campaign_rounded, color: Colors.white, size: 22),
+    );
+    final String? photo = channel.photoUrl;
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: ClipOval(
+        child: photo == null || photo.isEmpty
+            ? fallback
+            : Image.network(photo, fit: BoxFit.cover, errorBuilder: (_, _, _) => fallback),
       ),
     );
   }

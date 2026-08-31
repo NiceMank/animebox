@@ -37,7 +37,7 @@ class HomeScreen extends StatelessWidget {
         slivers: [
           SliverToBoxAdapter(child: _HomeTopBar(onSearchTap: onSearchTap)),
           SliverToBoxAdapter(child: HeroCarousel(repository: repository)),
-          const SliverToBoxAdapter(child: SectionTitle(title: '🔥 Nouveaux épisodes')),
+          const SliverToBoxAdapter(child: SectionTitle(title: 'Nouveaux épisodes', icon: Icons.local_fire_department_rounded)),
           SliverToBoxAdapter(
             child: SizedBox(
               height: 160,
@@ -54,7 +54,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
-          SliverToBoxAdapter(child: SectionTitle(title: '⭐ Mes animés', actionLabel: 'Tout voir', onAction: onLibraryTap)),
+          SliverToBoxAdapter(child: SectionTitle(title: 'Mes animés', icon: Icons.star_rounded, actionLabel: 'Tout voir', onAction: onLibraryTap)),
           SliverToBoxAdapter(
             child: SizedBox(
               height: 240,
@@ -84,7 +84,7 @@ class HomeScreen extends StatelessWidget {
                     ),
             ),
           ),
-          const SliverToBoxAdapter(child: SectionTitle(title: '▶ Continuer')),
+          const SliverToBoxAdapter(child: SectionTitle(title: 'Continuer', icon: Icons.play_circle_outline_rounded)),
           if (watching.isEmpty)
             const SliverToBoxAdapter(
               child: Padding(

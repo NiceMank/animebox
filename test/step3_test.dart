@@ -97,16 +97,16 @@ void main() {
       expect(service.sources.first.username, 'animechannel1');
     });
 
-    test('addSource / removeSource / setSourceEnabled', () {
-      final TelegramSource added = service.addSource(name: 'Test Canal', username: 'testcanal');
+    test('addSource / removeSource / setSourceEnabled', () async {
+      final TelegramSource added = await service.addSource(name: 'Test Canal', username: 'testcanal');
       expect(service.sources, hasLength(3));
       expect(service.sourceById(added.id), isNotNull);
 
-      service.setSourceEnabled(added.id, false);
+      await service.setSourceEnabled(added.id, false);
       expect(service.sourceById(added.id)!.status, SourceStatus.disabled);
       expect(service.sourceById(added.id)!.syncEnabled, isFalse);
 
-      service.removeSource(added.id);
+      await service.removeSource(added.id);
       expect(service.sources, hasLength(2));
     });
 
@@ -169,16 +169,16 @@ void main() {
       expect(find.byType(SourceDetailScreen), findsOneWidget);
       expect(find.text('Synchroniser maintenant'), findsOneWidget);
 
-      // Désactivation → statut « Désactivé ».
-      await tester.ensureVisible(find.text('Désactiver la source'));
+      // Désactivation via l'interrupteur « Synchronisation automatique ».
+      await tester.ensureVisible(find.byType(Switch));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Désactiver la source'));
+      await tester.tap(find.byType(Switch));
       await tester.pumpAndSettle();
       expect(service.sourceById('src-anime-channel')!.syncEnabled, isFalse);
-      expect(find.text('Désactivé'), findsOneWidget);
+      expect(find.text('Désactivée'), findsOneWidget);
 
       // Réactivation.
-      await tester.tap(find.text('Activer la source'));
+      await tester.tap(find.byType(Switch));
       await tester.pumpAndSettle();
       expect(service.sourceById('src-anime-channel')!.syncEnabled, isTrue);
     });
@@ -211,9 +211,9 @@ void main() {
       expect(find.text('Otakustream'), findsOneWidget);
 
       // Ajout effectif.
-      await tester.ensureVisible(find.text('Ajouter la source'));
+      await tester.ensureVisible(find.text('Ajouter cette source'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Ajouter la source'));
+      await tester.tap(find.text('Ajouter cette source'));
       await tester.pumpAndSettle();
       expect(service.sources, hasLength(3));
       expect(find.byType(SourcesScreen), findsOneWidget);
@@ -292,11 +292,11 @@ void main() {
       expect(find.text('Jujutsu Kaisen'), findsOneWidget);
 
       // Récemment ajoutés.
-      await tapCategory(tester, '🆕 Récemment ajoutés');
+      await tapCategory(tester, 'Récemment ajoutés');
       expect(find.text('Demon Slayer'), findsNothing);
 
       // Tous les animés.
-      await tapCategory(tester, '📺 Tous les animés');
+      await tapCategory(tester, 'Tous les animés');
       expect(find.text('Demon Slayer'), findsOneWidget);
 
       // Vue liste.
@@ -315,11 +315,11 @@ void main() {
     testWidgets('suivis : carte avec progression après avoir suivi un animé', (WidgetTester tester) async {
       await pumpApp(tester);
 
-      await tapCategory(tester, '❤️ Suivis');
+      await tapCategory(tester, 'Suivis');
       expect(find.text('Aucun animé suivi'), findsOneWidget);
 
       // Suivre Solo Leveling depuis sa fiche.
-      await tapCategory(tester, '📺 Tous les animés');
+      await tapCategory(tester, 'Tous les animés');
       await tester.tap(find.text('Solo Leveling'));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Suivre'));
@@ -329,7 +329,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.arrow_back_rounded));
       await tester.pumpAndSettle();
 
-      await tapCategory(tester, '❤️ Suivis');
+      await tapCategory(tester, 'Suivis');
       expect(find.text('Solo Leveling'), findsOneWidget);
       expect(find.textContaining('Dernier épisode disponible'), findsOneWidget);
     });
@@ -337,7 +337,7 @@ void main() {
     testWidgets('continuer : ouvre le lecteur à la position enregistrée', (WidgetTester tester) async {
       await pumpApp(tester);
 
-      await tapCategory(tester, '▶ Continuer');
+      await tapCategory(tester, 'Continuer');
 
       // Solo Leveling S2E07 avec progression 13:12.
       expect(find.textContaining('Reprendre à'), findsWidgets);
@@ -351,7 +351,7 @@ void main() {
     testWidgets('récemment ajoutés : ouvre le choix de qualité du dernier épisode', (WidgetTester tester) async {
       await pumpApp(tester);
 
-      await tapCategory(tester, '🆕 Récemment ajoutés');
+      await tapCategory(tester, 'Récemment ajoutés');
       expect(find.text('S2E09'), findsOneWidget);
 
       await tester.tap(find.text('S2E09'));

@@ -1,14 +1,15 @@
-/// Progression d'une synchronisation en cours (simulation locale).
+/// Progression d'une synchronisation en cours.
 class SyncProgress {
   const SyncProgress({
-    required this.fraction,
+    this.fraction,
     required this.phase,
     required this.analyzedPosts,
     required this.totalPosts,
   });
 
-  /// Avancement de 0 à 1.
-  final double fraction;
+  /// Avancement de 0 à 1 — null quand la progression est indéterminée
+  /// (requête backend en cours, sans jauge détaillée).
+  final double? fraction;
 
   /// Phase actuelle (« Analyzing publications... », …).
   final String phase;
@@ -19,7 +20,7 @@ class SyncProgress {
   /// Total attendu pour cette passe.
   final int totalPosts;
 
-  int get percent => (fraction * 100).round();
+  int? get percent => fraction == null ? null : (fraction! * 100).round();
 
   SyncProgress copyWith({double? fraction, String? phase, int? analyzedPosts, int? totalPosts}) =>
       SyncProgress(
