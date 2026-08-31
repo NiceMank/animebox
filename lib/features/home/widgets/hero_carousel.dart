@@ -25,7 +25,7 @@ class _HeroCarouselState extends State<HeroCarousel> {
   List<Anime> get _items => widget.repository.latestReleases.take(4).toList();
 
   void _open(Anime anime) {
-    Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: anime.id);
+    Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: AnimeIdArgs(anime.id));
   }
 
   @override

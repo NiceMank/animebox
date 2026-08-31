@@ -1,7 +1,7 @@
 name: animebox
-description: "AnimeBox — bibliothèque d'animés alimentée par Telegram (étape 1 : fondations de l'application mobile)."
+description: "AnimeBox — bibliothèque d'animés alimentée par Telegram (étape 2 : épisodes, qualités, lecteur)."
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.2.0+2
 
 environment:
   sdk: ^3.13.0

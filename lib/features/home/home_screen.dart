@@ -28,7 +28,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<Anime> releases = repository.latestReleases;
     final List<LibraryEntry> favorites = repository.libraryEntries.where((LibraryEntry entry) => entry.isFavorite).toList();
-    final List<LibraryEntry> watching = repository.libraryEntries.where((LibraryEntry entry) => entry.progress > 0).toList();
+    final List<LibraryEntry> watching = repository.libraryEntries.where((LibraryEntry entry) => entry.hasProgress).toList();
 
     return SafeArea(
       bottom: false,
@@ -49,7 +49,7 @@ class HomeScreen extends StatelessWidget {
                 separatorBuilder: (_, _) => const SizedBox(width: 12),
                 itemBuilder: (BuildContext context, int index) => ReleaseCard(
                   anime: releases[index],
-                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: releases[index].id),
+                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: AnimeIdArgs(releases[index].id)),
                 ),
               ),
             ),
@@ -77,8 +77,8 @@ class HomeScreen extends StatelessWidget {
                         return AnimeCard(
                           anime: entry.anime,
                           width: 118,
-                          progress: entry.progress > 0 ? entry.progress : null,
-                          onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: entry.anime.id),
+                          progress: entry.resumeFraction(),
+                          onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: AnimeIdArgs(entry.anime.id)),
                         );
                       },
                     ),
@@ -101,7 +101,7 @@ class HomeScreen extends StatelessWidget {
                   final LibraryEntry entry = watching[index];
                   return ContinueCard(
                     entry: entry,
-                    onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: entry.anime.id),
+                    onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: AnimeIdArgs(entry.anime.id)),
                   );
                 },
                 separatorBuilder: (_, _) => const SizedBox(height: 12),

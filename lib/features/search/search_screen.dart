@@ -124,7 +124,7 @@ class _TrendingGrid extends StatelessWidget {
             itemCount: anime.length,
             itemBuilder: (BuildContext context, int index) => AnimeCard(
               anime: anime[index],
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: anime[index].id),
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: AnimeIdArgs(anime[index].id)),
             ),
           ),
         ),
@@ -156,7 +156,7 @@ class _ResultsList extends StatelessWidget {
         final Anime anime = results[index - 1];
         return ResultTile(
           anime: anime,
-          onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: anime.id),
+          onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: AnimeIdArgs(anime.id)),
         );
       },
     );

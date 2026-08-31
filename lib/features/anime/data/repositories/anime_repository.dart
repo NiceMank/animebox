@@ -1,7 +1,9 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 import '../models/anime.dart';
 import '../models/library_entry.dart';
+import '../models/playback_progress.dart';
+import '../models/playback_settings.dart';
 import '../models/search_filters.dart';
 
 /// Contrat d'accès aux données de l'application.
@@ -11,7 +13,7 @@ import '../models/search_filters.dart';
 /// bibliothèque persistée…) sans modifier l'interface.
 ///
 /// Les implémentations sont des [Listenable] : les écrans s'y abonnent pour
-/// réagir aux changements (favoris, suivis…).
+/// réagir aux changements (favoris, suivis, progression…).
 abstract class AnimeRepository implements Listenable {
   List<Anime> get allAnime;
 
@@ -35,6 +37,26 @@ abstract class AnimeRepository implements Listenable {
   List<String> get availableLanguages;
   List<String> get availableSources;
   List<int> get availableSeasons;
+
+  // ---- Progression de lecture (locale pour cette étape) ----
+
+  /// Progression enregistrée pour un épisode donné.
+  Duration? episodeProgress(String animeId, String episodeId);
+
+  /// Enregistre la position de lecture d'un épisode.
+  ///
+  /// La position est bornée à la durée de l'épisode et notifie les écrans.
+  void recordProgress(String animeId, String episodeId, Duration position);
+
+  /// Historique de progression d'un animé (du plus récent au plus ancien).
+  List<PlaybackProgress> progressHistory(String animeId);
+
+  /// Paramètres de lecture courants.
+  PlaybackSettings get playbackSettings;
+
+  void setAutoPlayNext(bool enabled);
+
+  // ---- Favoris / suivi ----
 
   void toggleFollow(String animeId);
   void toggleFavorite(String animeId);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../anime/data/models/anime.dart';
 import '../../anime/data/models/episode.dart';
+import '../../anime/data/models/episode_quality.dart';
 import '../../anime/data/models/video_quality.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/primary_button.dart';
@@ -19,6 +20,7 @@ class HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Episode? episode = anime.latestEpisode;
+    final EpisodeQuality? best = episode?.bestQuality;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(28),
@@ -55,9 +57,9 @@ class HeroCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  episode == null
+                  episode == null || best == null
                       ? 'Bientôt disponible'
-                      : '${anime.latestEpisodeTag} · ${episode.qualities.first.label} · ${anime.languages.first}',
+                      : '${anime.latestEpisodeTag} · ${best.quality.label} · ${best.language}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w600,
@@ -69,9 +71,9 @@ class HeroCard extends StatelessWidget {
                     Expanded(
                       child: PrimaryButton(label: 'Voir la fiche', icon: Icons.arrow_forward_rounded, onTap: onOpen),
                     ),
-                    if (episode != null) ...[
+                    if (best != null) ...[
                       const SizedBox(width: 10),
-                      QualityBadge(episode.qualities.first),
+                      QualityBadge(best.quality),
                     ],
                   ],
                 ),

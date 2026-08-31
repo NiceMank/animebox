@@ -6,6 +6,7 @@ import '../anime/data/models/library_entry.dart';
 import '../anime/data/models/season.dart';
 import '../anime/data/models/video_quality.dart';
 import '../anime/data/repositories/anime_repository.dart';
+import '../../app/router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/episode_card.dart';
@@ -77,7 +78,15 @@ class _AnimeDetailsScreenState extends State<AnimeDetailsScreen> {
         ],
         body: TabBarView(
           children: [
-            _EpisodesTab(anime: anime),
+            _EpisodesTab(
+              anime: anime,
+              onEpisodeTap: (Season season, Episode episode) {
+                Navigator.of(context).pushNamed(
+                  AppRoutes.animeEpisodes,
+                  arguments: EpisodeListArgs(anime.id, seasonId: season.id),
+                );
+              },
+            ),
             _DetailsTab(anime: anime),
           ],
         ),
@@ -142,7 +151,7 @@ class _AnimeDetailsScreenState extends State<AnimeDetailsScreen> {
   }
 
   Widget _buildInfoBlock(BuildContext context, Anime anime, bool isFavorite, LibraryEntry? entry) {
-    final bool started = (entry?.progress ?? 0) > 0;
+    final bool started = (entry?.resumePosition ?? Duration.zero) > Duration.zero;
 
     return Container(
       color: AppColors.background,
@@ -237,10 +246,14 @@ class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
 
 /// Onglet Épisodes : liste des saisons (de la plus récente à la plus
 /// ancienne) avec leurs épisodes et qualités disponibles.
+///
+/// Un appui sur un épisode ouvre la liste complète des épisodes de la
+/// saison (écran 4).
 class _EpisodesTab extends StatelessWidget {
-  const _EpisodesTab({required this.anime});
+  const _EpisodesTab({required this.anime, required this.onEpisodeTap});
 
   final Anime anime;
+  final void Function(Season season, Episode episode) onEpisodeTap;
 
   @override
   Widget build(BuildContext context) {
@@ -262,14 +275,27 @@ class _EpisodesTab extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            for (final Episode episode in season.episodes.reversed) ...[
+            for (final Episode episode in season.episodes.reversed.take(3)) ...[
               EpisodeCard(
                 episode: episode,
-                onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Lecture et téléchargement : prochaine étape.')),
-                ),
+                onTap: () => onEpisodeTap(season, episode),
               ),
               const SizedBox(height: 8),
+            ],
+            if (season.episodes.length > 3) ...[
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    final Episode first = season.episodes.first;
+                    onEpisodeTap(season, first);
+                  },
+                  child: Text(
+                    'Voir les ${season.episodeCount} épisodes',
+                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.primaryBright),
+                  ),
+                ),
+              ),
             ],
             const SizedBox(height: 16),
           ],

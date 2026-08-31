@@ -4,16 +4,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:animebox/app/animebox_app.dart';
 import 'package:animebox/features/anime/data/repositories/mock_anime_repository.dart';
 import 'package:animebox/features/details/anime_details_screen.dart';
+import 'package:animebox/features/episodes/episode_list_screen.dart';
+import 'package:animebox/features/player/player_screen.dart';
+import 'package:animebox/features/quality/quality_select_screen.dart';
+import 'package:animebox/shared/widgets/episode_card.dart';
+
+Future<void> pumpApp(WidgetTester tester) async {
+  tester.view.physicalSize = const Size(1080, 2340);
+  tester.view.devicePixelRatio = 3.0;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(AnimeBoxApp(repository: MockAnimeRepository()));
+  await tester.pumpAndSettle();
+}
 
 void main() {
-  Future<void> pumpApp(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1080, 2340);
-    tester.view.devicePixelRatio = 3.0;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(AnimeBoxApp(repository: MockAnimeRepository()));
-    await tester.pumpAndSettle();
-  }
-
   testWidgets("l'accueil affiche le héros et les sections principales", (WidgetTester tester) async {
     await pumpApp(tester);
 
@@ -87,8 +91,8 @@ void main() {
     await tester.tap(find.text('Appliquer les filtres'));
     await tester.pumpAndSettle();
 
-    expect(find.text('3 résultat(s)'), findsOneWidget);
-    expect(find.text('One Piece'), findsNothing);
+    expect(find.text('4 résultat(s)'), findsOneWidget);
+    expect(find.text('One Piece'), findsOneWidget);
   });
 
   testWidgets('favori et suivi se basculent sur la fiche animé', (WidgetTester tester) async {
@@ -112,5 +116,120 @@ void main() {
     await tester.tap(find.text('Suivre'));
     await tester.pumpAndSettle();
     expect(find.text('Suivi'), findsOneWidget);
+  });
+
+  testWidgets('fiche → liste des épisodes : saisons, tri et navigation vers la qualité',
+      (WidgetTester tester) async {
+    await pumpApp(tester);
+
+    // Accueil → fiche de Solo Leveling (bouton du héros).
+    await tester.tap(find.text('Voir la fiche'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AnimeDetailsScreen), findsOneWidget);
+
+    // Onglet Épisodes → premier épisode (S2 E09) → liste complète.
+    await tester.tap(find.byType(EpisodeCard).first);
+    await tester.pumpAndSettle();
+    expect(find.byType(EpisodeListScreen), findsOneWidget);
+    expect(find.text('9 épisodes'), findsOneWidget);
+
+    // Changement de saison.
+    await tester.tap(find.text('Saison 1'));
+    await tester.pumpAndSettle();
+    expect(find.text('12 épisodes'), findsOneWidget);
+
+    // Tri croissant : le premier épisode devient l'épisode 1.
+    await tester.tap(find.text('Trier'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Numéro croissant'));
+    await tester.pumpAndSettle();
+    expect(find.text('Épisode 1'), findsOneWidget);
+
+    // Un appui ouvre le choix de qualité.
+    await tester.tap(find.byType(EpisodeCard).first);
+    await tester.pumpAndSettle();
+    expect(find.byType(QualitySelectScreen), findsOneWidget);
+    expect(find.text('Qualité disponible'), findsOneWidget);
+    expect(find.text('Langue / Sous-titres'), findsOneWidget);
+    expect(find.text('Lire maintenant'), findsOneWidget);
+  });
+
+  testWidgets('sélection qualité et langue, puis lecture (contrôles, prochain épisode)',
+      (WidgetTester tester) async {
+    await pumpApp(tester);
+
+    await tester.tap(find.text('Voir la fiche'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(EpisodeCard).first);
+    await tester.pumpAndSettle();
+
+    // Saison 1, tri croissant → Épisode 1 (qui a un épisode suivant).
+    await tester.tap(find.text('Saison 1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Trier'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Numéro croissant'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(EpisodeCard).first);
+    await tester.pumpAndSettle();
+
+    // Sélection d'une qualité et d'une langue.
+    await tester.tap(find.text('720p').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('VOSTFR').first);
+    await tester.pumpAndSettle();
+
+    // Lecture.
+    await tester.ensureVisible(find.text('Lire maintenant'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lire maintenant'));
+    await tester.pumpAndSettle();
+    expect(find.byType(PlayerScreen), findsOneWidget);
+    expect(find.textContaining('S01E01'), findsOneWidget);
+    expect(find.text('Lecture automatique'), findsOneWidget);
+
+    // Prochain épisode → choix de qualité de l'épisode 2.
+    expect(find.text('Prochain épisode'), findsOneWidget);
+    await tester.tap(find.text('Épisode 2').first);
+    await tester.pumpAndSettle();
+    expect(find.byType(QualitySelectScreen), findsOneWidget);
+    expect(find.text('Qualité disponible'), findsOneWidget);
+  });
+
+  testWidgets('la progression de lecture est enregistrée localement', (WidgetTester tester) async {
+    final MockAnimeRepository repository = MockAnimeRepository();
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(AnimeBoxApp(repository: repository));
+    await tester.pumpAndSettle();
+
+    // Solo Leveling S2 E09 (sans progression initiale).
+    await tester.tap(find.text('Voir la fiche'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(EpisodeCard).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(EpisodeCard).first);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Lire maintenant'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lire maintenant'));
+    await tester.pumpAndSettle();
+
+    expect(repository.episodeProgress('solo-leveling', 'sl-s2e9'), isNull);
+
+    // Lecture simulée : la progression est sauvegardée périodiquement.
+    await tester.tap(find.byKey(const Key('player-toggle-play')));
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(seconds: 3));
+    expect(repository.episodeProgress('solo-leveling', 'sl-s2e9'), greaterThan(Duration.zero));
+
+    await tester.tap(find.byKey(const Key('player-toggle-play')));
+    await tester.pumpAndSettle();
+
+    // Le bouton « Épisodes » ramène à la liste des épisodes.
+    await tester.tap(find.byKey(const Key('player-action-episodes')));
+    await tester.pumpAndSettle();
+    expect(find.byType(EpisodeListScreen), findsOneWidget);
   });
 }

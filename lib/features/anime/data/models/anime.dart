@@ -2,6 +2,17 @@ import 'episode.dart';
 import 'season.dart';
 import 'video_quality.dart';
 
+/// Statut de diffusion d'un animé.
+enum AnimeStatus { ongoing, completed, upcoming }
+
+extension AnimeStatusX on AnimeStatus {
+  String get label => switch (this) {
+        AnimeStatus.ongoing => 'En cours',
+        AnimeStatus.completed => 'Terminé',
+        AnimeStatus.upcoming => 'À venir',
+      };
+}
+
 /// Modèle principal d'un animé.
 ///
 /// Les champs `posterAsset` / `backdropAsset` pointent vers des images
@@ -17,6 +28,8 @@ class Anime {
     required this.genres,
     required this.year,
     required this.seasons,
+    this.rating = 0,
+    this.status = AnimeStatus.ongoing,
     this.languages = const ['VOSTFR'],
     this.episodeDurationMin = 24,
     this.source = 'Locale',
@@ -34,6 +47,10 @@ class Anime {
   final int year;
   final List<Season> seasons;
 
+  /// Note moyenne (0 à 10).
+  final double rating;
+  final AnimeStatus status;
+
   /// Langues disponibles (ex. `VF`, `VOSTFR`).
   final List<String> languages;
   final int episodeDurationMin;
@@ -48,10 +65,49 @@ class Anime {
 
   int get totalEpisodes => seasons.fold(0, (int sum, Season season) => sum + season.episodeCount);
 
+  bool get hasSpecials => seasons.any((Season season) => season.specials.isNotEmpty);
+
+  /// Tous les épisodes de l'animé, saison par saison.
+  List<Episode> get allEpisodes => [
+        for (final Season season in seasons) ...[...season.episodes, ...season.specials],
+      ];
+
+  Episode? episodeById(String episodeId) {
+    for (final Season season in seasons) {
+      final Episode? found = season.episodeById(episodeId);
+      if (found != null) return found;
+    }
+    return null;
+  }
+
   /// Dernier épisode disponible (saison la plus récente).
   Episode? get latestEpisode {
     for (final Season season in seasons.reversed) {
       if (season.episodes.isNotEmpty) return season.episodes.last;
+    }
+    return null;
+  }
+
+  (Season, Episode)? locateEpisode(String episodeId) {
+    for (final Season season in seasons) {
+      final Episode? episode = season.episodeById(episodeId);
+      if (episode != null) return (season, episode);
+    }
+    return null;
+  }
+
+  /// Épisode suivant (pour la lecture automatique) :
+  /// même saison d'abord, puis première saison suivante.
+  Episode? nextEpisodeOf(Episode episode) {
+    for (final Season season in seasons) {
+      final int index = season.episodes.indexWhere((Episode e) => e.id == episode.id);
+      if (index == -1) continue;
+      if (index + 1 < season.episodes.length) return season.episodes[index + 1];
+    }
+    for (int i = 0; i < seasons.length - 1; i++) {
+      if (seasons[i].episodes.isNotEmpty && seasons[i].episodes.last.id == episode.id && seasons[i + 1].episodes.isNotEmpty) {
+        return seasons[i + 1].episodes.first;
+      }
     }
     return null;
   }
@@ -98,7 +154,8 @@ class Anime {
   /// Toutes les qualités disponibles sur l'animé.
   Set<VideoQuality> get availableQualities => {
         for (final Season season in seasons)
-          for (final Episode episode in season.episodes) ...episode.qualities,
+          for (final Episode episode in season.episodes)
+            for (final quality in episode.qualities) quality.quality,
       };
 
   Anime copyWith({bool? isFollowing}) => Anime(
@@ -110,6 +167,8 @@ class Anime {
         genres: genres,
         year: year,
         seasons: seasons,
+        rating: rating,
+        status: status,
         languages: languages,
         episodeDurationMin: episodeDurationMin,
         source: source,

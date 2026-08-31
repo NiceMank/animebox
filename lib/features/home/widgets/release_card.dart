@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../anime/data/models/anime.dart';
 import '../../anime/data/models/episode.dart';
+import '../../anime/data/models/episode_quality.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/poster_image.dart';
 import '../../../shared/widgets/quality_badge.dart';
@@ -17,7 +18,10 @@ class ReleaseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Episode? episode = anime.latestEpisode;
-    final List<QualityBadge> qualities = [for (final quality in episode?.qualities ?? const []) QualityBadge(quality, compact: true)];
+    final List<QualityBadge> qualities = [
+      for (final EpisodeQuality quality in episode?.qualities ?? const <EpisodeQuality>[])
+        QualityBadge(quality.quality, compact: true),
+    ];
 
     return SizedBox(
       width: 292,

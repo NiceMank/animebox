@@ -1,16 +1,18 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/anime.dart';
-import '../models/episode.dart';
 import '../models/library_entry.dart';
+import '../models/playback_progress.dart';
+import '../models/playback_settings.dart';
 import '../models/search_filters.dart';
-import 'anime_repository.dart';
 import '../mock/mock_data.dart';
+import 'anime_repository.dart';
 
-/// Dépôt de données local (mocké) pour l'étape 1.
+/// Dépôt de données local (mocké).
 ///
 /// Il est notifiable : les écrans s'abonnent via [ListenableBuilder] pour
-/// réagir aux bascules « favori » / « suivre » sans rechargement manuel.
+/// réagir aux bascules « favori » / « suivre » et à la progression de
+/// lecture sans rechargement manuel.
 class MockAnimeRepository extends ChangeNotifier implements AnimeRepository {
   MockAnimeRepository({List<Anime>? seed}) : _anime = List.of(seed ?? kMockAnime) {
     _library = _buildLibrary();
@@ -18,27 +20,43 @@ class MockAnimeRepository extends ChangeNotifier implements AnimeRepository {
 
   final List<Anime> _anime;
   late final List<LibraryEntry> _library;
+  PlaybackSettings _settings = const PlaybackSettings();
 
-  LibraryEntry _entry(String animeId, {bool favorite = false, double progress = 0, String? lastEpisodeId}) {
-    final Anime anime = byId(animeId)!;
-    Episode? lastWatched;
-    if (lastEpisodeId != null) {
-      for (final season in anime.seasons) {
-        for (final episode in season.episodes) {
-          if (episode.id == lastEpisodeId) lastWatched = episode;
-        }
-      }
-    }
-    return LibraryEntry(anime: anime, isFavorite: favorite, progress: progress, lastWatched: lastWatched);
+  LibraryEntry _entry(String animeId, {bool favorite = false, Map<String, Duration>? progress, String? resumeEpisodeId}) {
+    return LibraryEntry(
+      anime: byId(animeId)!,
+      isFavorite: favorite,
+      progressMap: progress ?? const {},
+      resumeEpisodeId: resumeEpisodeId,
+    );
   }
 
-  /// Bibliothèque initiale de démonstration.
+  /// Bibliothèque initiale de démonstration (avec quelques progressions).
   List<LibraryEntry> _buildLibrary() => [
-        _entry('solo-leveling', favorite: true, progress: 0.55, lastEpisodeId: 'sl-s2e7'),
-        _entry('one-piece', favorite: true, progress: 0.72, lastEpisodeId: 'op-s1e1123'),
-        _entry('jujutsu-kaisen', favorite: true, progress: 0.12, lastEpisodeId: 'jjk-s2e3'),
+        _entry(
+          'solo-leveling',
+          favorite: true,
+          progress: const {'sl-s2e7': Duration(minutes: 13, seconds: 12)},
+          resumeEpisodeId: 'sl-s2e7',
+        ),
+        _entry(
+          'one-piece',
+          favorite: true,
+          progress: const {'op-s1e1123': Duration(minutes: 17, seconds: 17)},
+          resumeEpisodeId: 'op-s1e1123',
+        ),
+        _entry(
+          'jujutsu-kaisen',
+          favorite: true,
+          progress: const {'jjk-s2e3': Duration(minutes: 2, seconds: 53)},
+          resumeEpisodeId: 'jjk-s2e3',
+        ),
         _entry('demon-slayer'),
       ];
+
+  // ---------------------------------------------------------------------
+  // Catalogue
+  // ---------------------------------------------------------------------
 
   @override
   List<Anime> get allAnime => List.unmodifiable(_anime);
@@ -58,8 +76,7 @@ class MockAnimeRepository extends ChangeNotifier implements AnimeRepository {
   }
 
   @override
-  List<Anime> get latestReleases =>
-      List.unmodifiable(_anime.where((Anime anime) => anime.latestEpisode != null));
+  List<Anime> get latestReleases => List.unmodifiable(_anime.where((Anime anime) => anime.latestEpisode != null));
 
   @override
   List<Anime> search(String query, {SearchFilters filters = SearchFilters.empty}) {
@@ -117,6 +134,66 @@ class MockAnimeRepository extends ChangeNotifier implements AnimeRepository {
     return sorted;
   }
 
+  // ---------------------------------------------------------------------
+  // Progression de lecture
+  // ---------------------------------------------------------------------
+
+  @override
+  Duration? episodeProgress(String animeId, String episodeId) => libraryEntryFor(animeId)?.progressFor(episodeId);
+
+  @override
+  void recordProgress(String animeId, String episodeId, Duration position) {
+    final int index = _library.indexWhere((LibraryEntry entry) => entry.anime.id == animeId);
+    if (index == -1) return;
+
+    final Anime? anime = byId(animeId);
+    if (anime == null) return;
+
+    final Duration total = Duration(minutes: anime.episodeDurationMin.toInt());
+    final Duration clamped = position < Duration.zero
+        ? Duration.zero
+        : (position > total ? total : position);
+
+    final LibraryEntry entry = _library[index];
+    _library[index] = entry.copyWith(
+      progressMap: {...entry.progressMap, episodeId: clamped},
+      resumeEpisodeId: episodeId,
+    );
+    notifyListeners();
+  }
+
+  @override
+  List<PlaybackProgress> progressHistory(String animeId) {
+    final LibraryEntry? entry = libraryEntryFor(animeId);
+    final Anime? anime = byId(animeId);
+    if (entry == null || anime == null) return const [];
+    final Duration total = Duration(minutes: anime.episodeDurationMin.toInt());
+    return [
+      for (final MapEntry<String, Duration> item in entry.progressMap.entries)
+        if (item.value > Duration.zero)
+          PlaybackProgress(
+            animeId: animeId,
+            episodeId: item.key,
+            position: item.value,
+            duration: total,
+            savedAt: DateTime.now(),
+          ),
+    ];
+  }
+
+  @override
+  PlaybackSettings get playbackSettings => _settings;
+
+  @override
+  void setAutoPlayNext(bool enabled) {
+    _settings = _settings.copyWith(autoPlayNext: enabled);
+    notifyListeners();
+  }
+
+  // ---------------------------------------------------------------------
+  // Favoris / suivi
+  // ---------------------------------------------------------------------
+
   @override
   void toggleFollow(String animeId) {
     final int index = _anime.indexWhere((Anime anime) => anime.id == animeId);
@@ -135,12 +212,7 @@ class MockAnimeRepository extends ChangeNotifier implements AnimeRepository {
       _library.add(LibraryEntry(anime: anime, isFavorite: true));
     } else {
       final LibraryEntry entry = _library[index];
-      _library[index] = LibraryEntry(
-        anime: entry.anime,
-        isFavorite: !entry.isFavorite,
-        lastWatched: entry.lastWatched,
-        progress: entry.progress,
-      );
+      _library[index] = entry.copyWith(isFavorite: !entry.isFavorite);
     }
     notifyListeners();
   }

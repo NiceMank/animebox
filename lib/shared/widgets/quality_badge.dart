@@ -28,6 +28,11 @@ class QualityBadge extends StatelessWidget {
           AppColors.textMuted.withValues(alpha: 0.12),
           AppColors.divider,
         ),
+      VideoQuality.low => (
+          AppColors.textMuted,
+          AppColors.textMuted.withValues(alpha: 0.12),
+          AppColors.divider,
+        ),
     };
 
     return Container(

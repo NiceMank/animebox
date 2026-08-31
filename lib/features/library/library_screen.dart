@@ -80,8 +80,8 @@ class LibraryScreen extends StatelessWidget {
                       final LibraryEntry entry = favorites[index];
                       return AnimeCard(
                         anime: entry.anime,
-                        progress: entry.progress > 0 ? entry.progress : null,
-                        onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: entry.anime.id),
+                        progress: entry.resumeFraction(),
+                        onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: AnimeIdArgs(entry.anime.id)),
                       );
                     },
                   ),
@@ -108,7 +108,7 @@ class LibraryScreen extends StatelessWidget {
                       final Anime anime = followed[index];
                       return AnimeCard(
                         anime: anime,
-                        onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: anime.id),
+                        onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: AnimeIdArgs(anime.id)),
                       );
                     },
                   ),
