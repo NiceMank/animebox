@@ -1,11 +1,11 @@
-# AnimeBox 📺
+# AnimeBox
 
-Application mobile **Android** (Flutter) qui transformera vos canaux Telegram d'animés en une
+Application mobile **Android** (Flutter) qui transforme vos canaux Telegram d'animés en une
 bibliothèque organisée : détection automatique des titres, saisons, épisodes, qualités et langues.
 
-> **Étape actuelle : 5 — Moteur Python d'analyse des publications** (déterminisme total, sans IA
-> externe : normalisation, détection saison/épisode/qualité/langue/sous-titres, titre, score de
-> confiance, regroupement des versions, catalogue en base, cache d'analyse, API dédiée).
+> **Étape actuelle : 7 — Architecture 100 % locale.** L'application dialogue directement avec
+> Telegram (TDLib embarqué), analyse les publications sur l'appareil et stocke le catalogue dans
+> une base SQLite locale. **Aucun serveur n'est requis.**
 
 ## État du projet
 
@@ -14,147 +14,98 @@ bibliothèque organisée : détection automatique des titres, saisons, épisodes
 | Navigation basse persistante (Accueil / Recherche / Bibliothèque / Téléchargements / Profil) | ✅ |
 | Accueil, Recherche (6 filtres), Fiche animé, Épisodes, Qualité, Lecteur | ✅ |
 | Bibliothèque complète (Favoris, Suivis, Continuer, Récents, Tous) | ✅ |
-| Sources Telegram : liste, ajout avec vérification, détails, auto-sync, suppression | ✅ |
-| Synchronisation (statistiques, historique, progression) | ✅ |
-| **Connexion Telegram** (numéro → code → compte connecté, session expirée, erreurs) | ✅ |
-| **Backend API** (FastAPI) : authentification par jeton, sources persistées (SQLite) | ✅ |
-| **Service Telegram serveur** (Telethon) + mode simulation sans identifiants | ✅ |
-| **Publications récentes** (IDs, dates, médias, liens t.me — écran de vérification) | ✅ |
-| **Moteur Python d'analyse** (normalisation, titre, saison, épisode, qualité, langue, sous-titres) | ✅ |
-| **Score de confiance** (HIGH / MEDIUM / LOW / NEEDS_REVIEW) + publications à revoir | ✅ |
-| **Regroupement** des qualités d'un même épisode (multi-versions, meilleure qualité) | ✅ |
-| **Catalogue en base** (anime → saisons → épisodes → versions) + alias de titres | ✅ |
-| **Cache d'analyse** (un message inchangé n'est jamais réanalysé) + analyse par lot | ✅ |
-| Catalogue affiché dans l'application (remplacement des données mockées) | ⏳ étape suivante |
+| Sources Telegram : liste, ajout avec vérification d'accessibilité, détails, suppression | ✅ |
+| Synchronisation (statistiques, historique, progression, annulation) | ✅ |
+| **Connexion Telegram réelle depuis l'appareil** (numéro → code → 2FA → connecté) | ✅ |
+| **Session restaurée automatiquement** (stockage chiffré TDLib + clé en Keystore) | ✅ |
+| **Récupération paginée** (50 messages/page) + **synchronisation incrémentale** (curseur) | ✅ |
+| **Moteur d'analyse local** (port Dart du moteur : titre, saison, épisode, qualité, langue) | ✅ |
+| **Regroupement des qualités** (une fiche épisode, plusieurs versions, références Telegram) | ✅ |
+| **Base locale SQLite** (sources, catalogue, versions, favoris, progression, historique) | ✅ |
+| **Hors-ligne** : catalogue consultable, « Dernière synchronisation » conservée | ✅ |
+| Métadonnées enrichies côté backend (étape 6, mode hérité) | ✅ (mode `--dart-define=ANIMEBOX_API_URL=…`) |
 | Téléchargement réel, streaming, notifications | ⏳ étapes suivantes |
 
-## Architecture Telegram + moteur d'analyse
+## Architecture (étape 7 — locale)
 
 ```
-Application mobile (Flutter)          Backend API (FastAPI, backend/)        Telegram
-────────────────────────────          ────────────────────────────────       ────────
-ApiTelegramService ────HTTPS────►  /api/telegram/*  (code, session)   ──►  Telethon
-                                 /api/sources/*    (résolution, CRUD)      (session serveur,
-                                 /api/sources/{id}/messages                API_ID/API_HASH
-                                 /api/sync, /api/stats                     en variables d'env)
-
-Moteur d'analyse (backend/app/analyzer/) :
-   message → normalisation → saison/épisode → qualité → langue/sous-titres → titre
-           → score de confiance → regroupement → catalogue SQLite → API
-   GET /analyzer/status · POST /analyzer/analyze · POST /analyzer/analyze-batch
-   POST /analyzer/group · POST /api/sources/{id}/analyze (tâche de fond)
-   GET /api/catalog/anime · GET /api/catalog/anime/{id}   (données prêtes pour l'app)
+TÉLÉPHONE
+   ↓
+ANIMEBOX (Flutter)
+   ├─ TdlibTelegramGateway ──► TDLib embarqué (libtdjson.so) ──► serveurs Telegram
+   │      connect / code / 2FA / canaux / messages paginés
+   ├─ LocalSyncService : messages → RuleBasedAnalyzer (moteur Dart)
+   │      → classement → LocalDatabase (SQLite : sources, anime, saisons,
+   │        épisodes, versions, favoris, progression, historique)
+   └─ LocalAnimeRepository : catalogue affiché dans l'application
 ```
 
-- **Aucun secret côté mobile** : l'application ne contient ni API_ID, ni API_HASH, ni session
-  Telegram en clair. Le jeton d'accès est stocké dans le **stockage sécurisé** de la plateforme
-  (Keystore Android via `flutter_secure_storage`) ; `access_hash` n'est jamais envoyé au client.
-- **Deux modes** : sans identifiants, le backend démarre en **mode simulation** (tous les
-  endpoints fonctionnent avec des données locales) ; avec `TELEGRAM_API_ID`/`TELEGRAM_API_HASH`,
-  il utilise **Telethon** pour la vraie connexion.
-- L'application utilise le backend si elle est lancée avec
-  `--dart-define=ANIMEBOX_API_URL=http://IP:8000`, sinon le service simulé local.
+- **Aucun serveur distant** : ni Vercel, ni API, ni proxy, ni stockage central. La session
+  Telegram, les messages et le catalogue restent sur l'appareil.
+- **Session sensible** : la base de session de TDLib est chiffrée (clé générée et conservée
+  dans le stockage sécurisé Android — Keystore), jamais dans les préférences classiques.
+- **Identifiants d'application** (my.telegram.org) : fournis à la compilation uniquement,
+  jamais codés en dur, jamais journalisés, jamais envoyés.
 
-## Lancer le projet
+## Lancer l'application
 
 ```bash
-# Application (mode démonstration locale par défaut)
 flutter pub get
-flutter run                       # Android
-flutter test                      # 62 tests
-flutter analyze
 
-# Application branchée sur le backend :
-flutter run --dart-define=ANIMEBOX_API_URL=http://10.0.2.2:8000   # émulateur Android
+# Mode démonstration (aucun identifiant) : données mockées, tous les écrans.
+flutter run
 
-# Backend (depuis backend/)
+# Mode RÉEL local : Telegram direct depuis l'appareil.
+# Obtenez api_id / api_hash sur https://my.telegram.org (compte développeur),
+# puis lancez avec :
+flutter run \
+  --dart-define=ANIMEBOX_TELEGRAM_API_ID=123456 \
+  --dart-define=ANIMEBOX_TELEGRAM_API_HASH=abcdef0123456789...
+
+# Mode backend hérité (étapes 1-6), optionnel :
+flutter run --dart-define=ANIMEBOX_API_URL=http://10.0.2.2:8000
+
+# Vérifications
+flutter analyze          # 0 issue
+flutter test             # 121 tests (modèles, moteur, services, écrans)
+flutter build apk --debug
+flutter build web
+```
+
+## Test réel (compte Telegram de test)
+
+1. `flutter run` avec vos `--dart-define` (voir plus haut).
+2. Profil → **Connexion Telegram** → numéro → code reçu → (2FA le cas échéant) → Connecté.
+3. **Mes sources** → ajouter `@username` (ou un lien `t.me/…`) → aperçu → Ajouter.
+   Un canal inaccessible affiche « Ce canal n'est pas accessible avec ce compte Telegram. »
+4. **Synchroniser maintenant** : récupération paginée → analyse locale → catalogue mis à jour.
+   Les synchronisations suivantes sont incrémentales (seuls les nouveaux messages).
+5. Bibliothèque : les épisodes détectés apparaissent (versions multiples regroupées,
+   « Ouvrir dans Telegram » renvoie vers la publication d'origine quand le lien existe).
+
+## Backend (héritage des étapes 1-6 — conservé pour référence et tests)
+
+Le dossier `backend/` (FastAPI + moteur Python + tests 159/159 + smoke_test 41/41) reste dans le
+dépôt : il a servi de référence pour le port Dart du moteur d'analyse et reste utilisable via
+`--dart-define=ANIMEBOX_API_URL=…`. Le fonctionnement normal de l'application n'en dépend plus.
+
+```bash
+cd backend
 pip install -r requirements.txt
-TELEGRAM_MOCK=1 uvicorn app.main:app --host 0.0.0.0 --port 8000    # simulation (tests/démo)
-# ou, avec de vrais identifiants (jamais commités) :
-TELEGRAM_API_ID=... TELEGRAM_API_HASH=... uvicorn app.main:app --port 8000
-python3 smoke_test.py             # 41 vérifications du parcours complet
-python3 -m pytest tests -q        # 115 tests unitaires du moteur + API
+TELEGRAM_MOCK=1 uvicorn app.main:app --host 0.0.0.0 --port 8000
+python3 smoke_test.py        # 41 vérifications
+python3 -m pytest tests -q   # 159 tests
 ```
 
-## Variables d'environnement du backend (aucun secret dans le dépôt)
+## Confidentialité
 
-| Variable | Rôle | Défaut |
-| --- | --- | --- |
-| `TELEGRAM_API_ID` / `TELEGRAM_API_HASH` | Identifiants de l'app Telegram (serveur uniquement) | absents → mode simulation |
-| `TELEGRAM_MOCK` | `1` force le mode simulation | auto |
-| `SESSION_DIR` | Dossier de la session Telethon (hors dépôt, `.gitignore`) | `backend/.sessions/` |
-| `DB_PATH` | Base SQLite locale (sources, publications, stats, jetons) | `backend/animebox.db` |
-| `UPLOADS_DIR` | Photos de profil téléchargées | `backend/uploads/` |
-| `TOKEN_TTL_DAYS` | Durée de vie des jetons d'accès | 30 |
+Vos sources Telegram et votre catalogue sont traités localement sur votre appareil. AnimeBox ne
+transmet ni votre session Telegram, ni vos messages, ni vos fichiers, ni aucune information
+privée à un serveur distant (la section « Confidentialité » des réglages l'explique dans
+l'application elle-même).
 
-## Endpoints du backend
+## Permissions Android
 
-- `GET /health` — état + mode (mock/telegram)
-- `POST /api/telegram/send-code` · `POST /api/telegram/verify-code` — connexion (retourne un jeton)
-- `GET /api/telegram/status` · `POST /api/telegram/logout` — session (Bearer requis)
-- `GET /api/sources` · `POST /api/sources` · `POST /api/sources/resolve` — sources persistées
-- `PATCH /api/sources/{id}` (auto-sync) · `DELETE /api/sources/{id}` — gestion
-- `GET /api/sources/{id}/messages` — publications récentes (ID, date, texte, média, lien t.me)
-- `POST /api/sources/{id}/sync` · `POST /api/sync` · `GET /api/stats` — synchronisation
-
-Moteur d'analyse (Bearer requis) :
-
-- `GET /analyzer/status` — état du moteur, catalogue, cache, travaux en cours
-- `POST /analyzer/analyze` — analyse d'une publication (texte, fichier, métadonnées)
-- `POST /analyzer/analyze-batch` — lot ≤ 500 publications, avec regroupement
-- `POST /analyzer/group` — regroupement d'analyses fournies (clé anime+saison+épisode+langue)
-- `POST /api/sources/{id}/analyze` — analyse d'une source en tâche de fond (202 + job_id)
-- `GET /analyzer/jobs/{id}` — avancement d'une tâche
-- `GET /api/catalog/anime` · `GET /api/catalog/anime/{id}` — catalogue anime → saisons → épisodes → versions
-
-Erreurs normalisées : `{"error": {"code": "SOURCE_NOT_FOUND", "message": "…"}}`
-(SOURCE_NOT_FOUND, SOURCE_INACCESSIBLE, PHONE_CODE_INVALID, UNAUTHORIZED, FLOOD, …).
-
-## Structure du projet
-
-```
-lib/
-├── app/                    # Racine, thème, routes (11 routes nommées)
-├── core/                   # Thème, formats
-├── features/
-│   ├── anime/              # Modèles, données mockées, dépôt
-│   ├── home/ search/ details/ episodes/ quality/ player/ library/
-│   ├── telegram/
-│   │   ├── data/
-│   │   │   ├── models/     # TelegramSource, TelegramUser, TelegramMessage,
-│   │   │   │               # ResolvedChannel, SyncStats/Progress/History, ApiException
-│   │   │   └── services/
-│   │   │       ├── telegram_service.dart        # Contrat (écrans ← interface)
-│   │   │       ├── mock_telegram_service.dart   # Simulation locale
-│   │   │       ├── api_telegram_service.dart    # Client HTTP du backend
-│   │   │       ├── telegram_session_service.dart + secure_session_service.dart
-│   │   │       └── episode_grouping_service.dart
-│   │   └── screens/        # Sources, ajout, détail, synchronisation,
-│   │                       # connexion Telegram, publications récentes
-│   ├── downloads/ profile/
-├── navigation/             # Coquille + navigation basse
-└── shared/widgets/         # Composants réutilisables
-backend/
-├── app/                    # FastAPI : config, db, errors, telegram_client, main,
-│   │                       # auth, analyzer_routes (routes du moteur)
-│   └── analyzer/           # Moteur déterministe (sans IA externe)
-│       ├── text_utils.py   # Normalisation (casse, séparateurs, accents)
-│       ├── extractors.py   # Saison, épisode, qualité, langue, année, titre
-│       ├── quality.py      # 2160p/4K/1440p/1080p/FHD/720p/HD/480p/360p + rangs
-│       ├── language.py     # VF/VO/VOSTFR/VOST/SUB/MULTI (audio + sous-titres)
-│       ├── aliases.py      # Catalogue de titres + alias (SL → Solo Leveling…)
-│       ├── scoring.py      # Confiance 0-100 (HIGH/MEDIUM/LOW/NEEDS_REVIEW)
-│       ├── engine.py       # Interface Analyzer + RuleBasedAnalyzer
-│       ├── grouping.py     # Regroupement multi-versions par épisode
-│       ├── storage.py      # SQLite : anime/saison/épisode/version, cache, jobs
-│       └── batch.py        # Lots, cache, ingestion, logs
-├── tests/                  # 115 tests pytest (corpus, cas difficiles, API)
-├── requirements.txt
-└── smoke_test.py           # 41 vérifications du parcours (sans identifiants)
-```
-
-## Prochaines étapes (à valider une par une)
-
-1. Catalogue alimenté par le backend affiché dans l'application (remplacement des données mockées)
-2. Écran de revue des analyses incertaines (confirmer / corriger / ignorer)
-3. Téléchargement réel, streaming, notifications, lecture
+Seule la permission `INTERNET` est demandée (requise pour Telegram). Aucune autre permission
+n'est sollicitée à l'installation ; les permissions éventuellement nécessaires au futur
+téléchargement seront demandées au moment où elles deviendront nécessaires.

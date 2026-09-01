@@ -98,8 +98,17 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Mode de données',
                 subtitle: service.isBackendApi
                     ? 'API : ${service.apiBaseUrl}'
-                    : 'Données locales de démonstration',
+                    : service.isRealTelegram
+                        ? 'Local — Telegram direct (TDLib)'
+                        : 'Données locales de démonstration',
                 onTap: () => _showDataModeInfo(context, service),
+              ),
+              const SizedBox(height: 12),
+              _MenuCard(
+                icon: Icons.privacy_tip_outlined,
+                title: 'Confidentialité',
+                subtitle: 'Vos sources Telegram et votre catalogue sont traités localement sur votre appareil.',
+                onTap: () => _showPrivacyInfo(context),
               ),
               const SizedBox(height: 12),
               _MenuCard(
@@ -128,6 +137,8 @@ class ProfileScreen extends StatelessWidget {
         TelegramAuthState.connected =>
           'Connecté — ${service.currentUser?.fullName ?? 'compte Telegram'}',
         TelegramAuthState.connecting => 'Connexion en cours…',
+        TelegramAuthState.codeRequired => 'Code de connexion requis',
+        TelegramAuthState.passwordRequired => 'Mot de passe 2FA requis',
         TelegramAuthState.expired => 'Session expirée — reconnectez-vous',
         TelegramAuthState.error => 'Erreur — appuyez pour réessayer',
         TelegramAuthState.disconnected => 'Connectez votre compte Telegram',
@@ -139,6 +150,47 @@ class ProfileScreen extends StatelessWidget {
         TelegramAuthState.expired => 'Expirée',
         _ => null,
       };
+
+  void _showPrivacyInfo(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceAlt,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      builder: (BuildContext context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 22, 24, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.privacy_tip_outlined, size: 22, color: AppColors.primaryBright),
+                  SizedBox(width: 10),
+                  Text('Confidentialité', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                ],
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Vos sources Telegram et votre catalogue sont traités localement sur votre appareil.\n\n'
+                'AnimeBox ne transmet ni votre session Telegram, ni vos messages, ni vos fichiers, ni aucune information privée à un serveur distant.\n\n'
+                'La session Telegram est conservée dans un stockage chiffré, propre à cet appareil.',
+                style: TextStyle(fontSize: 13, height: 1.55, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 18),
+              Center(
+                child: PrimaryButton(
+                  label: 'Fermer',
+                  expanded: false,
+                  onTap: () => Navigator.of(context).pop(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   void _showDataModeInfo(BuildContext context, TelegramService service) {
     showModalBottomSheet<void>(
@@ -162,8 +214,10 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 14),
               Text(
                 service.isBackendApi
-                    ? 'Cette application utilise le backend API AnimeBox.\n\nAdresse : ${service.apiBaseUrl}\n\nLes secrets Telegram restent côté serveur ; aucune donnée sensible n\'est stockée sur cet appareil.'
-                    : 'Cette application utilise les données locales de démonstration (mode simulation).\n\nPour utiliser le vrai service Telegram, lancez le backend et l\'application avec :\n\nflutter run --dart-define=ANIMEBOX_API_URL=http://IP_DU_BACKEND:8000',
+                    ? 'Cette application utilise le backend API AnimeBox (mode hérité).\n\nAdresse : ${service.apiBaseUrl}\n\nLes secrets Telegram restent côté serveur ; aucune donnée sensible n\'est stockée sur cet appareil.'
+                    : service.isRealTelegram
+                        ? 'Mode local réel : AnimeBox dialogue directement avec Telegram depuis votre appareil (bibliothèque TDLib).\n\nLes messages sont analysés localement et stockés dans la base locale. Aucun serveur intermédiaire.'
+                        : 'Cette application utilise les données locales de démonstration (mode simulation).\n\nPour activer la vraie connexion Telegram locale, compilez l\'application avec :\n\nflutter run --dart-define=ANIMEBOX_TELEGRAM_API_ID=… --dart-define=ANIMEBOX_TELEGRAM_API_HASH=…',
                 style: const TextStyle(fontSize: 13, height: 1.55, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 18),

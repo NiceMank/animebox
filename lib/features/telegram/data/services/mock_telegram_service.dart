@@ -61,6 +61,9 @@ class MockTelegramService extends ChangeNotifier implements TelegramService {
   bool get isBackendApi => false;
 
   @override
+  bool get isRealTelegram => false;
+
+  @override
   String? get apiBaseUrl => null;
 
   @override
@@ -74,7 +77,8 @@ class MockTelegramService extends ChangeNotifier implements TelegramService {
 
   @override
   Future<void> requestCode(String phone) async {
-    _authState = TelegramAuthState.connecting;
+    // Simulation : Telegram envoie le code immédiatement.
+    _authState = TelegramAuthState.codeRequired;
     _authError = null;
     notifyListeners();
   }
@@ -87,6 +91,16 @@ class MockTelegramService extends ChangeNotifier implements TelegramService {
     _currentUser = const TelegramUser(firstName: 'Démo', lastName: 'AnimeBox', username: 'animebox_demo');
     _authState = TelegramAuthState.connected;
     _authError = null;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> requestPassword(String password) async {
+    // Simulation : le mot de passe 2FA (non vide) est accepté.
+    if (password.isEmpty) {
+      throw const ApiException(ApiErrorKind.telegram, message: 'Mot de passe 2FA incorrect.');
+    }
+    _authState = TelegramAuthState.connected;
     notifyListeners();
   }
 
@@ -162,7 +176,13 @@ class MockTelegramService extends ChangeNotifier implements TelegramService {
   }
 
   @override
-  Future<TelegramSource> addSource({required String name, required String username}) async {
+  Future<TelegramSource> addSource({
+    required String name,
+    required String username,
+    String? channelId,
+    String kind = 'channel',
+    String? inviteHash,
+  }) async {
     final TelegramSource source = TelegramSource(
       id: 'src-${_clock().millisecondsSinceEpoch}',
       name: name,
@@ -299,6 +319,13 @@ class MockTelegramService extends ChangeNotifier implements TelegramService {
 
   @override
   Future<void> syncAll() => syncSource();
+
+  @override
+  Future<void> cancelSync() async {
+    _isSyncing = false;
+    _progress = null;
+    notifyListeners();
+  }
 
   /// Simule une analyse progressive des publications.
   Future<void> _runSimulation({String? sourceId}) async {

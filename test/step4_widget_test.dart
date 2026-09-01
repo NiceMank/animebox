@@ -38,7 +38,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(TelegramConnectScreen), findsOneWidget);
       expect(
-        find.text('Connectez votre compte Telegram pour permettre à AnimeBox d\'accéder aux sources que vous choisissez.'),
+        find.text('Connectez votre compte Telegram pour utiliser vos propres sources dans AnimeBox.'),
         findsOneWidget,
       );
 
@@ -50,9 +50,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Étape 2 : code.
-      expect(find.text('Code de connexion'), findsOneWidget);
+      expect(find.text('Code Telegram'), findsOneWidget);
       await tester.enterText(find.byType(TextField), '12345');
-      await tester.tap(find.text('Vérifier'));
+      await tester.tap(find.text('Continuer'));
       await tester.pumpAndSettle();
 
       // Étape 3 : compte connecté (jamais de secret affiché).
@@ -60,10 +60,9 @@ void main() {
       expect(find.text('Démo AnimeBox'), findsOneWidget);
       expect(find.text('@animebox_demo'), findsOneWidget);
       expect(find.text('CONNECTÉ'), findsOneWidget);
-      expect(find.text('Telegram connecté'), findsOneWidget);
 
-      // Déconnexion.
-      await tester.tap(find.text('Se déconnecter'));
+      // Déconnexion (bouton principal, puis confirmation explicite).
+      await tester.tap(find.text('Déconnecter'));
       await tester.pumpAndSettle();
       await tester.tap(find.descendant(
         of: find.byType(AlertDialog),
@@ -89,7 +88,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), '12');
-      await tester.tap(find.text('Vérifier'));
+      await tester.tap(find.text('Continuer'));
       await tester.pumpAndSettle();
 
       expect(find.text('Code de connexion incorrect.'), findsOneWidget);

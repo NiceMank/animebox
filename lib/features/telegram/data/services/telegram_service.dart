@@ -10,7 +10,18 @@ import '../models/telegram_source.dart';
 import '../models/telegram_user.dart';
 
 /// État de la connexion Telegram côté application.
-enum TelegramAuthState { disconnected, connecting, connected, expired, error }
+///
+/// Correspond aux états d'interface du prompt (connexion, code requis,
+/// mot de passe 2FA requis, connecté, session expirée, erreur).
+enum TelegramAuthState {
+  disconnected,
+  connecting,
+  codeRequired,
+  passwordRequired,
+  connected,
+  expired,
+  error,
+}
 
 /// Contrat du service Telegram.
 ///
@@ -25,7 +36,11 @@ abstract class TelegramService implements Listenable {
   /// `true` pour le service adossé au backend (informations d'interface).
   bool get isBackendApi;
 
-  /// Adresse du backend utilisée (null en mode simulation).
+  /// `true` quand le service dialogue RÉELLEMENT avec Telegram depuis
+  /// l'appareil (mode local, TDLib). `false` pour le mock de démonstration.
+  bool get isRealTelegram;
+
+  /// Adresse du backend utilisée (null hors mode backend).
   String? get apiBaseUrl;
 
   // -------------------------------------------------------------------
@@ -43,6 +58,9 @@ abstract class TelegramService implements Listenable {
 
   /// Vérifie le code reçu et ouvre la session.
   Future<void> verifyCode(String phone, String code);
+
+  /// Vérifie le mot de passe 2FA (jamais contourné, jamais journalisé).
+  Future<void> requestPassword(String password);
 
   Future<void> disconnect();
 
@@ -63,7 +81,13 @@ abstract class TelegramService implements Listenable {
   /// Résout un canal via le backend (aperçu avant ajout).
   Future<ResolvedChannel> resolveChannel(String input);
 
-  Future<TelegramSource> addSource({required String name, required String username});
+  Future<TelegramSource> addSource({
+    required String name,
+    required String username,
+    String? channelId,
+    String kind = 'channel',
+    String? inviteHash,
+  });
 
   Future<void> removeSource(String sourceId);
 
@@ -96,4 +120,7 @@ abstract class TelegramService implements Listenable {
 
   /// Synchronise toutes les sources actives.
   Future<void> syncAll();
+
+  /// Demande l'arrêt propre de la synchronisation en cours.
+  Future<void> cancelSync();
 }

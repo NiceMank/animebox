@@ -26,6 +26,8 @@ class ResolvedChannel {
     this.photoUrl,
     this.channelId,
     this.kind = ChannelKind.channel,
+    this.memberCount,
+    this.inviteHash,
   });
 
   final String username;
@@ -35,6 +37,12 @@ class ResolvedChannel {
   final int? channelId;
   final ChannelKind kind;
 
+  /// Nombre d'abonnés si accessible (aperçu avant ajout).
+  final int? memberCount;
+
+  /// Hash du lien d'invitation (canal privé), si résolu via t.me/+hash.
+  final String? inviteHash;
+
   factory ResolvedChannel.fromJson(Map<String, dynamic> json) => ResolvedChannel(
         username: (json['username'] as String?) ?? '',
         title: (json['title'] as String?) ?? '',
@@ -42,5 +50,6 @@ class ResolvedChannel {
         photoUrl: json['photo_url'] as String?,
         channelId: (json['channel_id'] as num?)?.toInt(),
         kind: ChannelKind.fromApi(json['kind'] as String?),
+        memberCount: (json['member_count'] as num?)?.toInt(),
       );
 }

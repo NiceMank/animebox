@@ -54,12 +54,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
 
   Future<void> _openAdd() async {
     await Navigator.of(context).pushNamed(AppRoutes.sourceAdd);
-    if (mounted && widget.service.isBackendApi) await _load();
+    if (mounted) await _load();
   }
 
   Future<void> _openDetail(TelegramSource source) async {
     await Navigator.of(context).pushNamed(AppRoutes.sourceDetails, arguments: source.id);
-    if (mounted && widget.service.isBackendApi) await _load();
+    if (mounted) await _load();
   }
 
   @override
@@ -69,9 +69,8 @@ class _SourcesScreenState extends State<SourcesScreen> {
       builder: (BuildContext context, Widget? child) {
         final TelegramService service = widget.service;
         final List<TelegramSource> sources = service.sources;
-        final bool showConnectBanner = service.isBackendApi &&
-            (service.authState == TelegramAuthState.disconnected ||
-                service.authState == TelegramAuthState.expired);
+        final bool showConnectBanner = service.authState == TelegramAuthState.disconnected ||
+            service.authState == TelegramAuthState.expired;
 
         return Scaffold(
           appBar: AppBar(

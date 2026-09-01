@@ -66,6 +66,9 @@ class ApiTelegramService extends ChangeNotifier implements TelegramService {
   @override
   bool get isBackendApi => true;
 
+  @override
+  bool get isRealTelegram => true;
+
   /// URL du backend (affichée dans les réglages, sans secret).
   @override
   String? get apiBaseUrl => _baseUrl;
@@ -151,6 +154,20 @@ class ApiTelegramService extends ChangeNotifier implements TelegramService {
     await _session.writeUserJson(jsonEncode(user));
     _notify();
     unawaited(loadSources());
+  }
+
+  @override
+  Future<void> requestPassword(String password) async {
+    // Le mode backend ne propose pas la saisie 2FA côté application :
+    // la vérification se fait côté serveur via l'ancien flux.
+    throw const ApiException(ApiErrorKind.telegram,
+        message: 'Mot de passe 2FA non pris en charge dans ce mode.');
+  }
+
+  @override
+  Future<void> cancelSync() async {
+    // Les tâches d'analyse du backend ne sont pas annulables depuis
+    // l'application : rien à faire ici (le mode local gère l'annulation).
   }
 
   @override
@@ -286,7 +303,13 @@ class ApiTelegramService extends ChangeNotifier implements TelegramService {
   }
 
   @override
-  Future<TelegramSource> addSource({required String name, required String username}) async {
+  Future<TelegramSource> addSource({
+    required String name,
+    required String username,
+    String? channelId,
+    String kind = 'channel',
+    String? inviteHash,
+  }) async {
     final Map<String, dynamic> response = await _request('POST', '/api/sources', body: {
       'input': username,
       if (name.isNotEmpty) 'name': name,

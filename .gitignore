@@ -53,3 +53,7 @@ backend/animebox.db
 backend/uploads/
 backend/.env
 *.session
+
+# Sorties de compilation Android
+android/build/
+android/.gradle/

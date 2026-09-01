@@ -8,11 +8,12 @@ import '../data/models/api_exception.dart';
 import '../data/models/telegram_user.dart';
 import '../data/services/telegram_service.dart';
 
-/// Écran « Connecter Telegram » : flux de connexion complet avec états
-/// (non connecté, connexion en cours, connecté, session expirée, erreur).
+/// Écran « Connecter Telegram » : véritable processus de connexion.
 ///
-/// Le numéro est envoyé au backend, qui gère la vraie connexion Telegram
-/// côté serveur ; l'application ne manipule aucun secret.
+/// États gérés : non connecté, connexion en cours, code requis, mot de
+/// passe 2FA requis, connecté, session expirée, erreur. La connexion est
+/// effectuée DIRECTEMENT entre l'appareil et Telegram (TDLib) : aucun
+/// serveur intermédiaire, aucun secret dans l'application.
 class TelegramConnectScreen extends StatefulWidget {
   const TelegramConnectScreen({super.key, required this.service});
 
@@ -22,12 +23,13 @@ class TelegramConnectScreen extends StatefulWidget {
   State<TelegramConnectScreen> createState() => _TelegramConnectScreenState();
 }
 
-enum _Stage { intro, phone, code }
+enum _Stage { intro, phone }
 
 class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
   _Stage _stage = _Stage.intro;
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool _busy = false;
   String? _inlineError;
 
@@ -35,6 +37,7 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
   void dispose() {
     _phoneController.dispose();
     _codeController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -45,7 +48,7 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
     });
     try {
       await widget.service.requestCode(_phoneController.text.trim());
-      setState(() => _stage = _Stage.code);
+      // L'état `codeRequired` arrive via le service : l'interface réagit.
     } on ApiException catch (error) {
       setState(() => _inlineError = error.displayMessage);
     } finally {
@@ -60,7 +63,21 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
     });
     try {
       await widget.service.verifyCode(_phoneController.text.trim(), _codeController.text.trim());
-      // L'état `connected` est porté par le service ; l'interface réagit.
+      // `connected` ou `passwordRequired` : portés par le service.
+    } on ApiException catch (error) {
+      setState(() => _inlineError = error.displayMessage);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _verifyPassword() async {
+    setState(() {
+      _busy = true;
+      _inlineError = null;
+    });
+    try {
+      await widget.service.requestPassword(_passwordController.text);
     } on ApiException catch (error) {
       setState(() => _inlineError = error.displayMessage);
     } finally {
@@ -76,7 +93,8 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: const Text('Se déconnecter ?', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         content: const Text(
-          'Vos sources resteront enregistrées, mais la synchronisation sera interrompue jusqu\'à la prochaine connexion.',
+          'La session Telegram sera supprimée de cet appareil. '
+          'Vos sources et votre catalogue restent enregistrés localement.',
           style: TextStyle(fontSize: 13.5, height: 1.5, color: AppColors.textSecondary),
         ),
         actions: [
@@ -97,6 +115,15 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
     }
   }
 
+  void _startOver() {
+    setState(() {
+      _stage = _Stage.phone;
+      _inlineError = null;
+      _codeController.clear();
+      _passwordController.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -115,8 +142,11 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
           ),
           body: switch (service.authState) {
             TelegramAuthState.connected => _AccountView(service: service, onDisconnect: _disconnect),
-            TelegramAuthState.expired => _ExpiredView(onReconnect: () => setState(() => _stage = _Stage.phone)),
-            _ => _buildForm(service),
+            TelegramAuthState.expired => _ExpiredView(onReconnect: _startOver),
+            TelegramAuthState.connecting => const _ConnectingView(),
+            TelegramAuthState.codeRequired => _buildCodeForm(service),
+            TelegramAuthState.passwordRequired => _buildPasswordForm(service),
+            TelegramAuthState.error || TelegramAuthState.disconnected => _buildForm(service),
           },
         );
       },
@@ -127,94 +157,8 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
       children: [
-        if (_stage == _Stage.intro) ...[
-          const SizedBox(height: 18),
-          const Center(child: TelegramLogo(size: 86)),
-          const SizedBox(height: 22),
-          const Text(
-            'Connectez Telegram',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Connectez votre compte Telegram pour permettre à AnimeBox d\'accéder aux sources que vous choisissez.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13.5, height: 1.55, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 22),
-          const _InfoRow(icon: Icons.lock_outline_rounded, text: 'Votre numéro et votre session restent protégés côté serveur.'),
-          const SizedBox(height: 10),
-          const _InfoRow(icon: Icons.visibility_outlined, text: 'Seuls les canaux que vous ajoutez sont consultés.'),
-          const SizedBox(height: 10),
-          const _InfoRow(icon: Icons.phonelink_lock_rounded, text: 'Aucun secret n\'est stocké sur votre appareil.'),
-          const SizedBox(height: 26),
-          PrimaryButton(
-            label: 'Connecter Telegram',
-            icon: Icons.send_rounded,
-            onTap: () => setState(() => _stage = _Stage.phone),
-          ),
-        ],
-        if (_stage == _Stage.phone) ...[
-          const SizedBox(height: 8),
-          const Text(
-            'Votre numéro de téléphone',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Un code de connexion vous sera envoyé via Telegram.',
-            style: TextStyle(fontSize: 12.5, height: 1.5, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
-            cursorColor: AppColors.primary,
-            decoration: _fieldDecoration('+229 01 23 45 67', Icons.phone_outlined),
-          ),
-          const SizedBox(height: 14),
-          PrimaryButton(
-            label: _busy ? 'Envoi en cours…' : 'Envoyer le code',
-            icon: Icons.send_rounded,
-            onTap: _busy ? null : _sendCode,
-          ),
-        ],
-        if (_stage == _Stage.code) ...[
-          const SizedBox(height: 8),
-          const Text(
-            'Code de connexion',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Saisissez le code reçu dans Telegram.',
-            style: TextStyle(fontSize: 12.5, height: 1.5, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _codeController,
-            keyboardType: TextInputType.number,
-            maxLength: 5,
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, letterSpacing: 6),
-            cursorColor: AppColors.primary,
-            decoration: _fieldDecoration('• • • • •', Icons.pin_outlined).copyWith(counterText: ''),
-          ),
-          const SizedBox(height: 14),
-          PrimaryButton(
-            label: _busy ? 'Vérification…' : 'Vérifier',
-            icon: Icons.verified_outlined,
-            onTap: _busy ? null : _verifyCode,
-          ),
-          const SizedBox(height: 10),
-          Center(
-            child: TextButton(
-              onPressed: _busy ? null : _sendCode,
-              child: const Text('Renvoyer le code', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryBright)),
-            ),
-          ),
-        ],
+        if (_stage == _Stage.intro) ..._buildIntro(service),
+        if (_stage == _Stage.phone) ..._buildPhone(service),
         if (_inlineError != null) ...[
           const SizedBox(height: 16),
           _ErrorBox(message: _inlineError!),
@@ -222,6 +166,145 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
         if (service.authState == TelegramAuthState.error && service.authError != null && _inlineError == null) ...[
           const SizedBox(height: 16),
           _ErrorBox(message: service.authError!, onRetry: service.refreshSession),
+        ],
+      ],
+    );
+  }
+
+  List<Widget> _buildIntro(TelegramService service) => [
+        const SizedBox(height: 18),
+        const Center(child: TelegramLogo(size: 86)),
+        const SizedBox(height: 22),
+        const Text(
+          'Connectez Telegram',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          'Connectez votre compte Telegram pour utiliser vos propres sources dans AnimeBox.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13.5, height: 1.55, color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 22),
+        const _InfoRow(icon: Icons.lock_outline_rounded, text: 'Votre session reste sur cet appareil, dans un stockage chiffré.'),
+        const SizedBox(height: 10),
+        const _InfoRow(icon: Icons.visibility_outlined, text: 'Seuls les canaux que vous ajoutez sont consultés.'),
+        const SizedBox(height: 10),
+        const _InfoRow(icon: Icons.phonelink_lock_rounded, text: 'Aucune donnée n\'est envoyée à un serveur externe.'),
+        const SizedBox(height: 26),
+        PrimaryButton(
+          label: 'Connecter Telegram',
+          icon: Icons.send_rounded,
+          onTap: () => setState(() => _stage = _Stage.phone),
+        ),
+      ];
+
+  List<Widget> _buildPhone(TelegramService service) => [
+        const SizedBox(height: 8),
+        const Text(
+          'Votre numéro de téléphone',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Un code de connexion vous sera envoyé via Telegram.',
+          style: TextStyle(fontSize: 12.5, height: 1.5, color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _phoneController,
+          keyboardType: TextInputType.phone,
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+          cursorColor: AppColors.primary,
+          decoration: _fieldDecoration('+229 01 23 45 67', Icons.phone_outlined),
+        ),
+        const SizedBox(height: 14),
+        PrimaryButton(
+          label: _busy ? 'Connexion…' : 'Envoyer le code',
+          icon: Icons.send_rounded,
+          onTap: _busy ? null : _sendCode,
+        ),
+      ];
+
+  Widget _buildCodeForm(TelegramService service) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
+      children: [
+        const SizedBox(height: 8),
+        const Text(
+          'Code Telegram',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Saisissez le code reçu dans Telegram.',
+          style: TextStyle(fontSize: 12.5, height: 1.5, color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _codeController,
+          keyboardType: TextInputType.number,
+          maxLength: 5,
+          obscureText: true,
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, letterSpacing: 6),
+          cursorColor: AppColors.primary,
+          decoration: _fieldDecoration('• • • • •', Icons.pin_outlined).copyWith(counterText: ''),
+        ),
+        const SizedBox(height: 14),
+        PrimaryButton(
+          label: _busy ? 'Vérification…' : 'Continuer',
+          icon: Icons.verified_outlined,
+          onTap: _busy ? null : _verifyCode,
+        ),
+        const SizedBox(height: 10),
+        Center(
+          child: TextButton(
+            onPressed: _busy ? null : _sendCode,
+            child: const Text('Renvoyer le code', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryBright)),
+          ),
+        ),
+        if (_inlineError != null) ...[
+          const SizedBox(height: 10),
+          _ErrorBox(message: _inlineError!),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildPasswordForm(TelegramService service) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
+      children: [
+        const SizedBox(height: 8),
+        const Text(
+          'Mot de passe Telegram',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Votre compte est protégé par une authentification à deux facteurs.',
+          style: TextStyle(fontSize: 12.5, height: 1.5, color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _passwordController,
+          obscureText: true,
+          autocorrect: false,
+          enableSuggestions: false,
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+          cursorColor: AppColors.primary,
+          decoration: _fieldDecoration('••••••••', Icons.lock_outline_rounded),
+        ),
+        const SizedBox(height: 14),
+        PrimaryButton(
+          label: _busy ? 'Vérification…' : 'Continuer',
+          icon: Icons.verified_outlined,
+          onTap: _busy ? null : _verifyPassword,
+        ),
+        if (_inlineError != null) ...[
+          const SizedBox(height: 10),
+          _ErrorBox(message: _inlineError!),
         ],
       ],
     );
@@ -243,6 +326,29 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
           borderSide: const BorderSide(color: AppColors.primary),
         ),
       );
+}
+
+/// État « Connexion… » pendant l'échange avec Telegram.
+class _ConnectingView extends StatelessWidget {
+  const _ConnectingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 26,
+            height: 26,
+            child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.primaryBright),
+          ),
+          SizedBox(height: 16),
+          Text('Connexion…', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+        ],
+      ),
+    );
+  }
 }
 
 class _InfoRow extends StatelessWidget {
@@ -328,37 +434,25 @@ class _AccountView extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text('@${user.username}', style: Theme.of(context).textTheme.bodySmall),
               ],
-              if (user.phone != null) ...[
-                const SizedBox(height: 3),
-                Text(user.phone!, style: Theme.of(context).textTheme.labelSmall),
-              ],
-              const SizedBox(height: 12),
-              const StatusPill('Connecté', color: AppColors.success),
               const SizedBox(height: 14),
-              const Text(
-                'Telegram connecté',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.success),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle_outline_rounded, size: 15, color: AppColors.success),
+                  SizedBox(width: 6),
+                  StatusPill('Connecté', color: AppColors.success),
+                ],
               ),
             ],
           ),
         ),
         const SizedBox(height: 22),
-        PrimaryButton(
-          label: 'Rafraîchir la session',
-          icon: Icons.refresh_rounded,
-          outlined: true,
-          onTap: () async {
-            await service.refreshSession();
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Session vérifiée.')),
-              );
-            }
-          },
-        ),
+        const _InfoRow(icon: Icons.phonelink_lock_rounded, text: 'Connexion directe entre votre appareil et Telegram — aucun serveur intermédiaire.'),
         const SizedBox(height: 10),
+        const _InfoRow(icon: Icons.storage_rounded, text: 'Session chiffrée et stockée uniquement sur cet appareil.'),
+        const SizedBox(height: 22),
         PrimaryButton(
-          label: 'Se déconnecter',
+          label: 'Déconnecter',
           icon: Icons.logout_rounded,
           outlined: true,
           onTap: onDisconnect,
@@ -375,34 +469,21 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Widget fallback = Container(
-      alignment: Alignment.center,
-      decoration: const BoxDecoration(
+    return Container(
+      width: 84,
+      height: 84,
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(colors: AppColors.primaryGradient),
+        gradient: const LinearGradient(colors: AppColors.primaryGradient),
+        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 24, offset: const Offset(0, 8))],
       ),
-      child: Text(user.initials, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white)),
-    );
-
-    final String? photo = user.photoUrl;
-    if (photo == null || photo.isEmpty) {
-      return SizedBox(width: 74, height: 74, child: ClipOval(child: fallback));
-    }
-    return SizedBox(
-      width: 74,
-      height: 74,
-      child: ClipOval(
-        child: Image.network(
-          photo,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => fallback,
-        ),
+      child: Center(
+        child: Text(user.initials, style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800, color: Colors.white)),
       ),
     );
   }
 }
 
-/// État « session expirée ».
 class _ExpiredView extends StatelessWidget {
   const _ExpiredView({required this.onReconnect});
 
@@ -417,31 +498,28 @@ class _ExpiredView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 74,
-              height: 74,
+              width: 84,
+              height: 84,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.danger.withValues(alpha: 0.12),
+                color: AppColors.warning.withValues(alpha: 0.12),
+                border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
               ),
-              child: const Icon(Icons.timer_off_outlined, size: 34, color: AppColors.danger),
+              child: const Icon(Icons.timer_off_outlined, size: 40, color: AppColors.warning),
             ),
             const SizedBox(height: 18),
             const Text(
               'Session expirée',
-              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
             ),
             const SizedBox(height: 8),
             const Text(
-              'Votre connexion Telegram a expiré. Reconnectez-vous pour continuer à utiliser vos sources.',
+              'Votre session Telegram a expiré ou a été révoquée.\nReconnectez-vous pour continuer.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13.5, height: 1.5, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 13, height: 1.5, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 22),
-            PrimaryButton(
-              label: 'Se reconnecter',
-              icon: Icons.login_rounded,
-              onTap: onReconnect,
-            ),
+            PrimaryButton(label: 'Se reconnecter', icon: Icons.refresh_rounded, expanded: false, onTap: onReconnect),
           ],
         ),
       ),

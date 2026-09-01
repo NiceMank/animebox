@@ -73,7 +73,19 @@ class _SyncScreenState extends State<SyncScreen> {
                   finished: (service.currentProgress!.fraction ?? 0) >= 1,
                   resultEpisodes: service.stats.newEpisodes,
                 ),
-              if (service.currentProgress != null) const SizedBox(height: 16),
+              if (service.currentProgress != null) const SizedBox(height: 8),
+              if (syncing)
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () => widget.service.cancelSync(),
+                    icon: const Icon(Icons.stop_circle_outlined, size: 17, color: AppColors.warning),
+                    label: const Text(
+                      'Annuler la synchronisation',
+                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.warning),
+                    ),
+                  ),
+                ),
+              if (service.currentProgress != null) const SizedBox(height: 8),
               Row(
                 children: [
                   StatTile(label: 'Publications analysées', value: formatCount(service.stats.analyzedPosts)),

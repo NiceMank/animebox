@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/formats.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../data/models/api_exception.dart';
 import '../data/models/resolved_channel.dart';
@@ -34,26 +35,37 @@ class _SourceAddScreenState extends State<SourceAddScreen> {
     super.dispose();
   }
 
+  bool get _isInviteLink {
+    final String text = _controller.text.trim();
+    return text.contains('t.me/+') || text.contains('t.me/joinchat');
+  }
+
   Future<void> _previewSource() async {
     // 1. Validation locale (message immédiat, sans réseau).
-    final String username;
-    try {
-      username = TelegramInputParser.parse(_controller.text);
-    } on ApiException catch (error) {
-      setState(() {
-        _error = error.displayMessage;
-        _preview = null;
-      });
-      return;
+    // Les liens d'invitation (t.me/+hash) ne passent pas par le parseur
+    // d'usernames : ils sont résolus tels quels par le service.
+    final String input;
+    if (_isInviteLink) {
+      input = _controller.text.trim();
+    } else {
+      try {
+        input = TelegramInputParser.parse(_controller.text);
+      } on ApiException catch (error) {
+        setState(() {
+          _error = error.displayMessage;
+          _preview = null;
+        });
+        return;
+      }
     }
 
-    // 2. Résolution via le backend (vérification de l'accessibilité).
+    // 2. Résolution réelle : le compte connecté vérifie l'accessibilité.
     setState(() {
       _checking = true;
       _error = null;
     });
     try {
-      final ResolvedChannel channel = await widget.service.resolveChannel(username);
+      final ResolvedChannel channel = await widget.service.resolveChannel(input);
       if (!mounted) return;
       setState(() => _preview = channel);
     } on ApiException catch (error) {
@@ -72,7 +84,17 @@ class _SourceAddScreenState extends State<SourceAddScreen> {
     if (preview == null) return;
     setState(() => _adding = true);
     try {
-      await widget.service.addSource(name: preview.title, username: preview.username);
+      await widget.service.addSource(
+        name: preview.title,
+        username: preview.username,
+        channelId: preview.channelId?.toString(),
+        kind: switch (preview.kind) {
+          ChannelKind.group => 'group',
+          ChannelKind.private => 'private',
+          ChannelKind.channel => 'channel',
+        },
+        inviteHash: preview.inviteHash,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Source « ${preview.title} » ajoutée.')),
@@ -211,7 +233,19 @@ class _PreviewCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     const SizedBox(height: 2),
-                    Text('@${channel.username}', style: Theme.of(context).textTheme.labelSmall),
+                    Text(
+                      channel.username.isEmpty
+                          ? 'Lien d\'invitation privé'
+                          : '@${channel.username}',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                    if (channel.memberCount != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '${formatCount(channel.memberCount!)} abonnés',
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primaryBright),
+                      ),
+                    ],
                   ],
                 ),
               ),
