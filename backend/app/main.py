@@ -13,14 +13,15 @@ n'est jamais renvoyé.
 """
 import re
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import config, db
-from .errors import ApiError, bad_input, not_connected, unauthorized
+from . import analyzer_routes, config, db
+from .auth import require_auth  # noqa: F401 - utilisé par les dépendances
+from .errors import ApiError, bad_input, not_connected
 from .telegram_client import build_gateway, normalize_input
 
 app = FastAPI(title="AnimeBox Backend", version="0.4.0")
@@ -36,6 +37,8 @@ app.add_middleware(
 
 gateway = build_gateway()
 db.init_db()
+analyzer_routes.init(gateway)
+app.include_router(analyzer_routes.router)
 
 # Photos de profil téléchargées (mode réel uniquement).
 try:
@@ -75,16 +78,9 @@ class UpdateSourceBody(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Authentification par jeton
+# Authentification par jeton (voir auth.py)
 # ---------------------------------------------------------------------------
 
-
-def require_auth(authorization: str | None = Header(default=None)) -> None:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise unauthorized()
-    token = authorization.removeprefix("Bearer ").strip()
-    if not db.token_exists(token):
-        raise unauthorized()
 
 
 @app.exception_handler(ApiError)

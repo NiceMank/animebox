@@ -3,3 +3,6 @@
 fastapi>=0.115
 uvicorn>=0.30
 telethon>=1.39
+
+# Tests (le moteur d'analyse lui-même est 100 % stdlib : re, unicodedata, sqlite3)
+pytest>=8.0
