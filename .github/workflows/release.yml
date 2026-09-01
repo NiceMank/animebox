@@ -1,0 +1,97 @@
+name: Release
+
+# Publication d'une release de test :
+# - push d'un tag v* (ex. v0.7.0) ;
+# - ou déclenchement manuel (crée/met à jour le tag de version).
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build APK + GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Version Flutter
+        run: flutter --version
+
+      - name: Dépendances
+        run: flutter pub get
+
+      - name: Analyse statique
+        run: flutter analyze
+
+      - name: Tests
+        run: flutter test
+
+      # Signé avec les clés de débogage (voir android/app/build.gradle.kts) :
+      # APK installable pour tester, mais PAS pour le Play Store.
+      - name: Build APK (release, clés debug)
+        run: flutter build apk --release
+
+      - name: Extraire la version (pubspec.yaml)
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d '+' -f1)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Version : $VERSION (tag v$VERSION)"
+
+      - name: Préparer l'APK
+        run: cp build/app/outputs/flutter-apk/app-release.apk "AnimeBox-v${{ steps.version.outputs.version }}.apk"
+
+      # Relance manuelle : repartir d'une release propre pour ce tag.
+      - name: Supprimer une release précédente du même tag (relance manuelle)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release delete "${{ steps.version.outputs.tag }}" --yes --cleanup-tag || true
+
+      - name: Créer la GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: AnimeBox v${{ steps.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          files: AnimeBox-v*.apk
+          make_latest: true
+          body: |
+            **Build de test automatique** — APK Android signé avec les clés de
+            débogage (installation directe sur un appareil : activer
+            « Installer des applications inconnues », puis ouvrir l'APK).
+
+            ## Contenu
+            - Application Flutter Android (mode démonstration intégré :
+              tous les écrans, données mockées, aucun identifiant requis).
+            - Mode **Telegram réel** (TDLib) : disponible à la compilation
+              avec vos identifiants my.telegram.org via `--dart-define`
+              (aucun secret n'est embarqué dans cet APK public).
+
+            ## Vérifications passées
+            - `flutter analyze` — 0 issue
+            - `flutter test` — 121 tests
+            - Backend (héritage) : 159 tests pytest + 41 vérifications smoke
+
+            Commit : ${{ github.sha }}
+            Branch : `${{ github.ref_name }}`
