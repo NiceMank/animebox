@@ -33,6 +33,10 @@ class EpisodeQuality {
     required this.language,
     required this.subtitles,
     this.isAvailable = true,
+    this.sourceChannelId,
+    this.sourceChannelUsername,
+    this.telegramMessageId,
+    this.telegramMessageLink,
   });
 
   final String id;
@@ -43,7 +47,7 @@ class EpisodeQuality {
   /// Résolution courte (« FHD », « HD », « SD »).
   final String resolution;
 
-  /// Taille en octets — donnée MOCKÉE à ce stade.
+  /// Taille en octets — 0 si le fichier ne l'a pas exposée (jamais inventée).
   final int size;
 
   /// Langue audio (« VF », « VO », « VOSTFR »…).
@@ -54,6 +58,16 @@ class EpisodeQuality {
 
   /// Disponibilité locale de cette version.
   final bool isAvailable;
+
+  // ---- Références Telegram de la publication d'origine (étape 6) ----
+
+  final String? sourceChannelId;
+  final String? sourceChannelUsername;
+  final int? telegramMessageId;
+  final String? telegramMessageLink;
+
+  /// Lien t.me valide — jamais inventé : `null`/vide si non constructible.
+  bool get hasTelegramLink => telegramMessageLink != null && telegramMessageLink!.isNotEmpty;
 
   String get sizeLabel => formatBytes(size);
 }

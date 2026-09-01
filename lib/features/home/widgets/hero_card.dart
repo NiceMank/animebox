@@ -27,7 +27,7 @@ class HeroCard extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          PosterImage(asset: anime.backdropAsset, borderRadius: 0, fallbackLabel: anime.title),
+          PosterImage(asset: anime.backdropAsset, url: anime.backdropUrl, borderRadius: 0, fallbackLabel: anime.title),
           // Voile dégradé pour la lisibilité du texte.
           const DecoratedBox(
             decoration: BoxDecoration(

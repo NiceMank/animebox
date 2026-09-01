@@ -28,7 +28,7 @@ class AnimeCard extends StatelessWidget {
             // Le poster occupe l'espace restant : la carte s'adapte ainsi à
             // toutes les hauteurs de grille sans jamais déborder.
             Expanded(
-              child: PosterImage(asset: anime.posterAsset, fallbackLabel: anime.title),
+              child: PosterImage(asset: anime.posterAsset, url: anime.posterUrl, fallbackLabel: anime.title),
             ),
             const SizedBox(height: 8),
             Text(

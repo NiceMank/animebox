@@ -210,7 +210,7 @@ class _Banner extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              PosterImage(asset: anime.backdropAsset, borderRadius: 0, fallbackLabel: anime.title),
+              PosterImage(asset: anime.backdropAsset, url: anime.backdropUrl, borderRadius: 0, fallbackLabel: anime.title),
               const DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(

@@ -211,7 +211,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byType(EpisodeCard).first);
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Lire maintenant'));
+    // La liste s'est enrichie (source de la publication) : on défile
+    // jusqu'au bouton de lecture avant d'appuyer.
+    await tester.dragUntilVisible(
+      find.text('Lire maintenant'),
+      find.byType(ListView),
+      const Offset(0, -120),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Lire maintenant'));
     await tester.pumpAndSettle();

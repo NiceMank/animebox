@@ -260,7 +260,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ),
               child: Row(
                 children: [
-                  PosterImage(asset: anime.posterAsset, width: 46, height: 64, borderRadius: 10, fallbackLabel: anime.title),
+                  PosterImage(asset: anime.posterAsset, url: anime.posterUrl, width: 46, height: 64, borderRadius: 10, fallbackLabel: anime.title),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

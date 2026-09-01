@@ -5,11 +5,16 @@ import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/poster_image.dart';
 
 /// Ligne de résultat de recherche (poster, titre, saison, épisodes, genres).
+///
+/// [showMetadataStatus] active l'affichage de l'état d'enrichissement
+/// (badge « À vérifier » / « Informations en attente ») — pertinent pour
+/// les résultats du catalogue backend, pas pour les données de démonstration.
 class ResultTile extends StatelessWidget {
-  const ResultTile({super.key, required this.anime, required this.onTap});
+  const ResultTile({super.key, required this.anime, required this.onTap, this.showMetadataStatus = false});
 
   final Anime anime;
   final VoidCallback onTap;
+  final bool showMetadataStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +36,7 @@ class ResultTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              PosterImage(asset: anime.posterAsset, width: 60, height: 84, borderRadius: 12, fallbackLabel: anime.title),
+              PosterImage(asset: anime.posterAsset, url: anime.posterUrl, width: 60, height: 84, borderRadius: 12, fallbackLabel: anime.title),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -48,6 +53,13 @@ class ResultTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(anime.episodeMeta, style: Theme.of(context).textTheme.labelSmall),
+                    if (showMetadataStatus && (anime.needsMetadataReview || anime.isMetadataPending)) ...[
+                      const SizedBox(height: 6),
+                      _MetadataBadge(
+                        label: anime.needsMetadataReview ? 'À vérifier' : 'Informations en attente',
+                        warning: anime.needsMetadataReview,
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 5,
@@ -63,6 +75,43 @@ class ResultTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Badge d'état des métadonnées (correspondance incertaine ou fiche
+/// minimale) — aucune association aveugle n'est faite côté serveur.
+class _MetadataBadge extends StatelessWidget {
+  const _MetadataBadge({required this.label, required this.warning});
+
+  final String label;
+  final bool warning;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color = warning ? AppColors.warning : AppColors.textMuted;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(warning ? Icons.help_outline_rounded : Icons.hourglass_empty_rounded, size: 11, color: color),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
+            ),
+          ),
+        ],
       ),
     );
   }

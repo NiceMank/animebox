@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 
 from . import analyzer_routes, config, db
 from .auth import require_auth  # noqa: F401 - utilisé par les dépendances
+from .catalog.routes import router as catalog_router
 from .errors import ApiError, bad_input, not_connected
 from .telegram_client import build_gateway, normalize_input
 
@@ -39,6 +40,7 @@ gateway = build_gateway()
 db.init_db()
 analyzer_routes.init(gateway)
 app.include_router(analyzer_routes.router)
+app.include_router(catalog_router)
 
 # Photos de profil téléchargées (mode réel uniquement).
 try:

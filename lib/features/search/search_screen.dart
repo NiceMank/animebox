@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../anime/data/models/anime.dart';
 import '../anime/data/models/search_filters.dart';
 import '../anime/data/models/video_quality.dart';
 import '../anime/data/repositories/anime_repository.dart';
+import '../anime/data/repositories/catalog_repository.dart';
 import '../../app/router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/anime_card.dart';
@@ -15,6 +18,11 @@ import 'widgets/result_tile.dart';
 
 /// Écran de recherche avec filtres (Saison, Épisode, Qualité, Langue, Genre,
 /// Source) et résultats issus des données locales.
+///
+/// En mode backend ([CatalogRepository]), la recherche est déléguée au
+/// serveur (titre canonique, original, alternatifs, alias) avec les états
+/// d'interface : récupération en cours / trouvées / introuvables /
+/// correspondance incertaine / erreur / données hors-ligne.
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key, required this.repository});
 
@@ -29,8 +37,20 @@ class _SearchScreenState extends State<SearchScreen> {
   SearchFilters _filters = SearchFilters.empty;
   String _query = '';
 
+  // ---- Recherche distante (catalogue backend) ----
+  Timer? _debounce;
+  int _requestSeq = 0;
+  bool _remoteLoading = false;
+  CatalogSearchStatus _remoteStatus = CatalogSearchStatus.found;
+  List<Anime> _remoteResults = const [];
+  String? _remoteMessage;
+
+  CatalogRepository? get _catalog =>
+      widget.repository is CatalogRepository ? widget.repository as CatalogRepository : null;
+
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -47,15 +67,52 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _clearSearch() {
+    _debounce?.cancel();
     _controller.clear();
     setState(() {
       _query = '';
       _filters = SearchFilters.empty;
+      _remoteResults = const [];
+      _remoteMessage = null;
+      _remoteLoading = false;
+    });
+  }
+
+  void _onQueryChanged(String value) {
+    _debounce?.cancel();
+    setState(() => _query = value);
+    final CatalogRepository? catalog = _catalog;
+    if (catalog == null || value.trim().isEmpty) {
+      setState(() {
+        _remoteResults = const [];
+        _remoteMessage = null;
+        _remoteLoading = false;
+      });
+      return;
+    }
+    // Anti-rebond : on attend une courte pause de saisie avant la requête.
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      _runRemoteSearch(catalog, value.trim());
+    });
+  }
+
+  Future<void> _runRemoteSearch(CatalogRepository catalog, String query) async {
+    final int seq = ++_requestSeq;
+    setState(() => _remoteLoading = true);
+    final CatalogSearchResult result = await catalog.searchCatalog(query);
+    if (!mounted || seq != _requestSeq) return;
+    setState(() {
+      _remoteLoading = false;
+      _remoteStatus = result.status;
+      _remoteResults = result.anime;
+      _remoteMessage = result.message;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final CatalogRepository? catalog = _catalog;
+    final bool remoteMode = catalog != null && _query.trim().isNotEmpty;
     final bool isFiltering = _filters.isActive || _query.trim().isNotEmpty;
     final List<Anime> results = isFiltering ? widget.repository.search(_query, filters: _filters) : const [];
 
@@ -69,7 +126,7 @@ class _SearchScreenState extends State<SearchScreen> {
             child: AppSearchBar(
               controller: _controller,
               hint: 'Rechercher un animé…',
-              onChanged: (String value) => setState(() => _query = value),
+              onChanged: _onQueryChanged,
               onFilterTap: _openFilters,
               activeFilterCount: _filters.activeCount,
             ),
@@ -80,21 +137,169 @@ class _SearchScreenState extends State<SearchScreen> {
               onChanged: (SearchFilters filters) => setState(() => _filters = filters),
             ),
           Expanded(
-            child: !isFiltering
-                ? _TrendingGrid(repository: widget.repository)
-                : results.isEmpty
-                    ? EmptyState(
-                        icon: Icons.search_off_rounded,
-                        title: 'Aucun résultat',
-                        message: 'Aucun animé ne correspond à « ${_query.trim()} ». '
-                            'Essayez d\'autres mots-clés ou retirez des filtres.',
-                        actionLabel: 'Tout effacer',
-                        onAction: _clearSearch,
-                      )
-                    : _ResultsList(results: results),
+            child: remoteMode
+                ? _RemoteSearchBody(
+                    loading: _remoteLoading,
+                    status: _remoteStatus,
+                    results: _remoteResults,
+                    message: _remoteMessage,
+                    onRetry: () => _runRemoteSearch(catalog, _query.trim()),
+                    onTap: (Anime anime) => Navigator.of(context).pushNamed(
+                      AppRoutes.animeDetails,
+                      arguments: AnimeIdArgs(anime.id),
+                    ),
+                  )
+                : !isFiltering
+                    ? _TrendingGrid(repository: widget.repository)
+                    : results.isEmpty
+                        ? EmptyState(
+                            icon: Icons.search_off_rounded,
+                            title: 'Aucun résultat',
+                            message: 'Aucun animé ne correspond à « ${_query.trim()} ». '
+                                'Essayez d\'autres mots-clés ou retirez des filtres.',
+                            actionLabel: 'Tout effacer',
+                            onAction: _clearSearch,
+                          )
+                        : _ResultsList(results: results),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Corps de la recherche distante : états d'interface explicites
+/// (récupération / trouvées / introuvables / incertaines / erreur /
+/// hors-ligne).
+class _RemoteSearchBody extends StatelessWidget {
+  const _RemoteSearchBody({
+    required this.loading,
+    required this.status,
+    required this.results,
+    required this.message,
+    required this.onRetry,
+    required this.onTap,
+  });
+
+  final bool loading;
+  final CatalogSearchStatus status;
+  final List<Anime> results;
+  final String? message;
+  final VoidCallback onRetry;
+  final ValueChanged<Anime> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBright),
+            ),
+            SizedBox(height: 12),
+            Text('Récupération en cours…', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+          ],
+        ),
+      );
+    }
+    switch (status) {
+      case CatalogSearchStatus.offline:
+        return _OfflineResults(results: results, onRetry: onRetry, onTap: onTap);
+      case CatalogSearchStatus.error:
+        return EmptyState(
+          icon: Icons.cloud_off_rounded,
+          title: 'Actualisation impossible',
+          message: 'Le backend est injoignable pour le moment. '
+              'Les dernières données connues restent disponibles dans la bibliothèque.',
+          actionLabel: 'Réessayer',
+          onAction: onRetry,
+        );
+      case CatalogSearchStatus.notFound:
+        return EmptyState(
+          icon: Icons.search_off_rounded,
+          title: 'Aucun résultat',
+          message: message ?? 'Aucun animé ne correspond à cette recherche.',
+        );
+      case CatalogSearchStatus.found:
+      case CatalogSearchStatus.review:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (message != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.help_outline_rounded, size: 15, color: AppColors.warning),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(message!, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(child: _ResultsList(results: results, onTap: onTap, showMetadataStatus: true)),
+          ],
+        );
+      case CatalogSearchStatus.loading:
+        return const SizedBox.shrink();
+    }
+  }
+}
+
+/// Hors-ligne : résultats issus des dernières données connues (cache local),
+/// avec une indication claire.
+class _OfflineResults extends StatelessWidget {
+  const _OfflineResults({required this.results, required this.onRetry, required this.onTap});
+
+  final List<Anime> results;
+  final VoidCallback onRetry;
+  final ValueChanged<Anime> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          margin: const EdgeInsets.fromLTRB(20, 2, 20, 10),
+          padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceAlt,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.warning.withValues(alpha: 0.45)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.cloud_off_rounded, size: 18, color: AppColors.warning),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Hors-ligne — résultats issus des données locales.',
+                  style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                ),
+              ),
+              TextButton(
+                onPressed: onRetry,
+                child: const Text('Réessayer', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: results.isEmpty
+              ? const EmptyState(
+                  icon: Icons.search_off_rounded,
+                  title: 'Aucun résultat local',
+                  message: 'Aucune donnée connue ne correspond à cette recherche.',
+                )
+              : _ResultsList(results: results, onTap: onTap, showMetadataStatus: true),
+        ),
+      ],
     );
   }
 }
@@ -135,9 +340,11 @@ class _TrendingGrid extends StatelessWidget {
 
 /// Liste des résultats de recherche.
 class _ResultsList extends StatelessWidget {
-  const _ResultsList({required this.results});
+  const _ResultsList({required this.results, this.onTap, this.showMetadataStatus = false});
 
   final List<Anime> results;
+  final ValueChanged<Anime>? onTap;
+  final bool showMetadataStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -156,7 +363,10 @@ class _ResultsList extends StatelessWidget {
         final Anime anime = results[index - 1];
         return ResultTile(
           anime: anime,
-          onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: AnimeIdArgs(anime.id)),
+          showMetadataStatus: showMetadataStatus,
+          onTap: onTap != null
+              ? () => onTap!(anime)
+              : () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: AnimeIdArgs(anime.id)),
         );
       },
     );

@@ -4,7 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../anime/data/models/anime.dart';
 import '../../anime/data/models/episode.dart';
 import '../../anime/data/models/season.dart';
-import '../../../shared/widgets/episode_thumbnail.dart';
+import '../../../shared/widgets/poster_image.dart';
 
 /// Carte d'un animé suivi : progression des épisodes + dernier épisode
 /// disponible + indicateur « NOUVEAU ».
@@ -20,6 +20,9 @@ class FollowedCard extends StatelessWidget {
     final Episode? latestEpisode = anime.latestEpisode;
     final bool hasNew = latestEpisode?.isNew ?? false;
     final int available = latestSeason?.episodeCount ?? 0;
+    // « X/24 disponibles » : épisodes publiés vs total annoncé par le
+    // fournisseur (distinct des épisodes réellement sur Telegram).
+    final int? announced = anime.totalEpisodesDeclared;
 
     return Material(
       color: AppColors.card,
@@ -35,7 +38,7 @@ class FollowedCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              EpisodeThumbnail(asset: anime.posterAsset, width: 72, height: 100, borderRadius: 12),
+              PosterImage(asset: anime.posterAsset, url: anime.posterUrl, width: 72, height: 100, borderRadius: 12, fallbackLabel: anime.title),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -74,6 +77,13 @@ class FollowedCard extends StatelessWidget {
                           : 'Saison ${latestSeason.number} · Épisode ${latestEpisode?.number ?? 0} / $available',
                       style: Theme.of(context).textTheme.labelSmall,
                     ),
+                    if (announced != null && announced != anime.totalEpisodes) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '${anime.totalEpisodes} / $announced épisodes disponibles',
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primaryBright),
+                      ),
+                    ],
                     const SizedBox(height: 10),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),

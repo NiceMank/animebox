@@ -16,6 +16,7 @@ class Episode {
     this.isNew = false,
     required this.qualities,
     this.progress = Duration.zero,
+    this.thumbnailUrl,
   });
 
   final String id;
@@ -24,6 +25,9 @@ class Episode {
 
   /// Vignette (image locale pour cette étape).
   final String thumbnail;
+
+  /// Vignette distante (cache d'images backend), si fournie.
+  final String? thumbnailUrl;
 
   /// Date de sortie (publication).
   final DateTime date;

@@ -1,4 +1,6 @@
+import 'anime_alias.dart';
 import 'episode.dart';
+import 'metadata_status.dart';
 import 'season.dart';
 import 'video_quality.dart';
 
@@ -36,6 +38,19 @@ class Anime {
     this.popularity = 0,
     this.followers = 0,
     this.isFollowing = false,
+    this.canonicalTitle,
+    this.originalTitle,
+    this.alternativeTitles = const [],
+    this.aliases = const [],
+    this.metadataStatus = MetadataStatus.pending,
+    this.metadataSource,
+    this.metadataUpdatedAt,
+    this.metadataCandidates = const [],
+    this.totalEpisodesDeclared,
+    this.seasonCountDeclared,
+    this.episodeDurationMinDeclared,
+    this.posterUrl,
+    this.backdropUrl,
   });
 
   final String id;
@@ -62,6 +77,66 @@ class Anime {
   final int popularity;
   final int followers;
   final bool isFollowing;
+
+  // ---- Métadonnées du catalogue (étape 6) ----
+
+  /// Titre canonique (identité de la fiche, ex. « Solo Leveling »).
+  final String? canonicalTitle;
+
+  /// Titre original (ex. « Ore dake Level Up na Ken »).
+  final String? originalTitle;
+
+  /// Autres titres connus (jamais inventés).
+  final List<String> alternativeTitles;
+
+  /// Alias utilisés par la correspondance backend.
+  final List<AnimeAlias> aliases;
+
+  /// État d'enrichissement des métadonnées.
+  final MetadataStatus metadataStatus;
+
+  /// Fournisseur de métadonnées (« local », « jikan »…).
+  final String? metadataSource;
+
+  /// Date de dernière mise à jour des métadonnées (ISO 8601).
+  final String? metadataUpdatedAt;
+
+  /// Candidats proposés quand la correspondance est incertaine (revue).
+  final List<MetadataCandidateInfo> metadataCandidates;
+
+  /// Nombre total d'épisodes annoncé par le fournisseur (ex. 24).
+  /// Distinct des épisodes réellement disponibles sur Telegram.
+  final int? totalEpisodesDeclared;
+
+  /// Nombre de saisons annoncé par le fournisseur.
+  final int? seasonCountDeclared;
+
+  /// Durée d'épisode annoncée par le fournisseur (minutes).
+  final int? episodeDurationMinDeclared;
+
+  /// URL d'affiche verticale (cache d'images backend).
+  final String? posterUrl;
+
+  /// URL de fond horizontal (cache d'images backend).
+  final String? backdropUrl;
+
+  /// La fiche attend-elle encore des informations complètes ?
+  bool get isMetadataPending => metadataStatus.isPendingInfo;
+
+  /// Une décision humaine est-elle attendue (correspondance incertaine) ?
+  bool get needsMetadataReview => metadataStatus.needsReview;
+
+  /// Total d'épisodes annoncé par le fournisseur, sinon le nombre connu.
+  int get totalEpisodesAnnounced => totalEpisodesDeclared ?? totalEpisodes;
+
+  /// Tous les titres connus de la fiche (pour la recherche locale).
+  List<String> get allTitles => [
+        title,
+        ?canonicalTitle,
+        ?originalTitle,
+        ...alternativeTitles,
+        for (final AnimeAlias alias in aliases) alias.value,
+      ];
 
   int get totalEpisodes => seasons.fold(0, (int sum, Season season) => sum + season.episodeCount);
 
@@ -175,5 +250,18 @@ class Anime {
         popularity: popularity,
         followers: followers,
         isFollowing: isFollowing ?? this.isFollowing,
+        canonicalTitle: canonicalTitle,
+        originalTitle: originalTitle,
+        alternativeTitles: alternativeTitles,
+        aliases: aliases,
+        metadataStatus: metadataStatus,
+        metadataSource: metadataSource,
+        metadataUpdatedAt: metadataUpdatedAt,
+        metadataCandidates: metadataCandidates,
+        totalEpisodesDeclared: totalEpisodesDeclared,
+        seasonCountDeclared: seasonCountDeclared,
+        episodeDurationMinDeclared: episodeDurationMinDeclared,
+        posterUrl: posterUrl,
+        backdropUrl: backdropUrl,
       );
 }

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
 import '../features/anime/data/repositories/anime_repository.dart';
+import '../features/anime/data/repositories/api_anime_repository.dart';
+import '../features/anime/data/repositories/catalog_repository.dart';
 import '../features/anime/data/repositories/mock_anime_repository.dart';
 import '../features/library/services/library_service.dart';
 import '../features/telegram/data/services/api_telegram_service.dart';
@@ -16,10 +18,12 @@ import 'router.dart';
 
 /// Racine de l'application : thème global, services et routes.
 ///
-/// Sélection du service Telegram :
+/// Sélection des services :
 /// - si `ANIMEBOX_API_URL` est fournie au lancement (`--dart-define`),
-///   l'application utilise [ApiTelegramService] (backend réel) ;
-/// - sinon, [MockTelegramService] (démonstration locale).
+///   l'application utilise [ApiTelegramService] ET [ApiAnimeRepository]
+///   (backend réel : catalogue + métadonnées + recherche serveur) ;
+/// - sinon, [MockTelegramService] + [MockAnimeRepository] (démonstration
+///   locale, sans réseau).
 ///
 /// Les secrets Telegram ne vivent QUE côté backend : l'application ne
 /// contient aucun API_ID / API_HASH / session en clair.
@@ -52,7 +56,16 @@ class AnimeBoxApp extends StatefulWidget {
 }
 
 class _AnimeBoxAppState extends State<AnimeBoxApp> {
-  late final AnimeRepository _repository = widget.repository ?? MockAnimeRepository();
+  late final TelegramSessionService _sessionService = widget.sessionService ??
+      // Session stockée dans le stockage sécurisé de la plateforme
+      // (Keystore Android) ; en mémoire sur le web (démo).
+      (kIsWeb ? InMemorySessionService() : SecureSessionService());
+
+  late final AnimeRepository _repository = widget.repository ??
+      (AnimeBoxApp.useBackendApi
+          ? ApiAnimeRepository(baseUrl: AnimeBoxApp.apiBaseUrl, session: _sessionService)
+          : MockAnimeRepository());
+
   late final EpisodeGroupingService _groupingService = widget.groupingService ?? EpisodeGroupingService();
   late final LibraryService _libraryService =
       widget.libraryService ?? LibraryService(repository: _repository, groupingService: _groupingService);
@@ -61,13 +74,20 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
 
   TelegramService _buildTelegramService() {
     if (AnimeBoxApp.useBackendApi) {
-      // Session stockée dans le stockage sécurisé de la plateforme
-      // (Keystore Android) ; en mémoire sur le web (démo).
-      final TelegramSessionService session = widget.sessionService ??
-          (kIsWeb ? InMemorySessionService() : SecureSessionService());
-      return ApiTelegramService(baseUrl: AnimeBoxApp.apiBaseUrl, session: session);
+      return ApiTelegramService(baseUrl: AnimeBoxApp.apiBaseUrl, session: _sessionService);
     }
     return MockTelegramService();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Chargement initial du catalogue (non bloquant) : les écrans affichent
+    // d'abord les données connues, puis se mettent à jour via le Listenable.
+    if (_repository case final CatalogRepository catalog) {
+      // ignore: discarded_futures
+      catalog.refreshCatalog();
+    }
   }
 
   @override

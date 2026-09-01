@@ -56,9 +56,9 @@ def init(gateway) -> None:
     for anime in store.list_anime():
         title = AnimeTitle(
             key=anime["key"],
-            title=anime["title"],
+            title=anime["canonical_title"],
             original_title=anime.get("original_title"),
-            release_year=anime.get("release_year"),
+            release_year=anime.get("release_year") or anime.get("year"),
         )
         registry.register(title)
     for alias_row in store.list_aliases():
@@ -195,15 +195,29 @@ def _run_analysis_job(job_id: str, source: dict, limit: int, force: bool) -> Non
             message.setdefault("telegram_channel_username", source["username"])
         db.upsert_messages(source["id"], messages)
         jobs.update(job_id, total=len(messages))
+        store = CatalogStore()
         batch = BatchAnalyzer(
             _engine_or_fail(),
             cache=AnalysisCache(),
-            store=CatalogStore(),
+            store=store,
             ingest=True,
             force=force,
         )
         result = batch.run(messages, source=source)
         anime_keys = {group["anime"]["key"] for group in result.groups}
+        # Étape 6 : enrichissement des fiches détectées (metadonnées + images).
+        # En tâche de fond, avec garde TTL : jamais à chaque affichage.
+        try:
+            metadata = _metadata_service()
+            for anime_key in anime_keys:
+                row = store.find_anime_by_key_or_alias(anime_key)
+                if row is None:
+                    continue
+                public = store.get_anime_public(row["id"])
+                if public is not None:
+                    metadata.ensure_enriched(public)
+        except Exception:  # noqa: BLE001 - l'enrichissement n'est jamais bloquant
+            logger.exception("[Analyzer] enrichissement des métadonnées en erreur (ignoré)")
         db.update_source(
             source["id"],
             analyzed_posts=result.processed,
@@ -238,6 +252,12 @@ def _run_analysis_job(job_id: str, source: dict, limit: int, force: bool) -> Non
         jobs.update(job_id, status="error", error="Erreur interne d'analyse.")
 
 
+def _metadata_service():
+    from .catalog.routes import get_metadata_service
+
+    return get_metadata_service()
+
+
 @router.post("/api/sources/{source_id}/analyze", dependencies=[Depends(require_auth)], status_code=202)
 def analyze_source(
     source_id: str, background: BackgroundTasks, body: SourceAnalyzeBody | None = None
@@ -261,21 +281,3 @@ def analyzer_job(job_id: str) -> dict:
     if job is None:
         raise ApiError("JOB_NOT_FOUND", "Tâche d'analyse introuvable.", 404)
     return {"job": job}
-
-
-# ---------------------------------------------------------------------------
-# Catalogue (préparation des données pour l'application mobile)
-# ---------------------------------------------------------------------------
-
-
-@router.get("/api/catalog/anime", dependencies=[Depends(require_auth)])
-def catalog_anime() -> dict:
-    return {"anime": CatalogStore().list_anime()}
-
-
-@router.get("/api/catalog/anime/{anime_id}", dependencies=[Depends(require_auth)])
-def catalog_anime_detail(anime_id: int) -> dict:
-    detail = CatalogStore().anime_detail(anime_id)
-    if detail is None:
-        raise ApiError("ANIME_NOT_FOUND", "Animé introuvable dans le catalogue.", 404)
-    return {"anime": detail}

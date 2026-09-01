@@ -40,7 +40,7 @@ class ReleaseCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                PosterImage(asset: anime.posterAsset, width: 92, height: 132, borderRadius: 14, fallbackLabel: anime.title),
+                PosterImage(asset: anime.posterAsset, url: anime.posterUrl, width: 92, height: 132, borderRadius: 14, fallbackLabel: anime.title),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(

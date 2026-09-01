@@ -30,6 +30,20 @@ DB_PATH = os.environ.get("DB_PATH", os.path.join(_BASE, "animebox.db"))
 UPLOADS_DIR = os.environ.get("UPLOADS_DIR", os.path.join(_BASE, "uploads"))
 TOKEN_TTL_DAYS = int(os.environ.get("TOKEN_TTL_DAYS", "30"))
 
+# --- Métadonnées du catalogue (étape 6) -------------------------------------
+# Aucune clé secrète requise : le fournisseur distant par défaut (Jikan,
+# API publique de MyAnimeList) est accessible sans authentification. Si un
+# futur fournisseur exige une clé, elle vivra dans METADATA_API_KEY
+# (variable d'environnement serveur — jamais dans l'app ni le dépôt).
+METADATA_PROVIDER = os.environ.get("METADATA_PROVIDER", "auto").strip().lower()
+METADATA_TTL_DAYS = int(os.environ.get("METADATA_TTL_DAYS", "7"))
+METADATA_REMOTE_BASE_URL = os.environ.get(
+    "METADATA_REMOTE_BASE_URL", "https://api.jikan.moe/v4"
+).rstrip("/")
+METADATA_TIMEOUT_SECONDS = int(os.environ.get("METADATA_TIMEOUT_SECONDS", "10"))
+METADATA_DOWNLOAD_IMAGES = os.environ.get("METADATA_DOWNLOAD_IMAGES", "1") == "1"
+METADATA_API_KEY = os.environ.get("METADATA_API_KEY", "").strip() or None  # réservé
+
 SESSION_FILE = os.path.join(SESSION_DIR, "account.session")
 
 for _directory in (SESSION_DIR, UPLOADS_DIR, os.path.dirname(DB_PATH)):

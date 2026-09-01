@@ -276,6 +276,18 @@ class MockTelegramService(TelegramGateway):
         ("One Piece 1125 1080p VOSTFR", "document", 1_073_741_824, "one-piece-1125.mkv"),
     ]
 
+    # Flux spécifiques pour le scénario multi-sources (étape 6) : deux
+    # canaux publient des qualités différentes du même épisode.
+    _CAPTIONS_BY_USER = {
+        "sourcea": (
+            ("Solo Leveling S02E08 1080p VF", "video", 1_288_490_188, "solo-leveling-s02e08-1080p.mkv"),
+            ("Solo Leveling S02E08 720p VF", "video", 697_932_185, "solo-leveling-s02e08-720p.mkv"),
+        ),
+        "sourceb": (
+            ("Solo Leveling S02E08 480p VOSTFR", "video", 375_809_638, "solo-leveling-s02e08-480p.mkv"),
+        ),
+    }
+
     def __init__(self) -> None:
         self._connected = True  # la simulation démarre « connectée »
 
@@ -314,16 +326,21 @@ class MockTelegramService(TelegramGateway):
 
     def fetch_messages(self, username: str, channel_id, limit: int) -> list[dict]:
         now = datetime.now(timezone.utc)
+        captions = self._CAPTIONS_BY_USER.get(normalize_input(username), self._CAPTIONS)
+        base_id = {
+            "sourcea": 50001,
+            "sourceb": 60001,
+        }.get(normalize_input(username), 12345)
         messages = []
-        for index, (caption, media_type, size, file_name) in enumerate(self._CAPTIONS[:limit]):
+        for index, (caption, media_type, size, file_name) in enumerate(captions[:limit]):
             link = (
-                f"https://t.me/{username}/{12345 - index}"
-                if index < len(self._CAPTIONS) - 1
+                f"https://t.me/{username}/{base_id - index}"
+                if index < len(captions) - 1
                 else None  # dernier message : pas de lien (bouton désactivé côté client)
             )
             messages.append(
                 {
-                    "message_id": 12345 - index,
+                    "message_id": base_id - index,
                     "date": (now - timedelta(hours=index * 5)).isoformat(),
                     "text": caption,
                     "media_type": media_type,
