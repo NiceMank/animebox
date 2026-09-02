@@ -1,0 +1,867 @@
+PROMPT 11 — GESTION TELEGRAM, COMPTES ET SOURCES
+
+CONTEXTE
+==================================================
+
+Tu continues le développement de l'application mobile « AnimeBox ».
+
+Les PROMPTS 1 à 10 ont déjà été exécutés.
+
+NE RECOMMENCE PAS LE PROJET.
+
+NE REFAIS PAS les écrans déjà conçus.
+
+NE CHANGE PAS l'identité visuelle existante.
+
+AnimeBox est une application Flutter Android qui fonctionne principalement directement sur le téléphone.
+
+Chaque utilisateur doit pouvoir connecter SON propre compte Telegram et ajouter SES propres sources.
+
+==================================================
+OBJECTIF
+==================================================
+
+Créer une gestion Telegram complète permettant à l'utilisateur de :
+
+- connecter son compte Telegram ;
+- conserver sa session localement de manière sécurisée ;
+- voir l'état de sa connexion ;
+- ajouter un canal ;
+- ajouter plusieurs canaux ;
+- vérifier qu'un canal est accessible ;
+- activer/désactiver une source ;
+- supprimer une source ;
+- synchroniser une source ;
+- synchroniser toutes les sources ;
+- consulter les informations d'une source.
+
+IMPORTANT :
+
+Chaque utilisateur utilise son propre compte Telegram.
+
+NE PAS utiliser un compte Telegram partagé.
+
+NE PAS stocker les sessions Telegram sur un serveur.
+
+NE PAS créer de backend pour cette fonctionnalité.
+
+==================================================
+1. TELEGRAM SERVICE
+==================================================
+
+Créer une couche dédiée :
+
+TelegramService
+
+Elle doit centraliser les opérations Telegram.
+
+Exemples :
+
+connect()
+disconnect()
+getCurrentUser()
+addChannel()
+removeChannel()
+checkChannel()
+syncChannel()
+syncAllChannels()
+
+NE PAS mettre directement les appels Telegram dans les widgets Flutter.
+
+Architecture recommandée :
+
+UI
+↓
+TelegramController
+↓
+TelegramService
+↓
+Telegram client/library
+↓
+Telegram
+
+==================================================
+2. CONNEXION TELEGRAM
+==================================================
+
+Créer le véritable parcours de connexion Telegram.
+
+L'utilisateur doit pouvoir fournir les informations nécessaires selon la méthode d'authentification réellement supportée par la bibliothèque utilisée.
+
+Exemple de parcours :
+
+Numéro de téléphone
+↓
+Code Telegram
+↓
+Mot de passe 2FA si activé
+↓
+Compte connecté
+
+NE PAS simuler la connexion.
+
+==================================================
+3. CODE DE CONNEXION
+==================================================
+
+Lorsque Telegram demande un code :
+
+afficher un écran clair :
+
+« Entrez le code reçu sur Telegram »
+
+Prévoir :
+
+- saisie du code ;
+- validation ;
+- renvoi si réellement possible ;
+- gestion des erreurs.
+
+NE PAS afficher le code dans les logs.
+
+==================================================
+4. DOUBLE AUTHENTIFICATION
+==================================================
+
+Si le compte Telegram possède une protection 2FA :
+
+afficher :
+
+« Votre compte est protégé par un mot de passe supplémentaire. »
+
+Demander le mot de passe uniquement lorsque Telegram le demande réellement.
+
+NE PAS stocker le mot de passe 2FA en clair.
+
+==================================================
+5. SESSION
+==================================================
+
+Après une connexion réussie :
+
+conserver la session de manière sécurisée sur l'appareil selon les possibilités de la bibliothèque Telegram et du stockage sécurisé Android.
+
+Au prochain lancement :
+
+essayer de restaurer la session.
+
+Si elle est encore valide :
+
+ne pas demander inutilement une nouvelle connexion.
+
+==================================================
+6. DÉCONNEXION
+==================================================
+
+Dans Paramètres :
+
+[ Déconnecter Telegram ]
+
+Demander confirmation.
+
+Après déconnexion :
+
+- supprimer les informations de session sécurisées ;
+- arrêter les synchronisations ;
+- arrêter les tâches Telegram en cours ;
+- conserver les données locales du catalogue lorsque cela est pertinent.
+
+NE PAS supprimer automatiquement les fichiers vidéo téléchargés.
+
+==================================================
+7. ÉTAT DU COMPTE
+==================================================
+
+Afficher :
+
+Telegram connecté
+
+Nom du compte
+
+Identifiant disponible si approprié
+
+État :
+
+● Connecté
+
+ou :
+
+○ Déconnecté
+
+NE PAS afficher inutilement des informations personnelles sensibles.
+
+==================================================
+8. AJOUT D'UNE SOURCE
+==================================================
+
+L'utilisateur doit pouvoir ajouter :
+
+- lien d'un canal ;
+- @username d'un canal ;
+- identifiant lorsque la bibliothèque le permet.
+
+Exemples :
+
+https://t.me/nomducanal
+
+@nomducanal
+
+L'application doit essayer de résoudre réellement la source.
+
+NE PAS considérer une chaîne de caractères comme une source valide sans vérification.
+
+==================================================
+9. VÉRIFICATION DU CANAL
+==================================================
+
+Après saisie :
+
+→ vérifier la source avec Telegram.
+
+Si elle est valide :
+
+afficher les informations disponibles :
+
+Nom
+Photo
+Username
+Type
+
+Puis :
+
+[ Ajouter cette source ]
+
+==================================================
+10. SOURCE INACCESSIBLE
+==================================================
+
+Si le canal est inaccessible :
+
+afficher clairement :
+
+« Cette source n'est pas accessible avec votre compte Telegram. »
+
+Causes possibles :
+
+- canal privé auquel le compte n'appartient pas ;
+- canal supprimé ;
+- lien invalide ;
+- restrictions Telegram ;
+- compte non autorisé.
+
+NE PAS contourner les restrictions.
+
+==================================================
+11. CANAUX PRIVÉS
+==================================================
+
+Un canal privé doit fonctionner uniquement si le compte Telegram connecté possède réellement l'accès nécessaire.
+
+NE PAS contourner :
+
+- invitations ;
+- permissions ;
+- restrictions ;
+- accès aux messages.
+
+==================================================
+12. MES SOURCES
+==================================================
+
+L'écran Sources doit afficher toutes les sources ajoutées par l'utilisateur.
+
+Exemple :
+
+MES SOURCES
+
+Anime Channel
+● Actif
+
+Anime VF
+● Actif
+
+VOSTFR Anime
+○ Désactivé
+
+Chaque source peut afficher :
+
+- nom ;
+- photo ;
+- statut ;
+- dernière synchronisation ;
+- nombre d'épisodes détectés.
+
+==================================================
+13. ACTIVER / DÉSACTIVER
+==================================================
+
+Permettre de désactiver temporairement une source.
+
+Exemple :
+
+Anime Channel
+
+Synchronisation
+ON
+
+Après désactivation :
+
+Synchronisation
+OFF
+
+Une source désactivée :
+
+- ne doit plus être synchronisée automatiquement ;
+- ne doit plus générer de nouvelles notifications ;
+- doit rester visible dans la liste.
+
+==================================================
+14. SUPPRESSION D'UNE SOURCE
+==================================================
+
+Permettre :
+
+[ Supprimer la source ]
+
+Demander confirmation.
+
+Important :
+
+supprimer la source ne doit PAS automatiquement supprimer :
+
+- les animés ;
+- les épisodes ;
+- les favoris ;
+- les historiques ;
+- les vidéos téléchargées.
+
+La source est simplement retirée de la liste des sources actives.
+
+==================================================
+15. SYNCHRONISATION D'UNE SOURCE
+==================================================
+
+Chaque source doit pouvoir être synchronisée individuellement.
+
+Exemple :
+
+Anime Channel
+
+Dernière synchronisation :
+Il y a 15 min
+
+[ Synchroniser ]
+
+Pendant l'opération :
+
+Synchronisation...
+
+À la fin :
+
+Synchronisation terminée
+
+==================================================
+16. SYNCHRONISATION GLOBALE
+==================================================
+
+Prévoir :
+
+[ Synchroniser tout ]
+
+Le système doit traiter les sources actives.
+
+Afficher éventuellement :
+
+Sources :
+4
+
+En cours :
+2 / 4
+
+Nouveaux épisodes :
+8
+
+Erreurs :
+0
+
+Les chiffres doivent être réels.
+
+==================================================
+17. SYNCHRONISATION INCRÉMENTALE
+==================================================
+
+NE PAS récupérer inutilement tout l'historique du canal à chaque synchronisation.
+
+Utiliser autant que possible :
+
+- dernier message connu ;
+- identifiant du dernier message ;
+- date de dernière synchronisation ;
+- curseurs appropriés.
+
+Objectif :
+
+récupérer uniquement les nouvelles publications pertinentes.
+
+==================================================
+18. PREMIÈRE SYNCHRONISATION
+==================================================
+
+Lorsqu'un canal est ajouté pour la première fois :
+
+permettre une première analyse contrôlée.
+
+NE PAS télécharger les vidéos.
+
+NE PAS récupérer une quantité illimitée de messages.
+
+Prévoir une limite raisonnable et configurable dans le code.
+
+==================================================
+19. ANALYSE DES MESSAGES
+==================================================
+
+Pour chaque nouveau message pertinent :
+
+extraire autant que possible :
+
+- texte ;
+- nom de fichier ;
+- date ;
+- média ;
+- taille ;
+- extension ;
+- référence Telegram ;
+- identifiant du message ;
+- canal source.
+
+Puis transmettre ces informations au moteur de classification déjà développé.
+
+==================================================
+20. IDENTIFICATION ANIME
+==================================================
+
+Le système doit continuer à utiliser la logique intelligente déjà développée pour déterminer :
+
+Anime
+
+Saison
+
+Épisode
+
+Qualité
+
+Langue
+
+Ne pas recréer un deuxième moteur incompatible.
+
+Réutiliser le moteur existant.
+
+==================================================
+21. PLUSIEURS QUALITÉS
+==================================================
+
+Exemple de publications :
+
+One Piece 1150 1080p VF
+
+One Piece 1150 720p VF
+
+One Piece 1150 480p VF
+
+Résultat :
+
+ONE PIECE
+Épisode 1150
+
+Versions :
+
+1080p
+720p
+480p
+
+NE PAS créer trois épisodes.
+
+==================================================
+22. SOURCES MULTIPLES
+==================================================
+
+Si le même épisode apparaît dans deux canaux :
+
+Source A
+E1150 1080p
+
+Source B
+E1150 1080p
+
+le système doit éviter de créer deux épisodes identiques lorsqu'il peut déterminer qu'ils représentent réellement le même contenu.
+
+Conserver néanmoins les références des différentes publications.
+
+==================================================
+23. PRIORITÉ DES SOURCES
+==================================================
+
+Préparer la structure pour permettre ultérieurement une préférence de source.
+
+Exemple :
+
+Source préférée :
+
+Anime Channel A
+
+Mais NE PAS développer un système complexe de sélection automatique si ce n'est pas nécessaire à cette étape.
+
+==================================================
+24. LIMITATIONS TELEGRAM
+==================================================
+
+Respecter les limitations et mécanismes Telegram.
+
+Si Telegram renvoie une limitation :
+
+ne pas effectuer de boucle agressive.
+
+Attendre lorsque nécessaire.
+
+Afficher :
+
+« Telegram limite temporairement cette opération. »
+
+==================================================
+25. ERREURS DE SOURCE
+==================================================
+
+Gérer proprement :
+
+- lien invalide ;
+- source inexistante ;
+- source inaccessible ;
+- canal privé sans accès ;
+- canal supprimé ;
+- session expirée ;
+- limitation Telegram ;
+- erreur réseau ;
+- timeout.
+
+==================================================
+26. LOGS
+==================================================
+
+Créer des logs techniques utiles au développement.
+
+Mais NE JAMAIS enregistrer dans les logs :
+
+- codes Telegram ;
+- mots de passe ;
+- session Telegram ;
+- données sensibles inutiles.
+
+En mode production :
+
+réduire les logs sensibles.
+
+==================================================
+27. SÉCURITÉ
+==================================================
+
+Les données d'authentification doivent rester locales.
+
+NE PAS envoyer vers :
+
+Vercel
+
+Firebase
+
+Supabase
+
+serveur Python
+
+ou autre serveur externe.
+
+NE PAS créer de système permettant au développeur de récupérer les sessions des utilisateurs.
+
+==================================================
+28. STOCKAGE LOCAL
+==================================================
+
+La base locale doit permettre d'associer :
+
+sourceId
+telegramChannelId
+name
+username
+type
+active
+notificationsEnabled
+lastSync
+lastMessageId
+
+avec les informations nécessaires au moteur de synchronisation.
+
+==================================================
+29. REDÉMARRAGE
+==================================================
+
+Tester :
+
+1. connecter Telegram ;
+2. fermer l'application ;
+3. redémarrer ;
+4. vérifier la session ;
+5. vérifier les sources ;
+6. vérifier le catalogue ;
+7. lancer une synchronisation.
+
+Tout doit rester cohérent.
+
+==================================================
+30. CHANGEMENT DE COMPTE
+==================================================
+
+Préparer la possibilité de :
+
+Déconnecter le compte actuel
+
+puis connecter un autre compte Telegram.
+
+Les données du nouveau compte ne doivent pas être mélangées avec les références du compte précédent.
+
+==================================================
+31. DESIGN
+==================================================
+
+Respecter strictement le design AnimeBox existant.
+
+NE PAS créer une interface Telegram générique.
+
+Les écrans doivent ressembler à AnimeBox.
+
+Conserver :
+
+- thème sombre ;
+- identité violette ;
+- typographie ;
+- composants ;
+- arrondis ;
+- animations ;
+- navigation.
+
+==================================================
+32. ICÔNES — RÈGLE ABSOLUE
+==================================================
+
+NE PAS utiliser d'icônes génériques.
+
+NE PAS utiliser d'emojis comme icônes.
+
+Utiliser uniquement :
+
+- une bibliothèque d'icônes professionnelle cohérente ;
+OU
+- des SVG personnalisés.
+
+Ne jamais mélanger plusieurs styles.
+
+==================================================
+33. TESTS
+==================================================
+
+Tester :
+
+1. Connexion Telegram.
+2. Code incorrect.
+3. Code correct.
+4. Compte avec 2FA.
+5. Session restaurée.
+6. Déconnexion.
+7. Ajout d'un canal public.
+8. Ajout d'un canal privé accessible.
+9. Canal inaccessible.
+10. Lien invalide.
+11. Activation.
+12. Désactivation.
+13. Suppression.
+14. Synchronisation individuelle.
+15. Synchronisation globale.
+16. Première synchronisation.
+17. Synchronisation incrémentale.
+18. Plusieurs qualités.
+19. Doublons.
+20. Sources multiples.
+21. Session expirée.
+22. Absence Internet.
+23. Limitation Telegram.
+24. Redémarrage de l'application.
+25. Changement de compte.
+
+==================================================
+34. TEST RÉEL
+==================================================
+
+Utiliser un compte Telegram de TEST.
+
+Scénario complet :
+
+1. Lancer AnimeBox.
+2. Connecter Telegram.
+3. Vérifier la session.
+4. Ajouter un canal.
+5. Vérifier ses informations.
+6. Ajouter la source.
+7. Lancer la synchronisation.
+8. Vérifier les messages récupérés.
+9. Vérifier le classement des animés.
+10. Vérifier les saisons.
+11. Vérifier les épisodes.
+12. Vérifier le regroupement des qualités.
+13. Fermer l'application.
+14. Rouvrir.
+15. Vérifier que le compte est toujours reconnu.
+16. Vérifier que la source existe toujours.
+17. Lancer une nouvelle synchronisation.
+18. Vérifier qu'aucun doublon inutile n'est créé.
+19. Désactiver la source.
+20. Vérifier qu'elle n'est plus synchronisée.
+21. Réactiver.
+22. Synchroniser.
+23. Déconnecter le compte.
+24. Vérifier que la session locale est supprimée.
+
+==================================================
+35. PAS DE SIMULATION
+==================================================
+
+RÈGLE ABSOLUE :
+
+NE PAS simuler :
+
+- connexion Telegram ;
+- compte connecté ;
+- source ;
+- synchronisation ;
+- nouveaux épisodes ;
+- messages ;
+- statistiques.
+
+Tout doit correspondre à des données réellement obtenues.
+
+==================================================
+36. COMPATIBILITÉ GITHUB ACTIONS
+==================================================
+
+Vérifier :
+
+flutter pub get
+
+flutter analyze
+
+flutter test
+
+flutter build apk
+
+Toutes les dépendances Telegram utilisées doivent être compatibles avec la compilation Android et avec GitHub Actions.
+
+==================================================
+37. NE PAS FAIRE
+==================================================
+
+NE PAS créer :
+
+- backend ;
+- Vercel ;
+- serveur Python ;
+- proxy Telegram ;
+- stockage distant des sessions ;
+- serveur de streaming ;
+- système de contournement des restrictions Telegram.
+
+NE PAS modifier inutilement les fonctionnalités déjà terminées.
+
+NE PAS refaire l'onboarding.
+
+==================================================
+38. CRITÈRES DE RÉUSSITE
+==================================================
+
+Cette étape est terminée lorsque :
+
+✓ un utilisateur peut connecter son propre compte Telegram ;
+
+✓ la session peut être restaurée localement ;
+
+✓ le 2FA est correctement géré lorsqu'il est demandé ;
+
+✓ un canal peut être ajouté avec un lien ou username ;
+
+✓ l'accessibilité du canal est réellement vérifiée ;
+
+✓ plusieurs sources peuvent être ajoutées ;
+
+✓ une source peut être activée/désactivée ;
+
+✓ une source peut être supprimée ;
+
+✓ les sources actives peuvent être synchronisées ;
+
+✓ la synchronisation incrémentale fonctionne ;
+
+✓ les publications sont transmises au moteur de classification ;
+
+✓ les qualités sont regroupées ;
+
+✓ les doublons sont correctement gérés ;
+
+✓ les erreurs Telegram sont gérées ;
+
+✓ aucune session Telegram n'est envoyée à un serveur ;
+
+✓ aucune vidéo n'est envoyée vers un serveur ;
+
+✓ aucune restriction Telegram n'est contournée ;
+
+✓ aucune icône générique ou emoji n'est utilisée ;
+
+✓ le design existant est respecté ;
+
+✓ les tests passent ;
+
+✓ flutter analyze passe ;
+
+✓ l'APK reste compilable avec GitHub Actions.
+
+==================================================
+FIN DU PROMPT 11
+==================================================
+
+NE PAS passer automatiquement au prompt suivant.
+
+NE PAS créer de backend.
+
+NE PAS créer de système Premium.
+
+NE PAS créer de paiement.
+
+NE PAS créer de publicité.
+
+NE PAS modifier inutilement les fonctionnalités déjà terminées.
+
+À la fin, fournir un rapport clair :
+
+1. bibliothèque Telegram utilisée ;
+2. méthode d'authentification ;
+3. gestion de session ;
+4. gestion 2FA ;
+5. gestion des sources ;
+6. synchronisation ;
+7. détection incrémentale ;
+8. gestion des doublons ;
+9. sécurité ;
+10. fichiers créés/modifiés ;
+11. dépendances ajoutées ;
+12. tests effectués ;
+13. résultats ;
+14. limitations éventuelles ;
+15. prochaine étape recommandée.
+
+ATTENDS MON PROCHAIN PROMPT.

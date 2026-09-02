@@ -1,0 +1,766 @@
+PROMPT 9 — NOTIFICATIONS, SYNCHRONISATION EN ARRIÈRE-PLAN ET NOUVEAUX ÉPISODES
+
+CONTEXTE
+==================================================
+
+Tu continues le développement de l'application mobile « AnimeBox ».
+
+Les PROMPTS 1 à 8 ont déjà été exécutés.
+
+NE RECOMMENCE PAS LE PROJET.
+
+NE REFAIS PAS les écrans déjà existants.
+
+L'application est développée avec Flutter pour Android.
+
+ARCHITECTURE À RESPECTER :
+
+Téléphone
+↓
+AnimeBox
+↓
+Compte Telegram de l'utilisateur
+↓
+Canaux Telegram personnels
+↓
+Synchronisation
+↓
+Analyse locale
+↓
+Catalogue local
+↓
+Notifications
+
+IMPORTANT :
+
+AnimeBox doit rester principalement une application locale.
+
+NE PAS créer de backend Vercel.
+
+NE PAS créer de serveur Python distant.
+
+NE PAS envoyer les sessions Telegram ou les messages de l'utilisateur vers un serveur externe.
+
+==================================================
+OBJECTIF
+==================================================
+
+Permettre à AnimeBox d'informer l'utilisateur lorsqu'un nouveau contenu intéressant est détecté dans ses sources Telegram.
+
+Exemple :
+
+NOUVEL ÉPISODE
+
+Solo Leveling
+
+Saison 2 • Épisode 9
+
+1080p • VF
+
+[ Voir l'épisode ]
+
+La notification doit être déclenchée uniquement lorsqu'un véritable nouveau contenu a été détecté.
+
+NE PAS générer de fausses notifications.
+
+==================================================
+1. NOTIFICATION LOCALE
+==================================================
+
+Créer un :
+
+NotificationService
+
+Responsabilités :
+
+- demander la permission de notification ;
+- créer les canaux de notification Android nécessaires ;
+- afficher une notification ;
+- gérer les clics ;
+- ouvrir l'écran correspondant ;
+- supprimer ou mettre à jour une notification.
+
+Utiliser une solution Flutter/Android stable.
+
+==================================================
+2. PERMISSION NOTIFICATION
+==================================================
+
+Sur les versions Android qui l'exigent :
+
+demander la permission de notification au moment approprié.
+
+NE PAS demander la permission immédiatement au premier lancement avant que l'utilisateur comprenne pourquoi.
+
+Le message doit être clair.
+
+Exemple :
+
+« AnimeBox peut vous prévenir lorsqu'un nouvel épisode est détecté dans vos sources. »
+
+[ Autoriser ]
+
+[ Plus tard ]
+
+Si l'utilisateur refuse :
+
+l'application doit continuer à fonctionner normalement.
+
+==================================================
+3. CANAL DE NOTIFICATION
+==================================================
+
+Créer un canal Android approprié pour :
+
+Nouveaux épisodes
+
+Prévoir éventuellement :
+
+Téléchargements
+
+Synchronisation
+
+mais ne pas multiplier inutilement les canaux.
+
+==================================================
+4. NOUVEL ÉPISODE
+==================================================
+
+Lorsqu'une synchronisation détecte un nouvel épisode :
+
+vérifier que cet épisode n'a pas déjà été signalé.
+
+Si nouveau :
+
+→ créer une notification locale.
+
+Exemple :
+
+« Nouvel épisode disponible »
+
+Solo Leveling
+S02E09 • 1080p VF
+
+==================================================
+5. REGROUPEMENT DES QUALITÉS
+==================================================
+
+IMPORTANT.
+
+Si Telegram publie :
+
+S02E09 1080p VF
+
+puis :
+
+S02E09 720p VF
+
+puis :
+
+S02E09 480p VF
+
+AnimeBox doit éviter d'envoyer :
+
+3 notifications différentes.
+
+Le système doit regrouper les versions.
+
+Une seule notification :
+
+« Nouvel épisode disponible »
+
+Solo Leveling
+S02E09
+
+3 qualités disponibles
+
+==================================================
+6. DÉTECTION DES DOUBLONS
+==================================================
+
+Créer une logique permettant d'identifier :
+
+animeId
+seasonId
+episodeId
+
+et les versions associées.
+
+Une publication déjà analysée ne doit pas déclencher une nouvelle notification à chaque synchronisation.
+
+==================================================
+7. CLIC SUR NOTIFICATION
+==================================================
+
+Lorsque l'utilisateur touche :
+
+« Nouvel épisode disponible »
+
+ouvrir directement :
+
+AnimeBox
+↓
+Anime
+↓
+Saison
+↓
+Épisode
+
+et non simplement la page d'accueil.
+
+Si l'épisode n'est plus accessible :
+
+afficher l'état correspondant.
+
+==================================================
+8. NOTIFICATION DE TÉLÉCHARGEMENT
+==================================================
+
+Préparer le système pour afficher ultérieurement :
+
+Téléchargement en cours
+
+Solo Leveling
+68 %
+
+Mais utiliser uniquement les informations réelles provenant du DownloadManager.
+
+NE PAS créer une fausse progression.
+
+==================================================
+9. TÉLÉCHARGEMENT TERMINÉ
+==================================================
+
+Lorsque le DownloadManager confirme réellement qu'un fichier est terminé :
+
+afficher éventuellement :
+
+« Téléchargement terminé »
+
+Solo Leveling
+S02E08 • 1080p
+
+[ Lire ]
+
+Le clic doit ouvrir directement le fichier local.
+
+==================================================
+10. ÉCHEC DE TÉLÉCHARGEMENT
+==================================================
+
+Si un téléchargement échoue :
+
+afficher éventuellement :
+
+« Téléchargement interrompu »
+
+Solo Leveling
+S02E08
+
+[ Reprendre ]
+
+Ne jamais afficher « terminé » si le fichier n'est pas réellement terminé.
+
+==================================================
+11. SYNCHRONISATION EN ARRIÈRE-PLAN
+==================================================
+
+Préparer une solution Android compatible permettant à AnimeBox de lancer périodiquement une synchronisation lorsque le système l'autorise.
+
+IMPORTANT :
+
+Android contrôle fortement les tâches en arrière-plan.
+
+NE PAS prétendre qu'une application Flutter peut rester constamment active en arrière-plan.
+
+Utiliser les mécanismes Android appropriés.
+
+La synchronisation doit être :
+
+- légère ;
+- limitée ;
+- économome en batterie ;
+- annulable lorsque nécessaire.
+
+==================================================
+12. FRÉQUENCE
+==================================================
+
+Ajouter dans les paramètres :
+
+Synchronisation automatique
+
+Options :
+
+Désactivée
+
+Toutes les 15 minutes
+
+Toutes les 30 minutes
+
+Toutes les heures
+
+Toutes les 3 heures
+
+Une fois par jour
+
+IMPORTANT :
+
+Le système Android peut modifier ou retarder l'exécution réelle.
+
+L'interface doit donc présenter cela comme une fréquence souhaitée et non comme une garantie absolue.
+
+==================================================
+13. SYNCHRONISATION MANUELLE
+==================================================
+
+Le bouton :
+
+[ Synchroniser maintenant ]
+
+doit toujours rester disponible.
+
+Lorsqu'il est utilisé :
+
+récupérer les nouveaux messages ;
+
+analyser ;
+
+mettre à jour le catalogue ;
+
+mettre à jour les notifications.
+
+==================================================
+14. ÉCONOMIE DE BATTERIE
+==================================================
+
+La synchronisation en arrière-plan doit être très légère.
+
+NE PAS :
+
+- télécharger les vidéos ;
+- analyser des milliers de messages à chaque exécution ;
+- maintenir une connexion permanente inutilement ;
+- réveiller constamment le téléphone.
+
+Utiliser la synchronisation incrémentale déjà développée.
+
+==================================================
+15. DONNÉES MOBILES
+==================================================
+
+La synchronisation automatique ne doit récupérer que les informations nécessaires.
+
+NE PAS télécharger automatiquement les vidéos.
+
+Les vidéos doivent être téléchargées uniquement lorsqu'une action utilisateur le demande, sauf si une future fonctionnalité spécifique est ajoutée.
+
+==================================================
+16. SOURCES ACTIVES
+==================================================
+
+Seules les sources activées doivent être synchronisées.
+
+Exemple :
+
+Mes sources
+
+✓ Anime Channel A
+✓ Anime Channel B
+○ Anime Channel C — désactivé
+
+La source désactivée ne doit pas être synchronisée.
+
+==================================================
+17. PARAMÈTRES PAR SOURCE
+==================================================
+
+Préparer des paramètres pour chaque source :
+
+Synchronisation
+ON / OFF
+
+Notifications
+ON / OFF
+
+Téléchargement automatique
+OFF par défaut
+
+Qualité préférée
+hérite des paramètres globaux
+
+IMPORTANT :
+
+Le téléchargement automatique ne doit PAS être activé par défaut.
+
+==================================================
+18. NOTIFICATIONS PAR ANIME
+==================================================
+
+Préparer la possibilité de désactiver les notifications pour un anime précis.
+
+Exemple :
+
+Solo Leveling
+
+Notifications :
+ON
+
+Jujutsu Kaisen
+
+Notifications :
+OFF
+
+Cela ne doit pas supprimer l'anime du catalogue.
+
+==================================================
+19. MODE SILENCIEUX
+==================================================
+
+Ajouter éventuellement :
+
+Notifications silencieuses
+
+Lorsque cette option est activée :
+
+les notifications sont toujours créées mais sans son/vibration lorsque le système Android le permet.
+
+Ne pas contourner les réglages système de l'utilisateur.
+
+==================================================
+20. HEURES SILENCIEUSES
+==================================================
+
+Préparer une option :
+
+Heures silencieuses
+
+Exemple :
+
+23:00 → 07:00
+
+Pendant cette période :
+
+ne pas générer de notification sonore lorsque cela est contrôlable.
+
+Les nouveaux épisodes peuvent néanmoins être enregistrés localement.
+
+==================================================
+21. RÉSUMÉ DE SYNCHRONISATION
+==================================================
+
+Après une synchronisation manuelle :
+
+afficher :
+
+Synchronisation terminée
+
+Sources analysées : 4
+
+Nouveaux messages : 23
+
+Nouveaux épisodes : 5
+
+Nouvelles qualités : 8
+
+Erreurs : 0
+
+Les valeurs doivent être réelles.
+
+==================================================
+22. ÉTAT DE SYNCHRONISATION
+==================================================
+
+Afficher dans l'application :
+
+Dernière synchronisation :
+
+Il y a 12 minutes
+
+ou :
+
+Synchronisation en cours...
+
+ou :
+
+Dernière synchronisation échouée
+
+==================================================
+23. HORS LIGNE
+==================================================
+
+Si Internet n'est pas disponible :
+
+ne pas supprimer les données locales.
+
+Afficher :
+
+« Connexion Internet indisponible »
+
+Le catalogue local reste accessible.
+
+Les notifications de nouveaux épisodes attendent la prochaine synchronisation réussie.
+
+==================================================
+24. SESSION TELEGRAM EXPIRÉE
+==================================================
+
+Si la session Telegram n'est plus valide :
+
+ne pas essayer de synchroniser indéfiniment.
+
+Afficher :
+
+« Votre session Telegram doit être reconnectée. »
+
+Action :
+
+[ Reconnecter Telegram ]
+
+==================================================
+25. ERREURS DE SYNCHRONISATION
+==================================================
+
+Gérer :
+
+- absence Internet ;
+- timeout ;
+- session expirée ;
+- canal inaccessible ;
+- canal supprimé ;
+- limitation Telegram ;
+- erreur de base locale ;
+- synchronisation interrompue.
+
+Les erreurs doivent être compréhensibles.
+
+==================================================
+26. BATTERIE ET ANDROID
+==================================================
+
+Respecter les contraintes Android modernes.
+
+NE PAS utiliser une boucle infinie en arrière-plan.
+
+NE PAS maintenir un service permanent uniquement pour vérifier Telegram.
+
+Utiliser les mécanismes appropriés de tâches planifiées lorsque possible.
+
+==================================================
+27. DESIGN DES NOTIFICATIONS
+==================================================
+
+Les notifications doivent être cohérentes avec AnimeBox.
+
+Utiliser :
+
+Titre
+Sous-titre
+Informations utiles
+Icône de notification adaptée
+
+NE PAS utiliser d'emojis comme icônes.
+
+==================================================
+28. ICÔNES — RÈGLE ABSOLUE
+==================================================
+
+NE PAS utiliser d'icônes génériques.
+
+NE PAS utiliser d'emojis comme icônes de l'application.
+
+Utiliser uniquement :
+
+- une bibliothèque d'icônes professionnelle cohérente ;
+OU
+- des SVG personnalisés.
+
+Ne pas mélanger plusieurs styles d'icônes.
+
+==================================================
+29. SÉCURITÉ
+==================================================
+
+NE JAMAIS envoyer :
+
+- session Telegram ;
+- messages Telegram ;
+- fichiers ;
+- données personnelles ;
+
+vers un serveur externe.
+
+Les notifications doivent être générées localement.
+
+==================================================
+30. TESTS
+==================================================
+
+Tester :
+
+1. Permission notification.
+2. Notification nouvel épisode.
+3. Détection des doublons.
+4. Regroupement des qualités.
+5. Clic sur notification.
+6. Ouverture du bon épisode.
+7. Notification téléchargement terminé.
+8. Notification téléchargement échoué.
+9. Synchronisation manuelle.
+10. Synchronisation automatique.
+11. Source désactivée.
+12. Notifications désactivées pour une source.
+13. Notifications désactivées pour un anime.
+14. Session Telegram expirée.
+15. Absence Internet.
+16. Reprise après reconnexion.
+17. Fonctionnement hors ligne.
+18. Redémarrage du téléphone.
+19. Redémarrage de l'application.
+20. Respect des heures silencieuses.
+
+==================================================
+31. TEST RÉEL
+==================================================
+
+Avec un compte Telegram de TEST :
+
+1. Ajouter une source.
+2. Synchroniser.
+3. Activer les notifications.
+4. Ajouter ou détecter un nouvel épisode de test.
+5. Vérifier la détection.
+6. Vérifier qu'une seule notification est envoyée malgré plusieurs qualités.
+7. Appuyer sur la notification.
+8. Vérifier l'ouverture du bon épisode.
+9. Fermer l'application.
+10. Laisser Android effectuer une tâche en arrière-plan lorsque possible.
+11. Vérifier la prochaine synchronisation.
+12. Couper Internet.
+13. Vérifier le comportement.
+14. Rétablir Internet.
+15. Vérifier la synchronisation suivante.
+
+==================================================
+32. PAS DE FAUSSE SYNCHRONISATION
+==================================================
+
+NE PAS simuler une synchronisation.
+
+NE PAS afficher :
+
+« Synchronisation terminée »
+
+si aucune synchronisation réelle n'a eu lieu.
+
+NE PAS afficher de faux nouveaux épisodes.
+
+NE PAS générer de fausses notifications.
+
+==================================================
+33. COMPATIBILITÉ GITHUB ACTIONS
+==================================================
+
+Le projet doit rester compilable avec :
+
+flutter pub get
+
+flutter analyze
+
+flutter test
+
+flutter build apk
+
+Toutes les dépendances ajoutées doivent être compatibles avec Android et avec une future compilation GitHub Actions.
+
+==================================================
+34. NE PAS FAIRE
+==================================================
+
+NE PAS créer :
+
+- backend Vercel ;
+- serveur Python ;
+- serveur de notification ;
+- proxy Telegram ;
+- serveur de streaming ;
+- système de contournement Telegram.
+
+NE PAS commencer :
+
+- système Premium ;
+- paiement ;
+- publicité ;
+- recommandations IA ;
+- partage public.
+
+==================================================
+35. CRITÈRES DE RÉUSSITE
+==================================================
+
+Cette étape est terminée lorsque :
+
+✓ les notifications locales fonctionnent ;
+
+✓ les nouveaux épisodes peuvent déclencher une notification ;
+
+✓ les doublons sont correctement évités ;
+
+✓ plusieurs qualités d'un même épisode ne génèrent pas plusieurs notifications inutiles ;
+
+✓ le clic ouvre le bon épisode ;
+
+✓ le DownloadManager peut communiquer avec le système de notification ;
+
+✓ la synchronisation automatique est préparée ou fonctionne avec les mécanismes Android appropriés ;
+
+✓ la synchronisation manuelle fonctionne ;
+
+✓ les sources désactivées ne sont pas synchronisées ;
+
+✓ les préférences de notification fonctionnent ;
+
+✓ les erreurs sont correctement gérées ;
+
+✓ le catalogue reste disponible hors ligne ;
+
+✓ aucune donnée Telegram n'est envoyée à un serveur externe ;
+
+✓ aucune icône générique ou emoji n'est utilisée ;
+
+✓ le design existant est respecté ;
+
+✓ flutter analyze passe ;
+
+✓ les tests passent ;
+
+✓ l'APK reste compilable.
+
+==================================================
+FIN
+==================================================
+
+NE PAS passer automatiquement au prompt suivant.
+
+NE PAS commencer le système Premium.
+
+NE PAS créer GitHub Actions maintenant.
+
+NE PAS modifier inutilement les fonctionnalités déjà terminées.
+
+À la fin, fournir un rapport clair :
+
+1. solution de notification utilisée ;
+2. solution de tâche en arrière-plan utilisée ;
+3. fonctionnement de la synchronisation automatique ;
+4. fonctionnement de la synchronisation manuelle ;
+5. gestion des doublons ;
+6. gestion des notifications ;
+7. fichiers créés/modifiés ;
+8. dépendances ajoutées ;
+9. tests effectués ;
+10. résultats ;
+11. limitations Android éventuelles ;
+12. prochaine étape recommandée.
+
+ATTENDS MON PROCHAIN PROMPT.

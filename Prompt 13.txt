@@ -1,0 +1,261 @@
+PROMPT 13 — IMPLÉMENTATION DE L’ONBOARDING ANIMEBOX
+
+L’onboarding d’AnimeBox n’est pas encore implémenté.
+
+Tu dois maintenant créer et intégrer l’onboarding complet de l’application en respectant STRICTEMENT l’identité visuelle déjà présente dans le projet et les maquettes existantes.
+
+IMPORTANT :
+- Ne modifie pas inutilement les écrans déjà terminés.
+- Ne refais pas le design général de l’application.
+- Ne crée pas une interface générique de type application de streaming.
+- N’utilise AUCUNE donnée fictive.
+- Aucun backend.
+- Aucun serveur Vercel.
+- Aucun serveur Python.
+- Tout doit fonctionner localement sur Android.
+- NE PAS utiliser d’emoji comme icônes.
+- NE PAS utiliser des icônes génériques incohérentes avec le reste de l’application.
+- Utiliser la même bibliothèque d’icônes professionnelle déjà utilisée dans le projet ou des SVG cohérents avec le design existant.
+
+════════════════════════════════════
+1. STRUCTURE DE L’ONBOARDING
+════════════════════════════════════
+
+L’onboarding doit contenir EXACTEMENT 3 écrans.
+
+ÉCRAN 1
+Titre :
+« Bienvenue sur AnimeBox »
+
+Présenter clairement AnimeBox et son objectif :
+permettre à l’utilisateur de retrouver et organiser ses animés provenant de ses propres sources Telegram.
+
+ÉCRAN 2
+Titre :
+« Tous vos animés au même endroit »
+
+Présenter le fonctionnement général :
+AnimeBox analyse les sources Telegram configurées par l’utilisateur et organise automatiquement les contenus en animés, saisons et épisodes.
+
+ÉCRAN 3
+Titre :
+« Sécurisé & 100 % privé »
+
+Expliquer simplement que :
+- le compte Telegram appartient à l’utilisateur ;
+- ses sources lui appartiennent ;
+- les données de l’application sont conservées localement autant que possible ;
+- AnimeBox ne nécessite pas de serveur central pour fonctionner.
+
+Le troisième écran doit obligatoirement contenir le bouton :
+
+« Commencer »
+
+════════════════════════════════════
+2. NAVIGATION
+════════════════════════════════════
+
+Écran 1 :
+bouton « Suivant »
+
+Écran 2 :
+bouton « Suivant »
+
+Écran 3 :
+bouton principal « Commencer »
+
+Ajouter un indicateur de progression permettant de voir clairement qu’il y a 3 étapes.
+
+La navigation doit être fluide.
+
+Utiliser des animations légères et professionnelles :
+- transitions entre les pages ;
+- apparition douce du contenu ;
+- animation discrète des éléments visuels si cela correspond aux maquettes.
+
+Éviter les animations excessives.
+
+════════════════════════════════════
+3. DESIGN
+════════════════════════════════════
+
+Respecter EXACTEMENT autant que possible le langage visuel déjà utilisé dans AnimeBox :
+
+- thème sombre ;
+- accents violets déjà présents ;
+- typographie existante ;
+- rayons des éléments déjà utilisés ;
+- espacements cohérents ;
+- animations existantes ;
+- style des boutons existants ;
+- iconographie existante.
+
+L’onboarding doit donner l’impression d’avoir été conçu en même temps que le reste de l’application.
+
+NE PAS introduire :
+- cartes génériques ;
+- gradients excessifs ;
+- glassmorphism ;
+- interface Android par défaut ;
+- composants Material génériques qui cassent le design ;
+- illustrations IA génériques sans cohérence avec AnimeBox.
+
+Si les maquettes/images de l’onboarding sont déjà présentes dans le projet, elles sont PRIORITAIRES :
+reproduis leur composition, leurs proportions, leurs textes, leurs positions et leur hiérarchie visuelle le plus fidèlement possible.
+
+════════════════════════════════════
+4. PREMIER LANCEMENT
+════════════════════════════════════
+
+L’onboarding doit apparaître uniquement lors de la première ouverture de l’application.
+
+Créer une préférence locale permettant de mémoriser que l’utilisateur a terminé l’onboarding.
+
+Exemple logique :
+
+firstLaunch = true
+→ afficher onboarding
+
+Utilisateur appuie sur « Commencer »
+→ enregistrer onboardingCompleted = true
+→ ouvrir le parcours normal de connexion/configuration Telegram.
+
+Lors des ouvertures suivantes :
+
+onboardingCompleted = true
+→ ne plus afficher l’onboarding
+→ ouvrir directement l’application.
+
+Cette préférence doit rester conservée après fermeture et redémarrage de l’application.
+
+════════════════════════════════════
+5. BOUTON « COMMENCER »
+════════════════════════════════════
+
+Le bouton « Commencer » ne doit PAS simplement fermer l’onboarding.
+
+Il doit réellement lancer le parcours prévu dans l’application.
+
+Après avoir terminé l’onboarding :
+
+→ rediriger vers l’écran de connexion/configuration Telegram approprié déjà implémenté.
+
+Ne crée pas un nouvel écran Telegram si un écran fonctionnel existe déjà.
+
+Réutilise le flow Telegram existant.
+
+Si un compte Telegram est déjà configuré, respecter la logique existante de l’application et ne pas forcer inutilement une nouvelle connexion.
+
+════════════════════════════════════
+6. RESPONSIVE
+════════════════════════════════════
+
+L’onboarding doit fonctionner correctement sur les différents formats d’écrans Android.
+
+Vérifier notamment :
+- petits écrans ;
+- grands écrans ;
+- différentes résolutions ;
+- différentes densités ;
+- mode portrait.
+
+Aucun texte ne doit être coupé.
+
+Aucun bouton ne doit sortir de l’écran.
+
+Aucun élément ne doit être masqué par la barre système Android.
+
+Gérer correctement les Safe Areas.
+
+════════════════════════════════════
+7. ARCHITECTURE
+════════════════════════════════════
+
+Respecter l’architecture Flutter déjà présente dans le projet.
+
+Créer des composants propres et réutilisables.
+
+Éviter de mettre toute la logique dans un seul fichier.
+
+La logique de persistance de l’état de l’onboarding doit être séparée de l’UI si l’architecture actuelle le permet.
+
+Réutiliser les services/preferences déjà présents dans le projet plutôt que créer une deuxième solution de stockage inutile.
+
+════════════════════════════════════
+8. VÉRIFICATION DU PROJET
+════════════════════════════════════
+
+Avant de considérer cette tâche comme terminée :
+
+1. Vérifie les routes/navigation.
+2. Vérifie que l’onboarding apparaît au premier lancement.
+3. Vérifie que « Suivant » fonctionne.
+4. Vérifie que les 3 pages sont accessibles.
+5. Vérifie que « Commencer » fonctionne réellement.
+6. Vérifie que l’état est sauvegardé.
+7. Ferme complètement l’application.
+8. Relance-la.
+9. Vérifie que l’onboarding ne réapparaît pas après sa validation.
+10. Vérifie le comportement lorsqu’aucun compte Telegram n’est configuré.
+11. Vérifie le comportement lorsqu’un compte Telegram existe déjà.
+12. Vérifie les animations.
+13. Vérifie les petits écrans Android.
+14. Vérifie qu’aucun overflow Flutter n’existe.
+15. Vérifie qu’aucune icône générique ou emoji n’a été introduit.
+
+════════════════════════════════════
+9. TESTS
+════════════════════════════════════
+
+Ajouter ou mettre à jour les tests nécessaires pour vérifier :
+
+- affichage initial de l’onboarding ;
+- navigation entre les pages ;
+- sauvegarde de onboardingCompleted ;
+- disparition de l’onboarding après validation ;
+- navigation vers le flow Telegram ;
+- comportement après redémarrage.
+
+Puis exécuter :
+
+flutter analyze
+flutter test
+
+Corriger toutes les erreurs et warnings réellement liés à ton travail.
+
+════════════════════════════════════
+10. BUILD FINAL
+════════════════════════════════════
+
+Une fois l’onboarding terminé et vérifié :
+
+- vérifier que le projet compile ;
+- vérifier les dépendances ;
+- vérifier les imports ;
+- vérifier les routes ;
+- vérifier qu’aucune fonctionnalité existante n’a été cassée.
+
+Si tout est propre, préparer le projet pour le workflow GitHub Actions déjà utilisé pour générer l’APK.
+
+NE CHANGE PAS arbitrairement la configuration du projet.
+
+════════════════════════════════════
+RÈGLE ABSOLUE
+════════════════════════════════════
+
+Tu dois travailler sur l’ONBOARDING uniquement.
+
+Ne profite pas de cette tâche pour refaire les écrans existants ou changer l’architecture fonctionnelle de l’application.
+
+L’objectif est d’ajouter un onboarding professionnel de 3 écrans, parfaitement intégré au design actuel d’AnimeBox et connecté au véritable parcours de l’application.
+
+À la fin, fournis un rapport précis :
+- fichiers créés/modifiés ;
+- fonctionnalités ajoutées ;
+- méthode utilisée pour sauvegarder l’état ;
+- tests effectués ;
+- résultat de flutter analyze ;
+- résultat de flutter test ;
+- état du build.
+
+Ne prétends pas qu’une fonctionnalité fonctionne si elle n’a pas réellement été implémentée et vérifiée.

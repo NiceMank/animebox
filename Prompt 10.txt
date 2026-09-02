@@ -1,0 +1,796 @@
+PROMPT 10 — BIBLIOTHÈQUE, RECHERCHE, FILTRES, FAVORIS ET HISTORIQUE
+
+CONTEXTE
+==================================================
+
+Tu continues le développement de l'application mobile « AnimeBox ».
+
+Les PROMPTS 1 à 9 ont déjà été exécutés.
+
+NE RECOMMENCE PAS LE PROJET.
+
+NE REFAIS PAS les écrans déjà conçus.
+
+Le design actuel doit rester la référence visuelle.
+
+L'application est Flutter / Android et fonctionne principalement localement.
+
+Les données du catalogue proviennent des sources Telegram de l'utilisateur et sont stockées localement.
+
+==================================================
+OBJECTIF
+==================================================
+
+Transformer le catalogue détecté par AnimeBox en une véritable bibliothèque personnelle.
+
+L'utilisateur doit pouvoir :
+
+- parcourir ses animés ;
+- rechercher un anime ;
+- filtrer ;
+- trier ;
+- ajouter aux favoris ;
+- consulter son historique ;
+- reprendre un épisode ;
+- voir les épisodes récemment ajoutés ;
+- voir les épisodes téléchargés ;
+- retrouver facilement ses séries.
+
+Tout doit utiliser les données réellement présentes dans la base locale.
+
+NE PAS utiliser de données fictives dans l'application finale.
+
+==================================================
+1. BIBLIOTHÈQUE
+==================================================
+
+L'écran Bibliothèque doit afficher les animés réellement détectés.
+
+Chaque anime peut afficher :
+
+- affiche ;
+- titre ;
+- titre alternatif si disponible ;
+- nombre de saisons ;
+- nombre d'épisodes détectés ;
+- progression de visionnage si disponible ;
+- statut favori.
+
+L'interface doit rester cohérente avec le design AnimeBox existant.
+
+==================================================
+2. TRI
+==================================================
+
+Ajouter plusieurs options de tri :
+
+- récemment ajouté ;
+- récemment mis à jour ;
+- titre A → Z ;
+- titre Z → A ;
+- progression ;
+- favoris.
+
+Le tri doit être effectué localement.
+
+==================================================
+3. RECHERCHE
+==================================================
+
+Créer une recherche rapide dans le catalogue.
+
+Exemple :
+
+Utilisateur saisit :
+
+solo
+
+Résultat :
+
+Solo Leveling
+
+La recherche doit fonctionner sur :
+
+- titre principal ;
+- titres alternatifs ;
+- éventuellement titre original lorsqu'il est disponible.
+
+La recherche doit être tolérante aux majuscules/minuscules.
+
+==================================================
+4. RECHERCHE RAPIDE
+==================================================
+
+La recherche doit fournir les résultats pendant la saisie lorsque les performances le permettent.
+
+NE PAS déclencher une synchronisation Telegram à chaque caractère.
+
+La recherche concerne d'abord le catalogue LOCAL.
+
+==================================================
+5. ÉTAT VIDE
+==================================================
+
+Si aucun anime n'est encore disponible :
+
+afficher une interface élégante :
+
+« Votre bibliothèque est encore vide »
+
+Puis expliquer :
+
+« Synchronisez vos sources Telegram pour faire apparaître vos animés. »
+
+Action :
+
+[ Ajouter une source ]
+
+NE PAS afficher de faux animés.
+
+==================================================
+6. FILTRES
+==================================================
+
+Prévoir un panneau de filtres.
+
+Filtres possibles :
+
+- Toutes les séries ;
+- Favoris ;
+- En cours ;
+- Terminées ;
+- Non commencées ;
+- Téléchargées ;
+- Nouveautés.
+
+Les filtres doivent pouvoir être combinés lorsque cela est pertinent.
+
+==================================================
+7. FAVORIS
+==================================================
+
+Permettre :
+
+Ajouter aux favoris
+
+Retirer des favoris.
+
+Le statut doit être enregistré localement.
+
+Les favoris doivent rester disponibles hors connexion.
+
+==================================================
+8. FAVORIS — ÉCRAN
+==================================================
+
+Prévoir une section :
+
+MES FAVORIS
+
+Elle doit afficher uniquement les animés réellement marqués comme favoris.
+
+Si aucun favori :
+
+« Aucun favori pour le moment. »
+
+Action :
+
+[ Explorer ma bibliothèque ]
+
+==================================================
+9. CONTINUER À REGARDER
+==================================================
+
+Utiliser les données du lecteur.
+
+Afficher les épisodes réellement commencés mais non terminés.
+
+Exemple :
+
+CONTINUER À REGARDER
+
+Solo Leveling
+S02E08
+
+73 %
+
+[ Continuer ]
+
+Le clic doit reprendre la lecture à la dernière position enregistrée.
+
+==================================================
+10. PROGRESSION
+==================================================
+
+Pour chaque épisode :
+
+conserver localement :
+
+- position ;
+- durée ;
+- pourcentage ;
+- dernière date de lecture ;
+- statut terminé.
+
+Une barre de progression doit représenter une progression réelle.
+
+NE PAS générer de progression fictive.
+
+==================================================
+11. ÉPISODE TERMINÉ
+==================================================
+
+Lorsqu'un épisode est terminé :
+
+le marquer comme terminé.
+
+L'utilisateur doit pouvoir :
+
+- le relire ;
+- recommencer depuis le début.
+
+Ne pas supprimer l'épisode de l'historique.
+
+==================================================
+12. HISTORIQUE
+==================================================
+
+Créer une section :
+
+HISTORIQUE
+
+Afficher les derniers épisodes réellement consultés.
+
+Exemple :
+
+Aujourd'hui
+
+Solo Leveling
+S02E08
+
+Hier
+
+Jujutsu Kaisen
+S03E04
+
+L'historique doit être local.
+
+==================================================
+13. NETTOYER L'HISTORIQUE
+==================================================
+
+Ajouter une option :
+
+Effacer l'historique
+
+Demander confirmation.
+
+La suppression de l'historique ne doit PAS :
+
+- supprimer les épisodes ;
+- supprimer les téléchargements ;
+- supprimer les favoris ;
+- supprimer les sources Telegram.
+
+==================================================
+14. TÉLÉCHARGÉS
+==================================================
+
+Créer un filtre ou une section :
+
+TÉLÉCHARGÉS
+
+Afficher les épisodes réellement présents sur l'appareil.
+
+Exemple :
+
+Solo Leveling
+S02E08
+1080p • VF
+✓ Disponible hors connexion
+
+Le clic doit ouvrir directement le fichier local.
+
+==================================================
+15. NOUVEAUTÉS
+==================================================
+
+Créer une section :
+
+NOUVEAUX ÉPISODES
+
+Afficher les épisodes détectés récemment lors des synchronisations.
+
+Utiliser la date réelle de détection.
+
+NE PAS considérer plusieurs qualités d'un même épisode comme plusieurs nouveaux épisodes.
+
+==================================================
+16. DÉTAIL D'UN ANIME
+==================================================
+
+Lorsqu'un utilisateur ouvre un anime :
+
+afficher :
+
+- affiche ;
+- titre ;
+- informations disponibles ;
+- saisons ;
+- épisodes ;
+- progression ;
+- favoris.
+
+Exemple :
+
+SOLO LEVELING
+
+Saison 1
+Saison 2
+
+Saison 2 :
+
+Épisode 1
+Épisode 2
+...
+Épisode 8
+Épisode 9
+
+==================================================
+17. SAISONS
+==================================================
+
+Si plusieurs saisons sont détectées :
+
+les regrouper correctement.
+
+Exemple :
+
+Saison 1
+12 épisodes
+
+Saison 2
+13 épisodes
+
+Ne pas mélanger :
+
+S01E08
+
+avec :
+
+S02E08.
+
+==================================================
+18. ÉPISODES
+==================================================
+
+Chaque épisode doit afficher autant que possible :
+
+Numéro
+
+Titre
+
+Date détectée
+
+Versions disponibles
+
+Qualité
+
+Langue
+
+Statut :
+
+Non commencé
+
+En cours
+
+Terminé
+
+Téléchargé
+
+==================================================
+19. DOUBLONS
+==================================================
+
+Le catalogue doit continuer à appliquer le regroupement intelligent.
+
+Exemple :
+
+S02E08 1080p
+
+S02E08 720p
+
+S02E08 480p
+
+Résultat :
+
+Épisode 8
+
+Versions :
+
+1080p
+720p
+480p
+
+NE PAS créer trois épisodes différents.
+
+==================================================
+20. ÉPISODES MANQUANTS
+==================================================
+
+Si :
+
+E01
+E02
+E04
+
+sont disponibles mais E03 ne l'est pas :
+
+ne pas inventer E03.
+
+Afficher éventuellement :
+
+Épisode 3
+Non disponible
+
+uniquement si le moteur peut déterminer de manière fiable qu'il devrait exister.
+
+Sinon, ne rien inventer.
+
+==================================================
+21. RECHERCHE DANS UN ANIME
+==================================================
+
+Sur la fiche d'un anime comportant beaucoup d'épisodes :
+
+permettre éventuellement de rechercher :
+
+Épisode 12
+
+ou :
+
+12
+
+La recherche doit rester locale.
+
+==================================================
+22. FILTRE PAR QUALITÉ
+==================================================
+
+Lorsque plusieurs versions existent :
+
+permettre éventuellement de filtrer :
+
+2160p
+1080p
+720p
+480p
+
+Ne jamais afficher une qualité qui n'existe pas réellement.
+
+==================================================
+23. FILTRE PAR LANGUE
+==================================================
+
+Permettre éventuellement :
+
+VF
+VOSTFR
+VO
+
+uniquement si ces informations sont réellement disponibles.
+
+==================================================
+24. SOURCES
+==================================================
+
+Si un anime provient de plusieurs canaux :
+
+ne pas créer plusieurs fiches pour le même anime uniquement parce que les sources sont différentes.
+
+Regrouper les données lorsque le moteur d'identification peut déterminer qu'il s'agit du même anime.
+
+Conserver néanmoins la référence de chaque publication/source.
+
+==================================================
+25. MISE À JOUR
+==================================================
+
+Lorsqu'une nouvelle qualité est détectée pour un épisode existant :
+
+ne pas créer un nouvel épisode.
+
+Mettre à jour l'épisode existant.
+
+Exemple :
+
+Épisode 8
+
+Avant :
+
+720p
+
+Après synchronisation :
+
+720p
+1080p
+
+==================================================
+26. PERFORMANCE
+==================================================
+
+La bibliothèque doit rester fluide avec plusieurs centaines d'animés et plusieurs milliers d'épisodes.
+
+Éviter de charger inutilement toutes les données dans la mémoire.
+
+Utiliser des requêtes locales efficaces.
+
+La recherche et les filtres doivent être rapides.
+
+==================================================
+27. PERSISTANCE
+==================================================
+
+Les données suivantes doivent survivre au redémarrage :
+
+- favoris ;
+- historique ;
+- progression ;
+- épisodes ;
+- saisons ;
+- téléchargements ;
+- sources ;
+- préférences de tri/filtre si souhaité.
+
+==================================================
+28. HORS CONNEXION
+==================================================
+
+Lorsque l'utilisateur est hors ligne :
+
+la bibliothèque doit rester consultable.
+
+Il doit pouvoir :
+
+- rechercher ;
+- filtrer ;
+- consulter les fiches ;
+- consulter les favoris ;
+- consulter l'historique ;
+- lire les vidéos déjà téléchargées.
+
+Les fonctionnalités nécessitant Telegram doivent simplement indiquer qu'une connexion est nécessaire.
+
+==================================================
+29. DESIGN
+==================================================
+
+Respecter exactement l'identité visuelle AnimeBox existante.
+
+NE PAS transformer l'application en interface générique de streaming.
+
+Conserver :
+
+- thème sombre ;
+- identité violette ;
+- arrondis ;
+- typographie actuelle ;
+- animations sobres ;
+- navigation existante ;
+- hiérarchie visuelle actuelle.
+
+==================================================
+30. ICÔNES — RÈGLE ABSOLUE
+==================================================
+
+NE PAS utiliser d'icônes génériques.
+
+NE PAS utiliser d'emojis comme icônes.
+
+NE PAS utiliser :
+
+❤️
+⭐
+🔍
+⚙️
+⬇️
+etc.
+
+Utiliser uniquement une famille d'icônes professionnelle cohérente ou des SVG personnalisés.
+
+Les icônes doivent conserver le même style dans toute l'application.
+
+==================================================
+31. ACCESSIBILITÉ
+==================================================
+
+Les textes importants doivent rester lisibles.
+
+Les boutons doivent avoir une zone tactile suffisamment grande.
+
+Les informations ne doivent pas dépendre uniquement de la couleur.
+
+Les contrastes doivent rester corrects dans le thème sombre.
+
+==================================================
+32. TESTS
+==================================================
+
+Tester :
+
+1. Affichage de la bibliothèque.
+2. Recherche.
+3. Recherche sans résultat.
+4. Tri A-Z.
+5. Tri Z-A.
+6. Tri par date.
+7. Favoris.
+8. Retrait d'un favori.
+9. Filtre favoris.
+10. Filtre téléchargés.
+11. Filtre en cours.
+12. Filtre terminés.
+13. Historique.
+14. Suppression de l'historique.
+15. Progression.
+16. Reprise d'un épisode.
+17. Épisode terminé.
+18. Plusieurs saisons.
+19. Plusieurs qualités.
+20. Ajout d'une nouvelle qualité.
+21. Doublons.
+22. Mode hors connexion.
+23. Redémarrage de l'application.
+24. Plusieurs sources.
+
+==================================================
+33. TEST RÉEL
+==================================================
+
+Utiliser les données réellement récupérées par Telegram.
+
+Scénario :
+
+1. Synchroniser une source.
+2. Détecter plusieurs animés.
+3. Vérifier leur apparition dans Bibliothèque.
+4. Rechercher un anime.
+5. Ouvrir sa fiche.
+6. Sélectionner une saison.
+7. Ouvrir un épisode.
+8. Vérifier les qualités.
+9. Ajouter l'anime aux favoris.
+10. Lire un épisode.
+11. Quitter à mi-parcours.
+12. Vérifier « Continuer à regarder ».
+13. Reprendre.
+14. Terminer l'épisode.
+15. Vérifier l'historique.
+16. Télécharger un épisode.
+17. Vérifier le filtre Téléchargés.
+18. Couper Internet.
+19. Vérifier que la bibliothèque reste accessible.
+20. Lire le fichier téléchargé hors connexion.
+
+==================================================
+34. PAS DE DONNÉES FICTIVES
+==================================================
+
+IMPORTANT.
+
+Supprimer les données de démonstration utilisées uniquement pour concevoir l'interface si elles sont encore présentes.
+
+L'application finale doit utiliser les données réelles.
+
+NE PAS ajouter automatiquement :
+
+Naruto
+One Piece
+Solo Leveling
+Jujutsu Kaisen
+ou d'autres animés
+
+si ces données ne proviennent pas réellement des sources de l'utilisateur.
+
+==================================================
+35. COMPATIBILITÉ
+==================================================
+
+Vérifier :
+
+flutter pub get
+
+flutter analyze
+
+flutter test
+
+flutter build apk
+
+Corriger les erreurs avant de terminer.
+
+Le projet doit rester compatible avec GitHub Actions.
+
+==================================================
+36. NE PAS FAIRE
+==================================================
+
+NE PAS créer :
+
+- backend ;
+- API externe ;
+- serveur Python ;
+- recommandations IA ;
+- système Premium ;
+- paiement ;
+- publicité.
+
+Ne pas modifier l'architecture Telegram déjà fonctionnelle.
+
+Ne pas refaire l'onboarding.
+
+==================================================
+37. CRITÈRES DE RÉUSSITE
+==================================================
+
+Cette étape est terminée lorsque :
+
+✓ la bibliothèque utilise les données réelles ;
+
+✓ la recherche fonctionne ;
+
+✓ les filtres fonctionnent ;
+
+✓ le tri fonctionne ;
+
+✓ les favoris fonctionnent ;
+
+✓ l'historique fonctionne ;
+
+✓ « Continuer à regarder » fonctionne ;
+
+✓ les progressions sont réelles ;
+
+✓ les téléchargements apparaissent correctement ;
+
+✓ les saisons sont correctement séparées ;
+
+✓ les épisodes sont correctement regroupés ;
+
+✓ les qualités sont correctement regroupées ;
+
+✓ les doublons sont évités ;
+
+✓ le catalogue reste disponible hors connexion ;
+
+✓ les données persistent après redémarrage ;
+
+✓ aucune donnée fictive n'est utilisée ;
+
+✓ aucune icône générique ou emoji n'est utilisée ;
+
+✓ le design existant est respecté ;
+
+✓ les tests passent ;
+
+✓ l'application reste compilable avec GitHub Actions.
+
+==================================================
+FIN DU PROMPT 10
+==================================================
+
+NE PAS passer automatiquement au prompt suivant.
+
+NE PAS créer de nouvelles fonctionnalités non demandées.
+
+À la fin, fournir :
+
+1. fonctionnalités implémentées ;
+2. fichiers créés/modifiés ;
+3. base de données modifiée ;
+4. performances observées ;
+5. tests effectués ;
+6. résultats ;
+7. problèmes éventuels ;
+8. prochaine étape recommandée.
+
+ATTENDS MON PROCHAIN PROMPT.

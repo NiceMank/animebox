@@ -1,0 +1,961 @@
+PROMPT 12 — PARAMÈTRES, STOCKAGE, PRÉFÉRENCES ET FINALISATION UTILISATEUR
+
+CONTEXTE
+==================================================
+
+Tu continues le développement de l'application mobile « AnimeBox ».
+
+Les PROMPTS 1 à 11 ont déjà été exécutés.
+
+NE RECOMMENCE PAS LE PROJET.
+
+NE REFAIS PAS les écrans déjà conçus.
+
+NE CHANGE PAS l'identité visuelle actuelle.
+
+Cette étape est consacrée à la finalisation de l'expérience utilisateur et à la gestion des paramètres de l'application.
+
+AnimeBox est une application Flutter Android fonctionnant principalement localement.
+
+==================================================
+OBJECTIF
+==================================================
+
+Créer une section Paramètres complète permettant à l'utilisateur de contrôler :
+
+- son compte Telegram ;
+- ses préférences ;
+- les notifications ;
+- la synchronisation ;
+- les téléchargements ;
+- la qualité préférée ;
+- la langue ;
+- l'apparence ;
+- le stockage ;
+- les données locales ;
+- la confidentialité ;
+- les informations de l'application.
+
+Toutes les préférences doivent être persistantes.
+
+==================================================
+1. ÉCRAN PARAMÈTRES
+==================================================
+
+Utiliser l'écran Paramètres déjà prévu dans le design.
+
+Organiser les paramètres par catégories :
+
+COMPTE
+
+Telegram
+
+PRÉFÉRENCES
+
+Lecture
+Qualité
+Langue
+
+SYNCHRONISATION
+
+Synchronisation automatique
+Fréquence
+
+NOTIFICATIONS
+
+Nouveaux épisodes
+Téléchargements
+
+STOCKAGE
+
+Espace utilisé
+Gestion des téléchargements
+
+APPARENCE
+
+Thème
+
+DONNÉES
+
+Cache
+Historique
+
+À PROPOS
+
+Version
+Informations
+
+==================================================
+2. COMPTE TELEGRAM
+==================================================
+
+Afficher clairement l'état du compte.
+
+Si connecté :
+
+Telegram connecté
+
+Nom du compte
+
+[ Gérer le compte ]
+
+Si déconnecté :
+
+Telegram non connecté
+
+[ Connecter Telegram ]
+
+Le bouton doit utiliser le système Telegram réellement implémenté dans le Prompt 11.
+
+==================================================
+3. DÉCONNEXION
+==================================================
+
+Permettre :
+
+[ Déconnecter Telegram ]
+
+Afficher une confirmation avant déconnexion.
+
+La déconnexion doit :
+
+- terminer la session Telegram ;
+- arrêter les synchronisations ;
+- empêcher les nouvelles synchronisations automatiques.
+
+IMPORTANT :
+
+Ne pas supprimer automatiquement :
+
+- les animés ;
+- les épisodes ;
+- les favoris ;
+- l'historique ;
+- les fichiers téléchargés.
+
+==================================================
+4. QUALITÉ VIDÉO PAR DÉFAUT
+==================================================
+
+Ajouter :
+
+Qualité préférée
+
+Options :
+
+Auto
+2160p
+1440p
+1080p
+720p
+480p
+360p
+
+Valeur par défaut :
+
+Auto
+
+Cette préférence doit être utilisée lorsque l'utilisateur ouvre un épisode possédant plusieurs qualités.
+
+==================================================
+5. LANGUE
+==================================================
+
+Préparer le système d'internationalisation.
+
+Langue principale :
+
+Français
+
+Prévoir une structure permettant d'ajouter ultérieurement :
+
+English
+
+Español
+
+Português
+
+etc.
+
+NE PAS traduire artificiellement avec une API externe.
+
+Les chaînes doivent être centralisées dans le système de localisation Flutter.
+
+==================================================
+6. CHANGEMENT DE LANGUE
+==================================================
+
+Lorsque l'utilisateur change de langue :
+
+l'interface doit utiliser immédiatement la nouvelle langue lorsque possible.
+
+Conserver le choix après redémarrage.
+
+NE PAS modifier :
+
+- les titres des animés ;
+- les noms des fichiers Telegram ;
+- les noms des canaux.
+
+Seule l'interface AnimeBox doit être traduite.
+
+==================================================
+7. THÈME
+==================================================
+
+Prévoir :
+
+Sombre
+
+Clair
+
+Système
+
+Cependant :
+
+le design principal AnimeBox reste le thème sombre.
+
+Le thème clair doit uniquement être implémenté s'il peut respecter correctement l'identité visuelle existante.
+
+NE PAS créer un thème clair générique.
+
+==================================================
+8. NOTIFICATIONS
+==================================================
+
+Regrouper les préférences de notifications.
+
+Options :
+
+Nouveaux épisodes
+ON/OFF
+
+Téléchargements terminés
+ON/OFF
+
+Erreurs de téléchargement
+ON/OFF
+
+Synchronisation
+ON/OFF
+
+Ces réglages doivent réellement contrôler NotificationService.
+
+NE PAS afficher un réglage qui ne produit aucun effet.
+
+==================================================
+9. SYNCHRONISATION AUTOMATIQUE
+==================================================
+
+Afficher :
+
+Synchronisation automatique
+
+ON/OFF
+
+Si activée :
+
+Fréquence
+
+15 min
+30 min
+1 h
+3 h
+1 jour
+
+Respecter les limitations Android.
+
+NE PAS prétendre garantir une fréquence exacte lorsque Android retarde les tâches en arrière-plan.
+
+==================================================
+10. SYNCHRONISATION WIFI
+==================================================
+
+Ajouter éventuellement :
+
+Synchroniser uniquement en Wi-Fi
+
+ON/OFF
+
+Lorsque activé :
+
+les synchronisations automatiques doivent éviter les opérations réseau lorsque la connexion n'est pas adaptée, selon les possibilités du système Android.
+
+IMPORTANT :
+
+La synchronisation concerne les métadonnées/messages nécessaires.
+
+Elle ne doit pas télécharger automatiquement les vidéos.
+
+==================================================
+11. TÉLÉCHARGEMENT AUTOMATIQUE
+==================================================
+
+Prévoir la structure du paramètre :
+
+Téléchargement automatique
+
+OFF par défaut.
+
+Si cette fonctionnalité a déjà été implémentée dans les étapes précédentes :
+
+connecter correctement le réglage au DownloadManager.
+
+Sinon :
+
+NE PAS inventer un système incomplet.
+
+Afficher uniquement l'option si elle est réellement fonctionnelle.
+
+==================================================
+12. STOCKAGE
+==================================================
+
+Créer un écran :
+
+Gestion du stockage
+
+Afficher les informations réelles lorsque disponibles :
+
+Espace utilisé par AnimeBox
+
+Téléchargements
+
+Cache
+
+Espace disponible
+
+Exemple :
+
+Téléchargements
+8,4 Go
+
+Cache
+320 Mo
+
+Disponible
+42 Go
+
+NE PAS afficher de valeurs fictives.
+
+==================================================
+13. NETTOYAGE DU CACHE
+==================================================
+
+Ajouter :
+
+[ Vider le cache ]
+
+Afficher une confirmation.
+
+La suppression du cache ne doit PAS supprimer :
+
+- vidéos téléchargées ;
+- favoris ;
+- historique ;
+- catalogue ;
+- sources.
+
+==================================================
+14. SUPPRESSION DES TÉLÉCHARGEMENTS
+==================================================
+
+Ajouter :
+
+[ Gérer les téléchargements ]
+
+Permettre éventuellement :
+
+- supprimer un fichier ;
+- sélectionner plusieurs fichiers ;
+- supprimer plusieurs fichiers ;
+- supprimer tous les téléchargements.
+
+Toujours demander confirmation avant une suppression massive.
+
+==================================================
+15. ESPACE INSUFFISANT
+==================================================
+
+Si l'espace disponible devient faible :
+
+afficher un avertissement.
+
+Exemple :
+
+« Votre espace de stockage est presque plein. »
+
+Action :
+
+[ Gérer le stockage ]
+
+Ne pas empêcher inutilement l'utilisation du catalogue.
+
+==================================================
+16. DONNÉES LOCALES
+==================================================
+
+Préparer une section :
+
+Données locales
+
+Afficher :
+
+Catalogue
+Favoris
+Historique
+Préférences
+
+Permettre :
+
+[ Effacer les données locales ]
+
+Cette action doit être clairement présentée comme destructive.
+
+==================================================
+17. CONFIRMATION DE SUPPRESSION
+==================================================
+
+Avant toute suppression importante :
+
+afficher une confirmation explicite.
+
+Exemple :
+
+« Cette action supprimera vos données locales AnimeBox. Les vidéos téléchargées seront également supprimées. »
+
+Ne jamais supprimer silencieusement des données importantes.
+
+==================================================
+18. RÉINITIALISATION
+==================================================
+
+Ajouter éventuellement :
+
+Réinitialiser AnimeBox
+
+Cette action doit :
+
+- supprimer les données locales ;
+- supprimer les préférences ;
+- supprimer les sources ;
+- supprimer l'historique ;
+- supprimer les favoris ;
+- supprimer les téléchargements ;
+- déconnecter Telegram.
+
+Afficher plusieurs avertissements avant exécution.
+
+==================================================
+19. CONFIDENTIALITÉ
+==================================================
+
+Créer une section expliquant simplement :
+
+« Vos données restent sur votre appareil lorsque cela est possible. AnimeBox ne transfère pas vos vidéos vers un serveur intermédiaire. »
+
+NE PAS promettre une confidentialité absolue si une bibliothèque externe ou un service nécessaire au fonctionnement transmet certaines données.
+
+Rester factuel.
+
+==================================================
+20. DONNÉES TELEGRAM
+==================================================
+
+Ne jamais envoyer vers un serveur AnimeBox :
+
+- session Telegram ;
+- code de connexion ;
+- mot de passe 2FA ;
+- vidéos ;
+- messages Telegram.
+
+Utiliser uniquement les composants nécessaires au fonctionnement réel de Telegram.
+
+==================================================
+21. À PROPOS
+==================================================
+
+Créer :
+
+À propos d'AnimeBox
+
+Afficher :
+
+Nom de l'application
+
+Version
+
+Numéro de build
+
+Technologies utilisées si pertinent
+
+Licence / informations légales lorsque nécessaire.
+
+==================================================
+22. VERSION
+==================================================
+
+La version affichée doit provenir des informations réelles du projet.
+
+NE PAS coder en dur une version différente de celle du build.
+
+Exemple :
+
+AnimeBox
+Version 1.0.0
+Build 1
+
+==================================================
+23. LIENS EXTERNES
+==================================================
+
+Si des liens sont nécessaires :
+
+Politique de confidentialité
+Conditions d'utilisation
+Support
+
+les ouvrir avec un mécanisme Android approprié.
+
+NE PAS créer de fausses pages.
+
+==================================================
+24. ÉTATS DES PARAMÈTRES
+==================================================
+
+Tous les réglages doivent avoir trois caractéristiques :
+
+1. état actuel visible ;
+2. modification réelle ;
+3. persistance après redémarrage.
+
+Exemple :
+
+Notifications
+ON
+
+Fermer l'application.
+
+Rouvrir.
+
+Notifications
+ON
+
+==================================================
+25. BASE DE DONNÉES
+==================================================
+
+Centraliser les préférences dans un repository/service dédié.
+
+Exemple :
+
+SettingsRepository
+
+Il doit gérer :
+
+preferredQuality
+language
+theme
+notifications
+autoSync
+syncFrequency
+wifiOnly
+downloadPreferences
+
+Ne pas disperser les préférences dans différents widgets.
+
+==================================================
+26. ARCHITECTURE
+==================================================
+
+Utiliser une séparation claire :
+
+UI
+↓
+SettingsController
+↓
+SettingsRepository
+↓
+Local Storage
+
+Les services existants doivent pouvoir écouter les changements lorsque nécessaire.
+
+Exemple :
+
+Settings
+↓
+NotificationService
+
+Settings
+↓
+SyncService
+
+Settings
+↓
+DownloadManager
+
+==================================================
+27. PAS DE FAUSSES OPTIONS
+==================================================
+
+RÈGLE ABSOLUE.
+
+NE PAS afficher un paramètre simplement pour donner l'impression que l'application possède une fonctionnalité.
+
+Si une option n'est pas réellement connectée à un service :
+
+ne pas l'ajouter.
+
+Chaque switch, bouton ou sélecteur doit produire un effet réel.
+
+==================================================
+28. ERREURS
+==================================================
+
+Gérer proprement :
+
+- impossibilité d'enregistrer une préférence ;
+- stockage inaccessible ;
+- erreur de suppression ;
+- erreur de déconnexion Telegram ;
+- erreur de nettoyage ;
+- erreur de récupération de l'espace disque.
+
+Afficher un message compréhensible.
+
+==================================================
+29. DESIGN
+==================================================
+
+Respecter strictement le design AnimeBox existant.
+
+NE PAS refaire les écrans.
+
+NE PAS transformer Paramètres en interface Android générique.
+
+Conserver :
+
+- thème ;
+- typographie ;
+- espacements ;
+- arrondis ;
+- animations ;
+- navigation ;
+- identité violette ;
+- hiérarchie visuelle.
+
+==================================================
+30. ICÔNES — RÈGLE ABSOLUE
+==================================================
+
+NE PAS utiliser d'icônes génériques.
+
+NE PAS utiliser d'emojis comme icônes.
+
+Utiliser uniquement :
+
+- une bibliothèque d'icônes professionnelle cohérente ;
+OU
+- des SVG personnalisés.
+
+Toutes les icônes doivent appartenir au même langage visuel.
+
+==================================================
+31. ACCESSIBILITÉ
+==================================================
+
+Vérifier :
+
+- tailles de texte ;
+- zones tactiles ;
+- contraste ;
+- navigation ;
+- textes explicatifs ;
+- états ON/OFF clairement compréhensibles.
+
+Les informations importantes ne doivent pas dépendre uniquement d'une couleur.
+
+==================================================
+32. TESTS
+==================================================
+
+Tester :
+
+1. Ouverture des paramètres.
+2. Modification de la qualité.
+3. Persistance de la qualité.
+4. Changement de langue.
+5. Persistance de la langue.
+6. Changement de thème.
+7. Notifications ON/OFF.
+8. Synchronisation automatique ON/OFF.
+9. Modification de fréquence.
+10. Mode Wi-Fi uniquement.
+11. Gestion du stockage.
+12. Calcul de l'espace utilisé.
+13. Nettoyage du cache.
+14. Suppression d'un téléchargement.
+15. Suppression multiple.
+16. Suppression des données locales.
+17. Déconnexion Telegram.
+18. Réinitialisation complète.
+19. Redémarrage de l'application.
+20. Vérification que tous les réglages sont réellement appliqués.
+
+==================================================
+33. TEST DE PERSISTANCE
+==================================================
+
+Modifier plusieurs paramètres :
+
+Qualité :
+1080p
+
+Langue :
+Français
+
+Notifications :
+ON
+
+Synchronisation :
+30 minutes
+
+Thème :
+Sombre
+
+Fermer complètement l'application.
+
+Rouvrir.
+
+Vérifier que toutes les valeurs sont toujours correctes.
+
+==================================================
+34. TEST DE RÉINITIALISATION
+==================================================
+
+Créer des données de TEST.
+
+Ajouter :
+
+- source ;
+- anime ;
+- favori ;
+- historique ;
+- téléchargement.
+
+Puis effectuer :
+
+Réinitialiser AnimeBox.
+
+Vérifier que toutes les données prévues sont réellement supprimées.
+
+Vérifier qu'aucune donnée résiduelle importante ne reste.
+
+==================================================
+35. PERFORMANCE
+==================================================
+
+Les paramètres doivent s'ouvrir instantanément autant que possible.
+
+Les opérations lourdes :
+
+- calcul du stockage ;
+- suppression massive ;
+- nettoyage ;
+
+doivent être exécutées sans bloquer l'interface.
+
+==================================================
+36. COMPATIBILITÉ ANDROID
+==================================================
+
+Tester les comportements sur les versions Android ciblées par le projet.
+
+Respecter les permissions modernes.
+
+NE PAS demander de permissions inutiles.
+
+==================================================
+37. COMPATIBILITÉ GITHUB ACTIONS
+==================================================
+
+Vérifier :
+
+flutter pub get
+
+flutter analyze
+
+flutter test
+
+flutter build apk
+
+Le projet doit rester entièrement compilable via GitHub Actions.
+
+NE PAS ajouter de dépendance inutile.
+
+==================================================
+38. VÉRIFICATION GLOBALE
+==================================================
+
+À la fin de cette étape, parcourir toute l'application :
+
+Onboarding
+↓
+Connexion Telegram
+↓
+Sources
+↓
+Synchronisation
+↓
+Accueil
+↓
+Bibliothèque
+↓
+Anime
+↓
+Saison
+↓
+Épisode
+↓
+Qualités
+↓
+Lecture
+↓
+Téléchargement
+↓
+Notifications
+↓
+Favoris
+↓
+Historique
+↓
+Paramètres
+
+Vérifier qu'aucun parcours ne provoque :
+
+- crash ;
+- écran vide inattendu ;
+- navigation bloquée ;
+- bouton sans action ;
+- données fictives ;
+- incohérence de design.
+
+==================================================
+39. ICÔNES ET DESIGN — CONTRÔLE FINAL
+==================================================
+
+Parcourir toutes les pages.
+
+Remplacer toute icône générique restante.
+
+NE PAS utiliser d'emojis comme éléments d'interface.
+
+Vérifier que les icônes ont toutes une cohérence visuelle.
+
+NE PAS modifier le design validé simplement pour le moderniser.
+
+==================================================
+40. PAS DE BACKEND
+==================================================
+
+IMPORTANT.
+
+À aucun moment de cette étape ne créer :
+
+- Vercel ;
+- serveur Python ;
+- Firebase ;
+- Supabase ;
+- API AnimeBox ;
+- serveur de streaming ;
+- proxy vidéo.
+
+AnimeBox doit rester fonctionnelle directement depuis l'appareil et avec les services réellement nécessaires.
+
+==================================================
+41. CRITÈRES DE RÉUSSITE
+==================================================
+
+Cette étape est terminée lorsque :
+
+✓ les paramètres sont fonctionnels ;
+
+✓ toutes les préférences sont persistantes ;
+
+✓ la qualité préférée fonctionne ;
+
+✓ la langue fonctionne ;
+
+✓ les notifications peuvent être configurées ;
+
+✓ la synchronisation peut être configurée ;
+
+✓ le stockage peut être consulté ;
+
+✓ le cache peut être nettoyé ;
+
+✓ les téléchargements peuvent être gérés ;
+
+✓ les données locales peuvent être supprimées avec confirmation ;
+
+✓ la déconnexion Telegram fonctionne ;
+
+✓ la réinitialisation complète fonctionne ;
+
+✓ aucune option fictive n'est présente ;
+
+✓ aucune donnée Telegram sensible n'est envoyée à un serveur AnimeBox ;
+
+✓ aucune icône générique ou emoji n'est utilisée ;
+
+✓ le design existant est respecté ;
+
+✓ l'application fonctionne hors connexion pour les fonctionnalités locales ;
+
+✓ flutter analyze passe ;
+
+✓ les tests passent ;
+
+✓ flutter build apk fonctionne.
+
+==================================================
+FIN DU PROMPT 12
+==================================================
+
+NE PAS passer automatiquement à une nouvelle fonctionnalité.
+
+NE PAS créer de backend.
+
+NE PAS créer Vercel.
+
+NE PAS créer de serveur Python.
+
+NE PAS créer de système Premium.
+
+NE PAS créer de paiement.
+
+NE PAS créer de publicité.
+
+NE PAS refaire l'onboarding.
+
+NE PAS refaire les écrans déjà validés.
+
+À la fin, fournir un rapport clair :
+
+1. paramètres implémentés ;
+2. préférences persistantes ;
+3. stockage ;
+4. gestion des données ;
+5. gestion Telegram ;
+6. notifications ;
+7. synchronisation ;
+8. fichiers créés/modifiés ;
+9. dépendances ajoutées ;
+10. tests effectués ;
+11. résultats ;
+12. problèmes éventuels ;
+13. fonctionnalités réellement opérationnelles ;
+14. limitations éventuelles.
+
+ATTENDS MON PROCHAIN PROMPT.
