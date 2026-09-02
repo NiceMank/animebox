@@ -499,6 +499,13 @@ class LocalDatabase {
     await _db.delete('progress', where: 'anime_id = ? AND episode_id = ?', whereArgs: [animeId, episodeId]);
   }
 
+  /// Efface uniquement l'historique de visionnage (prompt 10 §13) :
+  /// ni les épisodes, ni les téléchargements, ni les favoris, ni les
+  /// sources ne sont touchés.
+  Future<void> deleteAllProgress() async {
+    await _db.delete('progress');
+  }
+
   // -----------------------------------------------------------------------
   // Téléchargements (prompt 8)
   // -----------------------------------------------------------------------

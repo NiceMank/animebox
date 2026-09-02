@@ -49,10 +49,12 @@ class LibraryEntry {
   /// Nombre d'épisodes commencés.
   int get startedCount => progressMap.values.where((Duration position) => position > Duration.zero).length;
 
-  LibraryEntry copyWith({bool? isFavorite, Map<String, Duration>? progressMap, String? resumeEpisodeId}) => LibraryEntry(
+  LibraryEntry copyWith(
+      {bool? isFavorite, Map<String, Duration>? progressMap, String? resumeEpisodeId, bool resetResume = false}) =>
+      LibraryEntry(
         anime: anime,
         isFavorite: isFavorite ?? this.isFavorite,
         progressMap: progressMap ?? this.progressMap,
-        resumeEpisodeId: resumeEpisodeId ?? this.resumeEpisodeId,
+        resumeEpisodeId: resetResume ? null : (resumeEpisodeId ?? this.resumeEpisodeId),
       );
 }

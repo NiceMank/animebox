@@ -68,6 +68,15 @@ abstract class AnimeRepository implements Listenable {
   /// Historique de progression d'un animé (du plus récent au plus ancien).
   List<PlaybackProgress> progressHistory(String animeId);
 
+  /// Historique réel de visionnage, tous animés confondus, du plus récent
+  /// au plus ancien (prompt 10 §12 — dates réelles de dernière lecture).
+  List<PlaybackProgress> get watchHistory;
+
+  /// Efface uniquement l'historique de visionnage (prompt 10 §13) :
+  /// ni les épisodes, ni les téléchargements, ni les favoris, ni les
+  /// sources ne sont supprimés.
+  void clearWatchHistory();
+
   /// Paramètres de lecture courants.
   PlaybackSettings get playbackSettings;
 

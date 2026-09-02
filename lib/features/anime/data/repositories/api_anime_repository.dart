@@ -474,11 +474,39 @@ class ApiAnimeRepository extends ChangeNotifier implements AnimeRepository, Cata
       progressMap: {...entry.progressMap, episodeId: clamped},
       resumeEpisodeId: episodeId,
     );
-    if (completed) _completed.add('$animeId|$episodeId');
+    if (completed) {
+      _completed.add('$animeId|$episodeId');
+      _history['$animeId|$episodeId'] = PlaybackProgress(
+        animeId: animeId, episodeId: episodeId, position: clamped,
+        duration: total, savedAt: DateTime.now(), completed: true);
+    } else if (clamped > Duration.zero) {
+      _history['$animeId|$episodeId'] = PlaybackProgress(
+        animeId: animeId, episodeId: episodeId, position: clamped,
+        duration: total, savedAt: DateTime.now());
+    }
     _notify();
   }
 
   final Set<String> _completed = <String>{};
+  final Map<String, PlaybackProgress> _history = <String, PlaybackProgress>{};
+
+  @override
+  List<PlaybackProgress> get watchHistory {
+    final List<PlaybackProgress> items = List.of(_history.values);
+    items.sort((PlaybackProgress a, PlaybackProgress b) => b.savedAt.compareTo(a.savedAt));
+    return List.unmodifiable(items);
+  }
+
+  @override
+  void clearWatchHistory() {
+    _history.clear();
+    _completed.clear();
+    final List<String> keys = _library.keys.toList();
+    for (final String key in keys) {
+      _library[key] = _library[key]!.copyWith(progressMap: const {}, resetResume: true);
+    }
+    _notify();
+  }
 
   @override
   bool episodeCompleted(String animeId, String episodeId) => _completed.contains('$animeId|$episodeId');

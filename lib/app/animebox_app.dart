@@ -281,6 +281,7 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
         groupingService: _groupingService,
         libraryService: _libraryService,
         mediaService: _mediaService,
+        database: widget.database,
       ),
       onGenerateRoute: AppRouter.onGenerateRoute(
         _repository,
