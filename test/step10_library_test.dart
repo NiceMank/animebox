@@ -7,7 +7,6 @@ import 'package:animebox/features/anime/data/repositories/local_anime_repository
 import 'package:animebox/features/local/data/local_database.dart';
 import 'package:animebox/features/telegram/data/gateway/telegram_gateway.dart';
 import 'package:animebox/features/telegram/data/services/local_telegram_service.dart';
-import 'package:animebox/features/telegram/data/services/telegram_service.dart';
 import 'package:animebox/features/telegram/data/services/telegram_session_manager.dart';
 
 import 'step7_fake_gateway.dart';
