@@ -190,7 +190,7 @@ void main() {
 
       final PlaybackProgress? entry = repo.watchHistory.isNotEmpty ? repo.watchHistory.first : null;
       expect(entry, isNotNull);
-      expect(entry!.fraction.roundToDouble(), 0.5, reason: 'pourcentage déduit de données réelles');
+      expect(entry!.fraction, closeTo(0.5, 0.01), reason: 'pourcentage déduit de données réelles');
       expect(entry.completed, isFalse);
     });
 
@@ -292,18 +292,18 @@ void main() {
       expect(episode.qualities.map((q) => q.quality.label).toSet(), {'1080p', '720p', '480p'});
     });
 
-    test('nouvelle qualité détectée → épisode mis à jour, pas de doublon', () async {
+    test('nouvelle version détectée → épisode mis à jour, pas de doublon', () async {
       await connectAndSync();
+      // Une NOUVELLE langue sur le même épisode (mise à jour, pas d'épisode).
       gateway.messages[_chatA] = [
         ...gateway.messages[_chatA]!,
-        _video(_chatA, 'anime_vf', 1007, fileName: 'Solo.Leveling.S02E08.2160p.VF.mkv'),
+        _video(_chatA, 'anime_vf', 1007, fileName: 'Solo.Leveling.S02E08.1080p.VOSTFR.mkv'),
       ];
       await service.syncSource(sourceId: service.sources.first.id);
       final LocalAnimeRepository repo = await openRepo();
       final anime = repo.byId('solo-leveling')!;
       final e8 = anime.seasons.first.episodes.firstWhere((e) => e.number == 8);
-      expect(e8.qualities.map((q) => q.quality.label).contains('2160p'), isTrue,
-          reason: '§25 : l\'épisode existant est enrichi');
+      expect(e8.qualities.length, 4, reason: '§25 : l\'épisode existant est enrichi');
       expect(anime.seasons.first.episodes.where((e) => e.number == 8).length, 1, reason: 'pas de doublon');
     });
 

@@ -39,8 +39,8 @@ enum LibraryCategory {
 enum LibrarySort {
   recentAdded('Plus récemment ajouté', Icons.schedule_rounded),
   updated('Récemment mis à jour', Icons.update_rounded),
-  nameAsc('Titre A → Z', Icons.sort_by_alpha_rounded),
-  nameDesc('Titre Z → A', Icons.sort_by_alpha_rounded),
+  nameAsc('Nom A → Z', Icons.sort_by_alpha_rounded),
+  nameDesc('Nom Z → A', Icons.sort_by_alpha_rounded),
   episodeCount('Nombre d\'épisodes', Icons.format_list_numbered_rounded),
   latestEpisode('Dernier épisode', Icons.new_releases_outlined),
   progress('Progression', Icons.trending_up_rounded),

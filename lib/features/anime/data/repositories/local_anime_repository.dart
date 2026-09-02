@@ -47,17 +47,36 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
   bool get isDatabaseAvailable => _dbReady;
 
   Future<void> _init() async {
+    await _queueLoad(seedIfEmpty: true);
+  }
+
+  // Chargements SÉRIALISÉS : un chargement n'en écrase jamais un autre en
+  // vol (initialisation, rechargement après synchronisation) — sinon les
+  // mutations intervenant entre-temps (favoris, progression) pourraient
+  // être perdues par course.
+  Future<void>? _loadChain;
+
+  Future<void> _queueLoad({bool seedIfEmpty = false}) {
+    final Future<void> task =
+        (_loadChain ?? Future<void>.value()).then((_) => _loadOnce(seedIfEmpty: seedIfEmpty));
+    _loadChain = task;
+    return task;
+  }
+
+  Future<void> _loadOnce({bool seedIfEmpty = false}) async {
     final LocalDatabase? db = database;
     if (db == null) return;
     try {
-      // Persistence d'un seed EXPLICITE (tests uniquement) — jamais de
-      // catalogue de démonstration automatique (prompt 10 §34).
-      if (_explicitSeed != null && _explicitSeed.isNotEmpty && await db.countAnime() == 0) {
-        await _persistSeed(db);
-      }
-      final String? savedPreference = await db.getSetting('preferred_quality');
-      if (savedPreference != null) {
-        _settings = _settings.copyWith(preferredQuality: QualityPreferenceX.fromName(savedPreference));
+      if (seedIfEmpty) {
+        final String? savedPreference = await db.getSetting('preferred_quality');
+        if (savedPreference != null) {
+          _settings = _settings.copyWith(preferredQuality: QualityPreferenceX.fromName(savedPreference));
+        }
+        // Persistence d'un seed EXPLICITE (tests uniquement) — jamais de
+        // catalogue de démonstration automatique (prompt 10 §34).
+        if (_explicitSeed != null && _explicitSeed.isNotEmpty && await db.countAnime() == 0) {
+          await _persistSeed(db);
+        }
       }
       await _loadFromDatabase(db);
       _dbReady = true;
@@ -69,16 +88,10 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
   }
 
   /// Recharge le catalogue depuis la base (après une synchronisation).
+  /// Retourne quand la base est effectivement lue — les mutations
+  /// ultérieures sont stables.
   Future<void> reloadFromDatabase() async {
-    final LocalDatabase? db = database;
-    if (db == null) return;
-    try {
-      await _loadFromDatabase(db);
-      _dbReady = true;
-      notifyListeners();
-    } catch (_) {
-      _dbReady = false;
-    }
+    await _queueLoad();
   }
 
   // ---------------------------------------------------------------------
