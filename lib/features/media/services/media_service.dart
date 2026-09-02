@@ -261,6 +261,19 @@ class MediaService {
         );
       }
       return PlaybackPlan(kind: PlaybackKind.unavailable, version: version, failure: failure);
+    } on GatewayError catch (error) {
+      // État du fichier illisible (supprimé, cache perdu…) : repli propre
+      // vers le lien Telegram réel — jamais de plantage.
+      final MediaAccessException failure = MediaAccessException.fromGateway(error);
+      if (version.hasTelegramLink) {
+        return PlaybackPlan(
+          kind: PlaybackKind.telegramFallback,
+          version: version,
+          failure: failure,
+          message: 'Lecture directe indisponible.',
+        );
+      }
+      return PlaybackPlan(kind: PlaybackKind.unavailable, version: version, failure: failure);
     }
   }
 

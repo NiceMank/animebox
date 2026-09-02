@@ -416,6 +416,10 @@ class DownloadManager extends ChangeNotifier {
               persist: shouldPersist, event: DownloadEventKind.progress);
           if (shouldNotify) lastNotifyAt = now;
           if (shouldPersist) lastPersistAt = now;
+        } else {
+          // Compteurs RÉELS toujours à jour en mémoire : seules la
+          // notification (400 ms) et la persistance (2,5 s) sont limitées.
+          _tasks[task.versionId] = task;
         }
       });
       inactivity = Timer.periodic(const Duration(seconds: 5), (Timer timer) {

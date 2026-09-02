@@ -177,6 +177,8 @@ class LocalDatabase {
         anime_title TEXT,
         season_number INTEGER,
         episode_number INTEGER,
+        message_link TEXT,
+        channel_username TEXT,
         status TEXT NOT NULL,
         total_bytes INTEGER,
         downloaded_bytes INTEGER NOT NULL DEFAULT 0,
@@ -254,6 +256,10 @@ class LocalDatabase {
       await db.execute('CREATE INDEX IF NOT EXISTS idx_downloads_status ON downloads(status)');
     }
     if (oldVersion < 3) {
+      // Colonnes de téléchargements présentes dans le gestionnaire mais
+      // absentes du schéma initial (réparées — lien et canal réels).
+      await _addColumnIfExists(db, 'downloads', 'message_link', 'TEXT');
+      await _addColumnIfExists(db, 'downloads', 'channel_username', 'TEXT');
       // Prompt 9 : préférences de notifications (par source, par animé) et
       // registre des épisodes déjà notifiés. Paramètres par source
       // préparés (téléchargement automatique OFF, qualité héritée).

@@ -153,6 +153,11 @@ class FakeTelegramGateway implements TelegramGateway {
   @override
   Future<GatewayMessage> getMessage({required int chatId, required int messageId}) async {
     callLog.add('getMessage:$chatId:$messageId');
+    final GatewayError? failure = failOnNextFetch;
+    if (failure != null) {
+      failOnNextFetch = null;
+      throw failure;
+    }
     final List<GatewayMessage> all = messages[chatId] ?? const [];
     for (final GatewayMessage message in all) {
       if (message.messageId == messageId) return message;
