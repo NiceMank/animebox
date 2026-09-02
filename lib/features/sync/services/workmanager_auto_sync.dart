@@ -54,8 +54,7 @@ class WorkmanagerAutoSyncScheduler implements AutoSyncScheduler {
       await Workmanager().cancelByUniqueName(kAutoSyncUniqueName);
       final Duration? interval = frequency.interval;
       if (interval == null) return; // désactivée
-      // registerPeriodicTask est synchrone côté greffon (0.5.x).
-      Workmanager().registerPeriodicTask(
+      await Workmanager().registerPeriodicTask(
         kAutoSyncUniqueName,
         kAutoSyncTaskName,
         frequency: interval,

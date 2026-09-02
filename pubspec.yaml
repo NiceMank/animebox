@@ -26,7 +26,7 @@ dependencies:
   flutter_local_notifications: ^17.2.4
   # Tâches périodiques légères (WorkManager) — synchronisation en
   # arrière-plan quand Android l'autorise (prompt 9).
-  workmanager: ^0.5.2
+  workmanager: ^0.10.9
 
 dev_dependencies:
   flutter_test:
