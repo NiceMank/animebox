@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../features/anime/data/repositories/anime_repository.dart';
+import '../features/media/services/media_service.dart';
 import '../features/details/anime_details_screen.dart';
 import '../features/episodes/episode_list_screen.dart';
 import '../features/player/player_screen.dart';
@@ -72,7 +73,11 @@ class EpisodeRouteArgs {
 abstract final class AppRouter {
   AppRouter._();
 
-  static RouteFactory onGenerateRoute(AnimeRepository repository, TelegramService telegramService) {
+  static RouteFactory onGenerateRoute(
+    AnimeRepository repository,
+    TelegramService telegramService, [
+    MediaService? mediaService,
+  ]) {
     return (RouteSettings settings) {
       switch (settings.name) {
         case AppRoutes.animeDetails:
@@ -91,13 +96,23 @@ abstract final class AppRouter {
           final EpisodeRouteArgs args = settings.arguments as EpisodeRouteArgs;
           return MaterialPageRoute<void>(
             settings: settings,
-            builder: (_) => QualitySelectScreen(repository: repository, animeId: args.animeId, episodeId: args.episodeId),
+            builder: (_) => QualitySelectScreen(
+            repository: repository,
+            animeId: args.animeId,
+            episodeId: args.episodeId,
+            mediaService: mediaService,
+          ),
           );
         case AppRoutes.player:
           final EpisodeRouteArgs args = settings.arguments as EpisodeRouteArgs;
           return MaterialPageRoute<void>(
             settings: settings,
-            builder: (_) => PlayerScreen(repository: repository, animeId: args.animeId, episodeId: args.episodeId),
+            builder: (_) => PlayerScreen(
+            repository: repository,
+            animeId: args.animeId,
+            episodeId: args.episodeId,
+            mediaService: mediaService,
+          ),
           );
         case AppRoutes.sources:
           return MaterialPageRoute<void>(

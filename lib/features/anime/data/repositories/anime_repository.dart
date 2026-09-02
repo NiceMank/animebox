@@ -5,6 +5,7 @@ import '../models/library_entry.dart';
 import '../models/playback_progress.dart';
 import '../models/playback_settings.dart';
 import '../models/search_filters.dart';
+import '../models/video_quality.dart';
 
 /// Contrat d'accès aux données de l'application.
 ///
@@ -46,10 +47,23 @@ abstract class AnimeRepository implements Listenable {
   /// Progression enregistrée pour un épisode donné.
   Duration? episodeProgress(String animeId, String episodeId);
 
-  /// Enregistre la position de lecture d'un épisode.
+  /// Enregistre la progression réelle de lecture d'un épisode (prompt 8) :
+  /// position, durée totale et statut terminé.
   ///
   /// La position est bornée à la durée de l'épisode et notifie les écrans.
-  void recordProgress(String animeId, String episodeId, Duration position);
+  void recordProgress(
+    String animeId,
+    String episodeId,
+    Duration position, {
+    Duration duration = Duration.zero,
+    bool completed = false,
+  });
+
+  /// L'épisode a-t-il déjà été terminé (reprise : redémarrer du début) ?
+  bool episodeCompleted(String animeId, String episodeId) => false;
+
+  /// Change la qualité préférée (persisté quand le dépôt le permet).
+  void setPreferredQuality(QualityPreference preference);
 
   /// Historique de progression d'un animé (du plus récent au plus ancien).
   List<PlaybackProgress> progressHistory(String animeId);

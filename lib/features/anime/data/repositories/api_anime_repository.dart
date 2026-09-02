@@ -13,6 +13,7 @@ import '../models/library_entry.dart';
 import '../models/metadata_status.dart';
 import '../models/playback_progress.dart';
 import '../models/playback_settings.dart';
+import '../models/video_quality.dart';
 import '../models/search_filters.dart';
 import '../models/season.dart';
 import 'anime_repository.dart';
@@ -454,17 +455,37 @@ class ApiAnimeRepository extends ChangeNotifier implements AnimeRepository, Cata
       libraryEntryFor(animeId)?.progressFor(episodeId);
 
   @override
-  void recordProgress(String animeId, String episodeId, Duration position) {
+  void recordProgress(
+    String animeId,
+    String episodeId,
+    Duration position, {
+    Duration duration = Duration.zero,
+    bool completed = false,
+  }) {
     final Anime? anime = byId(animeId);
     final LibraryEntry? entry = libraryEntryFor(animeId);
     if (anime == null || entry == null) return;
-    final Duration total = Duration(minutes: anime.episodeDurationMin.toInt());
+    final Duration total = duration > Duration.zero
+        ? duration
+        : Duration(minutes: anime.episodeDurationMin.toInt());
     final Duration clamped =
         position < Duration.zero ? Duration.zero : (position > total ? total : position);
     _library[animeId] = entry.copyWith(
       progressMap: {...entry.progressMap, episodeId: clamped},
       resumeEpisodeId: episodeId,
     );
+    if (completed) _completed.add('$animeId|$episodeId');
+    _notify();
+  }
+
+  final Set<String> _completed = <String>{};
+
+  @override
+  bool episodeCompleted(String animeId, String episodeId) => _completed.contains('$animeId|$episodeId');
+
+  @override
+  void setPreferredQuality(QualityPreference preference) {
+    _settings = _settings.copyWith(preferredQuality: preference);
     _notify();
   }
 

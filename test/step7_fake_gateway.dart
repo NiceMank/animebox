@@ -36,6 +36,8 @@ class FakeTelegramGateway implements TelegramGateway {
 
   GatewayAuthState _state = GatewayAuthState.notConnected;
   final StreamController<GatewayAuthState> _states = StreamController<GatewayAuthState>.broadcast();
+  final StreamController<GatewayFileSnapshot> _fileUpdates =
+      StreamController<GatewayFileSnapshot>.broadcast();
 
   final List<String> callLog = [];
 
@@ -144,6 +146,62 @@ class FakeTelegramGateway implements TelegramGateway {
     return filtered.take(limit).toList();
   }
 
+  // -------------------------------------------------------------------------
+  // Médias (prompt 8) — simulation contrôlée du protocole TDLib.
+  // -------------------------------------------------------------------------
+
+  @override
+  Future<GatewayMessage> getMessage({required int chatId, required int messageId}) async {
+    callLog.add('getMessage:$chatId:$messageId');
+    final List<GatewayMessage> all = messages[chatId] ?? const [];
+    for (final GatewayMessage message in all) {
+      if (message.messageId == messageId) return message;
+    }
+    throw const GatewayError('Publication introuvable.');
+  }
+
+  @override
+  Future<GatewayFileSnapshot> getFileSnapshot(int fileId) async {
+    final GatewayFileSnapshot? snapshot = files[fileId];
+    if (snapshot == null) {
+      throw const GatewayError('Fichier inconnu.');
+    }
+    return snapshot;
+  }
+
+  @override
+  Stream<GatewayFileSnapshot> get fileUpdates => _fileUpdates.stream;
+
+  @override
+  Future<void> startDownload({
+    required int fileId,
+    required int offset,
+    int limit = 0,
+    bool priority = false,
+  }) async {
+    callLog.add('startDownload:$fileId:$offset');
+    // Le test pilote la progression via [emitFileUpdate].
+  }
+
+  @override
+  Future<void> cancelDownload({required int fileId}) async {
+    callLog.add('cancelDownload:$fileId');
+  }
+
+  @override
+  Future<void> deleteDownloadedFile({required int fileId}) async {
+    callLog.add('deleteDownloadedFile:$fileId');
+  }
+
+  /// États de fichiers simulés (fileId → instantané).
+  final Map<int, GatewayFileSnapshot> files = {};
+
+  /// Publie une mise à jour de fichier (progression/complétion simulée).
+  void emitFileUpdate(GatewayFileSnapshot snapshot) {
+    files[snapshot.fileId] = snapshot;
+    _fileUpdates.add(snapshot);
+  }
+
   /// Simule la révocation distante de la session.
   void expireSession() => _set(GatewayAuthState.sessionExpired);
 
@@ -152,5 +210,8 @@ class FakeTelegramGateway implements TelegramGateway {
     _states.add(state);
   }
 
-  Future<void> dispose() => _states.close();
+  Future<void> dispose() async {
+    await _states.close();
+    await _fileUpdates.close();
+  }
 }

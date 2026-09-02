@@ -1,0 +1,142 @@
+name: CI
+
+# Intégration continue — toutes les branches (et PR), pas les tags.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend — pytest + smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Dépendances
+        run: pip install -r requirements.txt httpx
+
+      - name: Tests (pytest — 159 tests)
+        run: python -m pytest tests -q
+
+      - name: Test de fumée (API en mode simulé — 41 vérifications)
+        run: |
+          TELEGRAM_MOCK=1 python -m uvicorn app.main:app \
+            --host 127.0.0.1 --port 8000 --log-level warning > uvicorn.log 2>&1 &
+          SERVER_PID=$!
+          for _ in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8000/health >/dev/null 2>&1 && break
+            sleep 1
+          done
+          python smoke_test.py
+          STATUS=$?
+          kill $SERVER_PID 2>/dev/null || true
+          exit $STATUS
+
+  flutter:
+    name: Flutter — analyse + tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Version Flutter
+        run: flutter --version
+
+      - name: Dépendances
+        run: flutter pub get
+
+      # En cas d'échec : log émis en annotations (lisible via l'API même
+      # quand les fichiers de logs bruts sont inaccessibles depuis le
+      # sandbox de développement).
+      - name: Analyse statique (0 issue attendu)
+        shell: bash
+        run: flutter analyze --no-pub
+
+      - name: Diagnostic des issues analyze
+        if: failure()
+        shell: bash
+        run: |
+          flutter analyze --no-pub 2>&1 | grep -E '(error|warning|info) .' | cut -c1-380 > /tmp/issues.log || true
+          n=0
+          while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            [ $n -ge 10 ] && break
+            MSG=$(echo "$line" | sed 's/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')
+            echo "::error file=animebox-analyze::$MSG"
+            n=$((n+1))
+          done < /tmp/issues.log
+
+      - name: Tests (121 + prompt 8)
+        shell: bash
+        run: flutter test
+
+  android:
+    name: Android — build APK (artefact de test)
+    needs: [flutter]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Dépendances
+        run: flutter pub get
+
+      # Signé avec les clés de débogage (voir build.gradle.kts) :
+      # installable directement pour tester.
+      - name: Build APK (release, clés debug)
+        shell: bash
+        run: |
+          set -o pipefail
+          flutter build apk --release 2>&1 | tee /tmp/build.log
+
+      - name: Diagnostic du build
+        if: failure()
+        shell: bash
+        run: |
+          { awk '/What went wrong:/{f=1} f{print} /^\* Try:/{exit}' /tmp/build.log | head -30
+            grep -E 'error:|Error:' /tmp/build.log | head -10 ; } | cut -c1-380 > /tmp/issues.log || true
+          n=0
+          while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            [ $n -ge 10 ] && break
+            MSG=$(echo "$line" | sed 's/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')
+            echo "::error file=animebox-build::$MSG"
+            n=$((n+1))
+          done < /tmp/issues.log
+
+      - name: Publier l'artefact APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnimeBox-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error

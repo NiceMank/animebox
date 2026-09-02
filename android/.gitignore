@@ -1,8 +1,7 @@
-gradle-wrapper.jar
+# Le wrapper Gradle EST versionné (gradlew, gradlew.bat, gradle-wrapper.jar)
+# : indispensable à toute compilation hors machine de développement (CI/CD).
 /.gradle
 /captures/
-/gradlew
-/gradlew.bat
 /local.properties
 GeneratedPluginRegistrant.java
 .cxx/

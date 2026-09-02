@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../gateway/telegram_gateway.dart';
 import '../models/resolved_channel.dart';
 import '../models/source_status.dart';
 import '../models/sync_history_entry.dart';
@@ -35,6 +36,10 @@ enum TelegramAuthState {
 abstract class TelegramService implements Listenable {
   /// `true` pour le service adossé au backend (informations d'interface).
   bool get isBackendApi;
+
+  /// Passerelle Telegram directe pour les médias (téléchargement/lecture
+  /// via TDLib) — null quand le mode actif n'en dispose pas (mock, backend).
+  TelegramGateway? get mediaGateway => null;
 
   /// `true` quand le service dialogue RÉELLEMENT avec Telegram depuis
   /// l'appareil (mode local, TDLib). `false` pour le mock de démonstration.

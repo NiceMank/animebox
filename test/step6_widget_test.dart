@@ -9,6 +9,7 @@ import 'package:animebox/features/anime/data/models/library_entry.dart';
 import 'package:animebox/features/anime/data/models/metadata_status.dart';
 import 'package:animebox/features/anime/data/models/playback_progress.dart';
 import 'package:animebox/features/anime/data/models/playback_settings.dart';
+import 'package:animebox/features/anime/data/models/video_quality.dart';
 import 'package:animebox/features/anime/data/models/search_filters.dart';
 import 'package:animebox/features/anime/data/repositories/anime_repository.dart';
 import 'package:animebox/features/anime/data/repositories/catalog_repository.dart';
@@ -132,7 +133,19 @@ class FakeCatalogRepository extends ChangeNotifier implements AnimeRepository, C
   Duration? episodeProgress(String animeId, String episodeId) => null;
 
   @override
-  void recordProgress(String animeId, String episodeId, Duration position) {}
+  void recordProgress(
+    String animeId,
+    String episodeId,
+    Duration position, {
+    Duration duration = Duration.zero,
+    bool completed = false,
+  }) {}
+
+  @override
+  bool episodeCompleted(String animeId, String episodeId) => false;
+
+  @override
+  void setPreferredQuality(QualityPreference preference) {}
 
   @override
   List<PlaybackProgress> progressHistory(String animeId) => const [];
