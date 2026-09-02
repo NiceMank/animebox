@@ -24,8 +24,7 @@ import 'anime_repository.dart';
 /// - favoris, progression et catalogue survivent au redémarrage ;
 /// - rien n'est envoyé hors de l'appareil.
 class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
-  LocalAnimeRepository({List<Anime>? seed, this.database}) {
-    _explicitSeed = seed;
+  LocalAnimeRepository({List<Anime>? seed, this.database}) : _explicitSeed = seed {
     _anime = List.of(seed ?? const []);
     _library = const [];
     unawaited(_init());

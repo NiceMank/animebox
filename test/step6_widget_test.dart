@@ -151,6 +151,12 @@ class FakeCatalogRepository extends ChangeNotifier implements AnimeRepository, C
   List<PlaybackProgress> progressHistory(String animeId) => const [];
 
   @override
+  List<PlaybackProgress> get watchHistory => const [];
+
+  @override
+  void clearWatchHistory() {}
+
+  @override
   PlaybackSettings get playbackSettings => const PlaybackSettings();
 
   @override

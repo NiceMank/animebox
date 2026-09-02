@@ -96,7 +96,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
   LibrarySort _sort = LibrarySort.recentAdded;
   final Set<LibraryFilter> _filters = <LibraryFilter>{};
   bool _gridView = true;
-  bool _prefsLoaded = false;
 
   static const String _prefsKey = 'library_ui';
 
@@ -112,10 +111,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   Future<void> _loadPrefs() async {
     final LocalDatabase? db = widget.database;
-    if (db == null) {
-      setState(() => _prefsLoaded = true);
-      return;
-    }
+    if (db == null) return;
     try {
       final String? raw = await db.getSetting(_prefsKey);
       if (raw != null) {
@@ -137,7 +133,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
     } catch (_) {
       // Réglages absents/corrompus : valeurs par défaut.
     }
-    if (mounted) setState(() => _prefsLoaded = true);
   }
 
   void _savePrefs() {
