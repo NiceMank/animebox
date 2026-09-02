@@ -17,7 +17,8 @@ import '../../sync/services/auto_sync_scheduler.dart';
 /// - préférences PAR SOURCE (règle 17) et PAR ANIMÉ (règle 18).
 class NotificationSettings extends ChangeNotifier {
   NotificationSettings({LocalDatabase? database, DateTime Function()? now})
-      : _database = database,
+      : // ignore: prefer_initializing_formals
+        _database = database,
         _now = now ?? DateTime.now;
 
   static const String _keyNewEpisodes = 'notif_new_episodes';

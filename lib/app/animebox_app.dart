@@ -20,7 +20,6 @@ import '../features/sync/models/sync_frequency.dart';
 import '../features/sync/services/auto_sync_scheduler.dart';
 import '../features/sync/services/auto_sync_scheduler_factory.dart';
 import '../features/telegram/data/gateway/tdlib_gateway.dart';
-import '../features/telegram/data/gateway/telegram_gateway.dart';
 import '../features/telegram/data/services/api_telegram_service.dart';
 import '../features/telegram/data/services/episode_grouping_service.dart';
 import '../features/telegram/data/services/local_telegram_service.dart';

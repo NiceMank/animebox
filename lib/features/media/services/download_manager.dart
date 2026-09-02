@@ -316,7 +316,6 @@ class DownloadManager extends ChangeNotifier {
       // 1. Résolution du fichier (fileId réel — jamais inventé).
       int fileId = task.fileId ?? 0;
       int? expected = task.expectedSize;
-      String? tdRemotePath;
       if (fileId <= 0) {
         final GatewayMessage message =
             await gateway!.getMessage(chatId: chatId, messageId: task.messageId!);

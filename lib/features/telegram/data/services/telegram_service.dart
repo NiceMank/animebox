@@ -118,7 +118,7 @@ abstract class TelegramService implements Listenable {
   /// Résumé de la DERNIÈRE synchronisation RÉELLE (prompt 9 — règle 21) :
   /// valeurs mesurées pendant la passe, jamais simulées. Null tant
   /// qu'aucune synchronisation n'a abouti dans cette session.
-  SyncRunSummary? get lastSyncSummary => null;
+  SyncRunSummary? get lastSyncSummary;
 
   /// Callback branché par l'application (centre de notifications) :
   /// appelé après chaque passe de synchronisation réelle, y compris

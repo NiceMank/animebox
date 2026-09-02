@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../notifications/models/notification_models.dart';
 import '../gateway/telegram_gateway.dart';
 import '../models/api_exception.dart';
 import '../models/resolved_channel.dart';
@@ -45,6 +46,15 @@ class MockTelegramService extends ChangeNotifier implements TelegramService {
   final Random _random = Random(7);
   bool _isSyncing = false;
   SyncProgress? _progress;
+
+  /// Pas de résumé réel en simulation (règle 32 : aucune fausse synchro).
+  @override
+  SyncRunSummary? get lastSyncSummary => null;
+
+  /// Jamais appelé en simulation : le mock ne produit pas de
+  /// synchronisation réelle — donc jamais de notification (règle 32).
+  @override
+  void Function(SyncRunSummary summary)? onSyncCompleted;
 
   // -------------------------------------------------------------------
   // Authentification (simulation)

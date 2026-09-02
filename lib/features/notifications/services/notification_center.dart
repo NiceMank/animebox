@@ -27,8 +27,11 @@ class NotificationCenter {
     required NotificationSettings settings,
     LocalDatabase? database,
     DateTime Function()? now,
-  })  : _notifications = notifications,
+  })  : // ignore: prefer_initializing_formals
+        _notifications = notifications,
+        // ignore: prefer_initializing_formals
         _settings = settings,
+        // ignore: prefer_initializing_formals
         _database = database,
         _now = now ?? DateTime.now;
 

@@ -482,6 +482,10 @@ class LocalTelegramService extends ChangeNotifier implements TelegramService {
   @override
   SyncRunSummary? get lastSyncSummary => _lastSyncSummary;
 
+  /// Branché par l'application (centre de notifications — prompt 9).
+  @override
+  void Function(SyncRunSummary summary)? onSyncCompleted;
+
   /// Synchronise les sources. Règle 16 : sans cible précise, SEULES les
   /// sources ACTIVÉES sont synchronisées ; une source désactivée n'est
   /// jamais interrogée. Après la passe, le résumé RÉEL est exposé via
