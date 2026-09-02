@@ -295,7 +295,14 @@ class _RealLanguageCard extends StatelessWidget {
         children: [
           const Icon(Icons.language_rounded, size: 18, color: AppColors.textSecondary),
           const SizedBox(width: 10),
-          Text(language, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+          Expanded(
+            child: Text(
+              language,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+            ),
+          ),
           if (hasSubtitles) ...[
             const SizedBox(width: 8),
             Container(
@@ -306,6 +313,7 @@ class _RealLanguageCard extends StatelessWidget {
               ),
               child: Text(
                 'Sous-titres $subtitles',
+                maxLines: 1,
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primaryBright),
               ),
             ),

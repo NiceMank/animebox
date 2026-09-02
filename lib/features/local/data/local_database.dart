@@ -30,7 +30,7 @@ class LocalDatabase {
       final Database db = await factory.openDatabase(
         path,
         options: OpenDatabaseOptions(
-          version: 2,
+          version: 3,
           onCreate: _createSchema,
           onUpgrade: _upgradeSchema,
         ),
@@ -49,7 +49,7 @@ class LocalDatabase {
       final Database db = await factory.openDatabase(
         inMemoryDatabasePath,
         options: OpenDatabaseOptions(
-          version: 2,
+          version: 3,
           onCreate: _createSchema,
           onUpgrade: _upgradeSchema,
         ),
@@ -77,7 +77,10 @@ class LocalDatabase {
         analyzed_posts INTEGER NOT NULL DEFAULT 0,
         detected_anime INTEGER NOT NULL DEFAULT 0,
         detected_episodes INTEGER NOT NULL DEFAULT 0,
-        sync_enabled INTEGER NOT NULL DEFAULT 1
+        sync_enabled INTEGER NOT NULL DEFAULT 1,
+        notifications_enabled INTEGER NOT NULL DEFAULT 1,
+        auto_download INTEGER NOT NULL DEFAULT 0,
+        preferred_quality TEXT
       )
     ''');
     await db.execute('''
@@ -92,7 +95,8 @@ class LocalDatabase {
         genres TEXT NOT NULL DEFAULT '[]',
         year INTEGER,
         source TEXT,
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL,
+        notifications_enabled INTEGER NOT NULL DEFAULT 1
       )
     ''');
     await db.execute('''
@@ -173,7 +177,9 @@ class LocalDatabase {
         anime_title TEXT,
         season_number INTEGER,
         episode_number INTEGER,
-        status TEXT NOT NULL;
+        message_link TEXT,
+        channel_username TEXT,
+        status TEXT NOT NULL,
         total_bytes INTEGER,
         downloaded_bytes INTEGER NOT NULL DEFAULT 0,
         local_path TEXT,
@@ -192,6 +198,17 @@ class LocalDatabase {
         success INTEGER NOT NULL,
         analyzed_posts INTEGER NOT NULL DEFAULT 0,
         new_episodes INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE notified_episodes (
+        episode_id TEXT PRIMARY KEY,
+        anime_id TEXT NOT NULL,
+        anime_title TEXT,
+        season_number INTEGER NOT NULL DEFAULT 1,
+        episode_number INTEGER NOT NULL DEFAULT 0,
+        quality_count INTEGER NOT NULL DEFAULT 1,
+        notified_at TEXT NOT NULL
       )
     ''');
     await db.execute('CREATE INDEX idx_season_anime ON season(anime_id)');
@@ -237,6 +254,30 @@ class LocalDatabase {
         )
       ''');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_downloads_status ON downloads(status)');
+    }
+    if (oldVersion < 3) {
+      // Colonnes de téléchargements présentes dans le gestionnaire mais
+      // absentes du schéma initial (réparées — lien et canal réels).
+      await _addColumnIfExists(db, 'downloads', 'message_link', 'TEXT');
+      await _addColumnIfExists(db, 'downloads', 'channel_username', 'TEXT');
+      // Prompt 9 : préférences de notifications (par source, par animé) et
+      // registre des épisodes déjà notifiés. Paramètres par source
+      // préparés (téléchargement automatique OFF, qualité héritée).
+      await _addColumnIfExists(db, 'sources', 'notifications_enabled', 'INTEGER NOT NULL DEFAULT 1');
+      await _addColumnIfExists(db, 'sources', 'auto_download', 'INTEGER NOT NULL DEFAULT 0');
+      await _addColumnIfExists(db, 'sources', 'preferred_quality', 'TEXT');
+      await _addColumnIfExists(db, 'anime', 'notifications_enabled', 'INTEGER NOT NULL DEFAULT 1');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS notified_episodes (
+          episode_id TEXT PRIMARY KEY,
+          anime_id TEXT NOT NULL,
+          anime_title TEXT,
+          season_number INTEGER NOT NULL DEFAULT 1,
+          episode_number INTEGER NOT NULL DEFAULT 0,
+          quality_count INTEGER NOT NULL DEFAULT 1,
+          notified_at TEXT NOT NULL
+        )
+      ''');
     }
   }
 
@@ -483,6 +524,56 @@ class LocalDatabase {
 
   Future<void> deleteDownload(String id) async {
     await _db.delete('downloads', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // -----------------------------------------------------------------------
+  // Registre des notifications d'épisodes (prompt 9 — règle 6)
+  // -----------------------------------------------------------------------
+
+  /// Enregistre (ou met à jour) l'état « notifié » d'un épisode, avec le
+  /// nombre de qualités connues au moment de la notification — base du
+  /// regroupement des qualités (règle 5) et de l'anti-doublon (règle 6).
+  Future<void> markEpisodeNotified(
+    String episodeId, {
+    required String animeId,
+    String? animeTitle,
+    int seasonNumber = 1,
+    int episodeNumber = 0,
+    required int qualityCount,
+    DateTime? notifiedAt,
+  }) async {
+    await _db.insert(
+      'notified_episodes',
+      <String, Object?>{
+        'episode_id': episodeId,
+        'anime_id': animeId,
+        'anime_title': animeTitle,
+        'season_number': seasonNumber,
+        'episode_number': episodeNumber,
+        'quality_count': qualityCount,
+        'notified_at': (notifiedAt ?? DateTime.now()).toIso8601String(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// Tous les épisodes notifiés : épisode → nombre de qualités signalées.
+  Future<Map<String, int>> loadNotifiedQualityCounts() async {
+    final List<Map<String, Object?>> rows = await _db.query('notified_episodes');
+    return <String, int>{
+      for (final Map<String, Object?> row in rows)
+        row['episode_id']! as String: (row['quality_count'] as num?)?.toInt() ?? 1,
+    };
+  }
+
+  Future<Map<String, Object?>?> getNotifiedEpisode(String episodeId) async {
+    final List<Map<String, Object?>> rows = await _db.query(
+      'notified_episodes',
+      where: 'episode_id = ?',
+      whereArgs: [episodeId],
+      limit: 1,
+    );
+    return rows.isEmpty ? null : rows.first;
   }
 
   // -----------------------------------------------------------------------

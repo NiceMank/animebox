@@ -395,24 +395,30 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
     bool completed = false,
   }) {
     final int index = _library.indexWhere((LibraryEntry entry) => entry.anime.id == animeId);
-    if (index == -1) return;
     final Anime? anime = byId(animeId);
-    if (anime == null) return;
+    // Rien d'exploitable : ni fiche connue, ni durée fournie → aucune
+    // progression enregistrée (comportement historique préservé).
+    if (anime == null && duration == Duration.zero) return;
     final Duration total = duration > Duration.zero
         ? duration
-        : Duration(minutes: anime.episodeDurationMin.toInt());
+        : Duration(minutes: anime!.episodeDurationMin.toInt());
     final Duration clamped = position < Duration.zero
         ? Duration.zero
         : (position > total ? total : position);
-    final LibraryEntry entry = _library[index];
-    _library[index] = entry.copyWith(
-      progressMap: {...entry.progressMap, episodeId: clamped},
-      resumeEpisodeId: episodeId,
-    );
+    // La bibliothèque est mise à jour quand l'entrée existe ; la
+    // progression elle-même (table progress) ne dépend pas d'elle.
+    if (index != -1) {
+      final LibraryEntry entry = _library[index];
+      _library[index] = entry.copyWith(
+        progressMap: {...entry.progressMap, episodeId: clamped},
+        resumeEpisodeId: episodeId,
+      );
+    }
     if (completed) _completed.add('$animeId|$episodeId');
     final LocalDatabase? db = database;
     if (db != null) {
-      unawaited(db.saveProgress(
+      unawaited(_persistProgress(
+        db,
         animeId,
         episodeId,
         clamped.inMilliseconds,
@@ -421,6 +427,29 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
       ));
     }
     notifyListeners();
+  }
+
+  /// Persistance incassable de la progression : une base fermée ou
+  /// indisponible ne plante jamais la lecture (l'état mémoire prime).
+  Future<void> _persistProgress(
+    LocalDatabase db,
+    String animeId,
+    String episodeId,
+    int positionMs, {
+    required int durationMs,
+    required bool completed,
+  }) async {
+    try {
+      await db.saveProgress(
+        animeId,
+        episodeId,
+        positionMs,
+        durationMs: durationMs,
+        completed: completed,
+      );
+    } catch (_) {
+      // Ignoré : l'état mémoire reste la référence de session.
+    }
   }
 
   @override

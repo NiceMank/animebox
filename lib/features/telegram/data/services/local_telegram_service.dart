@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../local/data/local_database.dart';
+import '../../../notifications/models/notification_models.dart';
 import '../gateway/telegram_gateway.dart';
 import '../models/api_exception.dart';
 import '../models/resolved_channel.dart';
@@ -476,14 +477,38 @@ class LocalTelegramService extends ChangeNotifier implements TelegramService {
   @override
   SourceStatus? simulatedSourceStatus;
 
+  SyncRunSummary? _lastSyncSummary;
+
+  @override
+  SyncRunSummary? get lastSyncSummary => _lastSyncSummary;
+
+  /// Branché par l'application (centre de notifications — prompt 9).
+  @override
+  void Function(SyncRunSummary summary)? onSyncCompleted;
+
+  /// Synchronise les sources. Règle 16 : sans cible précise, SEULES les
+  /// sources ACTIVÉES sont synchronisées ; une source désactivée n'est
+  /// jamais interrogée. Après la passe, le résumé RÉEL est exposé via
+  /// [lastSyncSummary] (règle 21) et transmis au centre de notifications
+  /// via [onSyncCompleted] (règle 4).
   @override
   Future<void> syncSource({String? sourceId}) async {
     if (_authState != TelegramAuthState.connected && _gateway.authState != GatewayAuthState.connected) {
       throw const ApiException(ApiErrorKind.unauthorized, message: 'Compte Telegram non connecté. Reconnectez-vous.');
     }
     final List<TelegramSource> targets = sourceId == null
-        ? _sources
+        ? _sources.where((TelegramSource s) => s.syncEnabled).toList()
         : _sources.where((TelegramSource s) => s.id == sourceId).toList();
+
+    int sourcesAnalyzed = 0;
+    int analyzed = 0;
+    int newEpisodes = 0;
+    int newQualities = 0;
+    int errors = 0;
+    bool cancelled = false;
+    final List<String> errorMessages = <String>[];
+    final List<SyncRunEpisode> updates = <SyncRunEpisode>[];
+
     for (final TelegramSource source in targets) {
       final Map<String, Object?>? row = await _database.getSource(source.id);
       if (row == null) continue;
@@ -491,8 +516,78 @@ class LocalTelegramService extends ChangeNotifier implements TelegramService {
       await loadSources();
       await loadStats();
       if (result.errorMessage != null) {
-        throw ApiException(ApiErrorKind.telegram, message: result.errorMessage);
+        errors += 1;
+        errorMessages.add(result.errorMessage!);
+        // Synchronisation ciblée : l'échec remonte comme avant (message
+        // clair à l'utilisateur), le résumé reste enregistré.
+        if (sourceId != null) {
+          _recordSummary(
+            sourcesAnalyzed: sourcesAnalyzed,
+            newMessages: analyzed,
+            newEpisodes: newEpisodes,
+            newQualities: newQualities,
+            errors: errors,
+            errorMessages: errorMessages,
+            cancelled: cancelled,
+            episodes: updates,
+          );
+          throw ApiException(ApiErrorKind.telegram, message: result.errorMessage);
+        }
+        continue;
       }
+      sourcesAnalyzed += 1;
+      analyzed += result.analyzed;
+      newEpisodes += result.newEpisodes;
+      newQualities += result.grouped;
+      cancelled = cancelled || result.cancelled;
+      updates.addAll(result.episodeUpdates);
+    }
+
+    _recordSummary(
+      sourcesAnalyzed: sourcesAnalyzed,
+      newMessages: analyzed,
+      newEpisodes: newEpisodes,
+      newQualities: newQualities,
+      errors: errors,
+      errorMessages: errorMessages,
+      cancelled: cancelled,
+      episodes: updates,
+    );
+
+    // Toutes les sources ont échoué : remonter une erreur globale claire
+    // (règle 25) plutôt qu'un résumé « réussi » trompeur.
+    if (sourceId == null && targets.isNotEmpty && errors > 0 && sourcesAnalyzed == 0) {
+      throw ApiException(ApiErrorKind.telegram, message: errorMessages.join('\n'));
+    }
+  }
+
+  void _recordSummary({
+    required int sourcesAnalyzed,
+    required int newMessages,
+    required int newEpisodes,
+    required int newQualities,
+    required int errors,
+    required List<String> errorMessages,
+    required bool cancelled,
+    required List<SyncRunEpisode> episodes,
+  }) {
+    final SyncRunSummary summary = SyncRunSummary(
+      finishedAt: DateTime.now(),
+      sourcesAnalyzed: sourcesAnalyzed,
+      newMessages: newMessages,
+      newEpisodes: newEpisodes,
+      newQualities: newQualities,
+      errors: errors,
+      errorMessages: errorMessages,
+      cancelled: cancelled,
+      episodes: episodes,
+    );
+    _lastSyncSummary = summary;
+    _notify();
+    try {
+      onSyncCompleted?.call(summary);
+    } catch (_) {
+      // Un récepteur défaillant ne casse jamais la synchronisation.
     }
   }
 

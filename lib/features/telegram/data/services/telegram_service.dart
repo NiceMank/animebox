@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../notifications/models/notification_models.dart';
 import '../gateway/telegram_gateway.dart';
 import '../models/resolved_channel.dart';
 import '../models/source_status.dart';
@@ -113,6 +114,17 @@ abstract class TelegramService implements Listenable {
   bool get isSyncing;
   SyncProgress? get currentProgress;
   List<SyncHistoryEntry> get history;
+
+  /// Résumé de la DERNIÈRE synchronisation RÉELLE (prompt 9 — règle 21) :
+  /// valeurs mesurées pendant la passe, jamais simulées. Null tant
+  /// qu'aucune synchronisation n'a abouti dans cette session.
+  SyncRunSummary? get lastSyncSummary;
+
+  /// Callback branché par l'application (centre de notifications) :
+  /// appelé après chaque passe de synchronisation réelle, y compris
+  /// en cas de réussite partielle. Aucun appel = aucune notification
+  /// (jamais de fausse notification — règle 32).
+  void Function(SyncRunSummary summary)? onSyncCompleted;
 
   /// Recharge les statistiques et l'historique (mode backend).
   Future<void> loadStats();

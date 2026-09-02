@@ -59,8 +59,9 @@ class DownloadManager extends ChangeNotifier {
   final Future<String?> Function() _resolveBaseDirectory;
   final int maxConcurrent;
 
-  /// Sortie d'événements (base des futures notifications — règle 34).
-  final void Function(DownloadEvent)? onEvent;
+  /// Sortie d'événements (notifications du prompt 9 — branchée par
+  /// l'application au démarrage).
+  void Function(DownloadEvent)? onEvent;
 
   final Map<String, DownloadTask> _tasks = <String, DownloadTask>{};
   final Set<String> _active = <String>{};
@@ -315,7 +316,6 @@ class DownloadManager extends ChangeNotifier {
       // 1. Résolution du fichier (fileId réel — jamais inventé).
       int fileId = task.fileId ?? 0;
       int? expected = task.expectedSize;
-      String? tdRemotePath;
       if (fileId <= 0) {
         final GatewayMessage message =
             await gateway!.getMessage(chatId: chatId, messageId: task.messageId!);
@@ -416,6 +416,10 @@ class DownloadManager extends ChangeNotifier {
               persist: shouldPersist, event: DownloadEventKind.progress);
           if (shouldNotify) lastNotifyAt = now;
           if (shouldPersist) lastPersistAt = now;
+        } else {
+          // Compteurs RÉELS toujours à jour en mémoire : seules la
+          // notification (400 ms) et la persistance (2,5 s) sont limitées.
+          _tasks[task.versionId] = task;
         }
       });
       inactivity = Timer.periodic(const Duration(seconds: 5), (Timer timer) {

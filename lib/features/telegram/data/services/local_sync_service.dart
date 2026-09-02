@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../../analyzer/engine.dart';
 import '../../../analyzer/models.dart';
 import '../../../local/data/local_database.dart';
+import '../../../notifications/models/notification_models.dart';
 import '../gateway/telegram_gateway.dart';
 
 /// Phases d'une synchronisation locale.
@@ -41,6 +42,7 @@ class LocalSyncResult {
     this.grouped = 0,
     this.cancelled = false,
     this.errorMessage,
+    this.episodeUpdates = const <SyncRunEpisode>[],
   });
 
   final int analyzed;
@@ -48,6 +50,11 @@ class LocalSyncResult {
   final int grouped;
   final bool cancelled;
   final String? errorMessage;
+
+  /// Détail par épisode (nouveaux épisodes ET épisodes enrichis d'une
+  /// nouvelle qualité) — consommé par le centre de notifications
+  /// (règles 4/5/6 du prompt 9).
+  final List<SyncRunEpisode> episodeUpdates;
 }
 
 /// Synchronisation LOCALE : Telegram → messages → analyse → classement →
@@ -202,10 +209,13 @@ class LocalSyncService extends ChangeNotifier {
     }
 
     // 4. Stockage local (transactionnel) + mise à jour du curseur.
+    List<SyncRunEpisode> updates = const <SyncRunEpisode>[];
     if (accepted.isNotEmpty) {
-      final (int episodes, int merged) = await _persist(sourceId, chat, accepted.values.toList());
+      final (int episodes, int merged, List<SyncRunEpisode> details) =
+          await _persist(sourceId, chat, accepted.values.toList());
       newEpisodes = episodes;
       grouped = merged;
+      updates = details;
     }
     final int updatedCursor = maxMessageId > cursor ? maxMessageId : cursor;
     final Map<String, Object?> updated = Map<String, Object?>.from(source)
@@ -229,7 +239,12 @@ class LocalSyncService extends ChangeNotifier {
       message: 'Synchronisation terminée.',
       phase: LocalSyncPhase.done,
     ));
-    return LocalSyncResult(analyzed: analyzed, newEpisodes: newEpisodes, grouped: grouped);
+    return LocalSyncResult(
+      analyzed: analyzed,
+      newEpisodes: newEpisodes,
+      grouped: grouped,
+      episodeUpdates: updates,
+    );
   }
 
   Future<GatewayChat> _chatById(int chatId, String username) async {
@@ -274,7 +289,10 @@ class LocalSyncService extends ChangeNotifier {
   /// Stocke les analyses acceptées : anime → saison → épisode → versions.
   /// Les qualités d'un même épisode sont regroupées sur UNE fiche épisode ;
   /// aucune version n'est supprimée (une par publication).
-  Future<(int, int)> _persist(
+  ///
+  /// Renvoie (nouveaux épisodes, versions regroupées, détail par épisode)
+  /// — le détail alimente les notifications réelles du prompt 9.
+  Future<(int, int, List<SyncRunEpisode>)> _persist(
     String sourceId,
     GatewayChat chat,
     List<AnalysisResult> results,
@@ -288,6 +306,9 @@ class LocalSyncService extends ChangeNotifier {
     final List<Map<String, Object?>> seasonRows = [];
     final List<Map<String, Object?>> episodeRows = [];
     final List<Map<String, Object?>> versionRows = [];
+
+    // Suivi par épisode, pour le détail notifications (règles 4/5/6).
+    final Map<String, _EpisodeTrack> tracked = {};
 
     for (final AnalysisResult result in results) {
       final String animeId = _slug(result.titleKey!);
@@ -320,7 +341,8 @@ class LocalSyncService extends ChangeNotifier {
       if (episodeNumber == null) continue; // spécial sans numéro : non classé
       final String episodeId = '$seasonId-e$episodeNumber';
       final bool episodeExists = await database.hasEpisode(episodeId);
-      if (!episodeExists && !seenEpisodeIds.contains(episodeId)) {
+      final bool isNew = !episodeExists && !seenEpisodeIds.contains(episodeId);
+      if (isNew) {
         episodeRows.add({
           'id': episodeId,
           'season_id': seasonId,
@@ -357,6 +379,27 @@ class LocalSyncService extends ChangeNotifier {
         'telegram_message_link': result.telegramMessageLink,
         'created_at': DateTime.now().toIso8601String(),
       });
+
+      // Détail pour les notifications (meilleure qualité ajoutée retenue).
+      final _EpisodeTrack track = tracked.putIfAbsent(
+        episodeId,
+        () => _EpisodeTrack(
+          episodeId: episodeId,
+          animeId: animeId,
+          seasonId: seasonId,
+          sourceId: sourceId,
+          animeTitle: (result.title ?? result.titleKey)!,
+          seasonNumber: seasonNumber,
+          episodeNumber: episodeNumber,
+          isNewEpisode: isNew,
+        ),
+      );
+      track.addedQualities += 1;
+      if (result.qualityRank >= track.bestRank) {
+        track.bestRank = result.qualityRank;
+        track.qualityLabel = result.quality;
+        track.language = result.language == 'unknown' ? null : result.language;
+      }
     }
 
     await database.saveCatalogGraph(
@@ -365,7 +408,28 @@ class LocalSyncService extends ChangeNotifier {
       episodes: episodeRows,
       versions: versionRows,
     );
-    return (newEpisodes, merged);
+
+    // Nombre RÉEL de versions en base après la passe (regroupement des
+    // qualités — règle 5 : « 3 qualités disponibles » est vérifié).
+    final List<SyncRunEpisode> updates = [];
+    for (final _EpisodeTrack track in tracked.values) {
+      final int total = (await database.listVersions(track.episodeId)).length;
+      updates.add(SyncRunEpisode(
+        episodeId: track.episodeId,
+        animeId: track.animeId,
+        seasonId: track.seasonId,
+        sourceId: track.sourceId,
+        animeTitle: track.animeTitle,
+        seasonNumber: track.seasonNumber,
+        episodeNumber: track.episodeNumber,
+        isNewEpisode: track.isNewEpisode,
+        addedQualities: track.addedQualities,
+        totalQualities: total,
+        qualityLabel: track.qualityLabel,
+        language: track.language,
+      ));
+    }
+    return (newEpisodes, merged, updates);
   }
 
   String _slug(String titleKey) {
@@ -406,4 +470,32 @@ class LocalSyncService extends ChangeNotifier {
     _state = state;
     notifyListeners();
   }
+}
+
+/// Suivi interne d'un épisode pendant la persistance (règles 4/5/6).
+class _EpisodeTrack {
+  _EpisodeTrack({
+    required this.episodeId,
+    required this.animeId,
+    required this.seasonId,
+    required this.sourceId,
+    required this.animeTitle,
+    required this.seasonNumber,
+    required this.episodeNumber,
+    required this.isNewEpisode,
+  });
+
+  final String episodeId;
+  final String animeId;
+  final String seasonId;
+  final String sourceId;
+  final String animeTitle;
+  final int seasonNumber;
+  final int episodeNumber;
+  final bool isNewEpisode;
+
+  int addedQualities = 0;
+  int bestRank = -1;
+  String? qualityLabel;
+  String? language;
 }

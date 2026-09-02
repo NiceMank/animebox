@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../notifications/models/notification_models.dart';
 import '../gateway/telegram_gateway.dart';
 import '../models/api_exception.dart';
 import '../models/resolved_channel.dart';
@@ -53,6 +54,15 @@ class ApiTelegramService extends ChangeNotifier implements TelegramService {
   late final Future<void> _restoreDone;
 
   bool _disposed = false;
+
+  /// Le résumé détaillé est fourni par le mode local (prompt 9) ; le
+  /// backend hérité ne l'expose pas.
+  @override
+  SyncRunSummary? get lastSyncSummary => null;
+
+  /// Notifications branchées en mode local uniquement.
+  @override
+  void Function(SyncRunSummary summary)? onSyncCompleted;
 
   void _notify() {
     if (!_disposed) notifyListeners();
