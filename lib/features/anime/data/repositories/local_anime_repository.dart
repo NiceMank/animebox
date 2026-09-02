@@ -417,7 +417,8 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
     if (completed) _completed.add('$animeId|$episodeId');
     final LocalDatabase? db = database;
     if (db != null) {
-      unawaited(db.saveProgress(
+      unawaited(_persistProgress(
+        db,
         animeId,
         episodeId,
         clamped.inMilliseconds,
@@ -426,6 +427,29 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
       ));
     }
     notifyListeners();
+  }
+
+  /// Persistance incassable de la progression : une base fermée ou
+  /// indisponible ne plante jamais la lecture (l'état mémoire prime).
+  Future<void> _persistProgress(
+    LocalDatabase db,
+    String animeId,
+    String episodeId,
+    int positionMs, {
+    required int durationMs,
+    required bool completed,
+  }) async {
+    try {
+      await db.saveProgress(
+        animeId,
+        episodeId,
+        positionMs,
+        durationMs: durationMs,
+        completed: completed,
+      );
+    } catch (_) {
+      // Ignoré : l'état mémoire reste la référence de session.
+    }
   }
 
   @override
