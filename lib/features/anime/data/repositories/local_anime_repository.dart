@@ -461,14 +461,20 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
     final Duration clamped = position < Duration.zero
         ? Duration.zero
         : (position > total ? total : position);
-    // La bibliothèque est mise à jour quand l'entrée existe ; la
-    // progression elle-même (table progress) ne dépend pas d'elle.
+    // La bibliothèque suit la lecture : commencer un épisode ajoute
+    // automatiquement l'animé (prompt 10 §9).
     if (index != -1) {
       final LibraryEntry entry = _library[index];
       _library[index] = entry.copyWith(
         progressMap: {...entry.progressMap, episodeId: clamped},
         resumeEpisodeId: episodeId,
       );
+    } else if (anime != null) {
+      _library.add(LibraryEntry(
+        anime: anime,
+        progressMap: {episodeId: clamped},
+        resumeEpisodeId: episodeId,
+      ));
     }
     if (completed) _completed.add('$animeId|$episodeId');
     // Historique réel (date réelle de lecture) — prompt 10 §10/§12.
@@ -606,7 +612,11 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
       _library[index] = entry.copyWith(isFavorite: favorite);
     }
     final LocalDatabase? db = database;
-    if (db != null) unawaited(db.setFavorite(animeId, favorite));
+    if (db != null) {
+      unawaited(db.setFavorite(animeId, favorite).catchError((_) {
+        // Base fermée/indisponible : l'état mémoire reste la référence.
+      }));
+    }
     notifyListeners();
   }
 

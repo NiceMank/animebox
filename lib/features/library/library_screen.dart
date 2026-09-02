@@ -25,7 +25,7 @@ enum LibraryCategory {
   favorites('Favoris', Icons.favorite_rounded),
   followed('Suivis', Icons.favorite_outline_rounded),
   continueWatching('Continuer', Icons.play_circle_outline_rounded),
-  recent('Nouveautés', Icons.fiber_new_rounded),
+  recent('Récemment ajoutés', Icons.fiber_new_rounded),
   history('Historique', Icons.history_rounded),
   downloaded('Téléchargés', Icons.download_done_rounded),
   all('Tous les animés', Icons.grid_view_rounded);

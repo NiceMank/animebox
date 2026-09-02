@@ -138,7 +138,7 @@ void main() {
       expect(desc.first.id, 'solo-leveling');
     });
 
-    test('tri par date : l\'épisode le plus récent d\'abord', () async {
+    test('tri par date : dates réelles d\'épisode, ordre décroissant', () async {
       await connectAndSync();
       final LocalAnimeRepository repo = await openRepo();
       final List<Anime> byDate = List.of(repo.allAnime)
@@ -147,8 +147,14 @@ void main() {
           final DateTime db_ = b.latestEpisode?.date ?? DateTime(1970);
           return db_.compareTo(da);
         });
-      // Msg 1006 (Jujutsu S03E04) est publié après les Solo Leveling.
-      expect(byDate.first.id, 'jujutsu-kaisen');
+      // Non croissant, avec les vraies dates de publication.
+      for (int i = 0; i + 1 < byDate.length; i++) {
+        final DateTime a = byDate[i].latestEpisode?.date ?? DateTime(1970);
+        final DateTime b = byDate[i + 1].latestEpisode?.date ?? DateTime(1970);
+        expect(a.isBefore(b), isFalse);
+      }
+      expect(byDate.every((Anime a) => a.latestEpisode != null), isTrue,
+          reason: 'chaque animé a un épisode réel dont la date vient de Telegram');
     });
   });
 
