@@ -1,5 +1,7 @@
 # AnimeBox
 
+[![CI](https://github.com/NiceMank/animebox/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/NiceMank/animebox/actions/workflows/ci.yml)
+
 Application mobile **Android** (Flutter) qui transforme vos canaux Telegram d'animés en une
 bibliothèque organisée : détection automatique des titres, saisons, épisodes, qualités et langues.
 
@@ -46,6 +48,17 @@ ANIMEBOX (Flutter)
   dans le stockage sécurisé Android — Keystore), jamais dans les préférences classiques.
 - **Identifiants d'application** (my.telegram.org) : fournis à la compilation uniquement,
   jamais codés en dur, jamais journalisés, jamais envoyés.
+
+## Intégration continue & releases (GitHub Actions)
+
+| Workflow | Déclencheur | Contenu |
+| --- | --- | --- |
+| **CI** (`.github/workflows/ci.yml`) | push sur une branche, PR | Backend : 159 tests pytest + 41 vérifications smoke (API mock) · Flutter : `analyze` + 121 tests · Build APK **artefact** de test |
+| **Release** (`.github/workflows/release.yml`) | push d'un tag `v*` (ou manuel) | Vérifications complètes + build APK + **GitHub Release** publiée avec l'APK en pièce jointe |
+
+Le wrapper Gradle est versionné (`android/gradlew`, `gradle-wrapper.jar`) : aucune installation
+locale n'est nécessaire pour compiler. L'APK publié est signé avec les clés de débogage
+(installable pour tester, pas pour le Play Store). Pour publier : `git tag v0.7.1 && git push origin v0.7.1`.
 
 ## Lancer l'application
 

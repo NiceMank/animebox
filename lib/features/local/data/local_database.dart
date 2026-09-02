@@ -30,8 +30,9 @@ class LocalDatabase {
       final Database db = await factory.openDatabase(
         path,
         options: OpenDatabaseOptions(
-          version: 1,
+          version: 2,
           onCreate: _createSchema,
+          onUpgrade: _upgradeSchema,
         ),
       );
       return LocalDatabase._(db);
@@ -48,8 +49,9 @@ class LocalDatabase {
       final Database db = await factory.openDatabase(
         inMemoryDatabasePath,
         options: OpenDatabaseOptions(
-          version: 1,
+          version: 2,
           onCreate: _createSchema,
+          onUpgrade: _upgradeSchema,
         ),
       );
       return LocalDatabase._(db);
@@ -126,6 +128,7 @@ class LocalDatabase {
         duration INTEGER,
         width INTEGER,
         height INTEGER,
+        file_id INTEGER,
         telegram_channel_id TEXT,
         telegram_channel_username TEXT,
         telegram_message_id INTEGER,
@@ -143,8 +146,42 @@ class LocalDatabase {
         anime_id TEXT NOT NULL,
         episode_id TEXT NOT NULL,
         position_ms INTEGER NOT NULL,
+        duration_ms INTEGER NOT NULL DEFAULT 0,
+        completed INTEGER NOT NULL DEFAULT 0,
         updated_at TEXT NOT NULL,
         PRIMARY KEY (anime_id, episode_id)
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE settings (
+        key TEXT PRIMARY KEY,
+        value TEXT
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE downloads (
+        id TEXT PRIMARY KEY,
+        version_id TEXT NOT NULL UNIQUE,
+        anime_id TEXT NOT NULL,
+        season_id TEXT NOT NULL,
+        episode_id TEXT NOT NULL,
+        chat_id INTEGER,
+        message_id INTEGER,
+        file_id INTEGER,
+        quality TEXT,
+        language TEXT,
+        anime_title TEXT,
+        season_number INTEGER,
+        episode_number INTEGER,
+        status TEXT NOT NULL;
+        total_bytes INTEGER,
+        downloaded_bytes INTEGER NOT NULL DEFAULT 0,
+        local_path TEXT,
+        file_name TEXT,
+        error TEXT,
+        resumable INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
       )
     ''');
     await db.execute('''
@@ -161,6 +198,59 @@ class LocalDatabase {
     await db.execute('CREATE INDEX idx_episode_season ON episode(season_id)');
     await db.execute('CREATE INDEX idx_version_episode ON version(episode_id)');
     await db.execute('CREATE INDEX idx_version_message ON version(telegram_message_id)');
+  await db.execute('CREATE INDEX idx_downloads_status ON downloads(status)');
+  }
+
+  /// Migration v1 → v2 : téléchargements, file_id des versions, progression
+  /// enrichie (durée + statut terminé). Aucune perte de données.
+  static Future<void> _upgradeSchema(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await _addColumnIfExists(db, 'version', 'file_id', 'INTEGER');
+      await _addColumnIfExists(db, 'progress', 'duration_ms', 'INTEGER NOT NULL DEFAULT 0');
+      await _addColumnIfExists(db, 'progress', 'completed', 'INTEGER NOT NULL DEFAULT 0');
+      await db.execute('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS downloads (
+          id TEXT PRIMARY KEY,
+          version_id TEXT NOT NULL UNIQUE,
+          anime_id TEXT NOT NULL,
+          season_id TEXT NOT NULL,
+          episode_id TEXT NOT NULL,
+          chat_id INTEGER,
+          message_id INTEGER,
+          file_id INTEGER,
+          quality TEXT,
+          language TEXT,
+          anime_title TEXT,
+          season_number INTEGER,
+          episode_number INTEGER,
+          message_link TEXT,
+          status TEXT NOT NULL,
+          total_bytes INTEGER,
+          downloaded_bytes INTEGER NOT NULL DEFAULT 0,
+          local_path TEXT,
+          file_name TEXT,
+          error TEXT,
+          resumable INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_downloads_status ON downloads(status)');
+    }
+  }
+
+  static Future<void> _addColumnIfExists(
+    Database db,
+    String table,
+    String column,
+    String definition,
+  ) async {
+    final List<Map<String, Object?>> columns = await db.rawQuery('PRAGMA table_info($table)');
+    final bool exists = columns.any((Map<String, Object?> c) => c['name'] == column);
+    if (!exists) {
+      await db.execute('ALTER TABLE $table ADD COLUMN $column $definition');
+    }
   }
 
   Future<void> close() => _db.close();
@@ -319,6 +409,7 @@ class LocalDatabase {
     }
   }
 
+  /// Position seule (compatibilité) — voir [loadProgressDetails].
   Future<Map<String, int>> loadProgress() async {
     final List<Map<String, Object?>> rows = await _db.query('progress');
     return {
@@ -327,17 +418,85 @@ class LocalDatabase {
     };
   }
 
-  Future<void> saveProgress(String animeId, String episodeId, int positionMs) async {
+  /// Progression complète : position, durée, statut terminé (prompt 8).
+  /// Clé : `animeId|episodeId`.
+  Future<Map<String, Map<String, Object?>>> loadProgressDetails() async {
+    final List<Map<String, Object?>> rows = await _db.query('progress');
+    return {
+      for (final Map<String, Object?> r in rows)
+        '${r['anime_id']}|${r['episode_id']}': {
+          'positionMs': (r['position_ms'] as num?)?.toInt() ?? 0,
+          'durationMs': (r['duration_ms'] as num?)?.toInt() ?? 0,
+          'completed': (r['completed'] as num?)?.toInt() == 1,
+          'updatedAt': r['updated_at']?.toString(),
+        },
+    };
+  }
+
+  Future<void> saveProgress(
+    String animeId,
+    String episodeId,
+    int positionMs, {
+    int durationMs = 0,
+    bool completed = false,
+  }) async {
     await _db.insert(
       'progress',
       {
         'anime_id': animeId,
         'episode_id': episodeId,
         'position_ms': positionMs,
+        'duration_ms': durationMs,
+        'completed': completed ? 1 : 0,
         'updated_at': DateTime.now().toIso8601String(),
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  Future<void> clearProgress(String animeId, String episodeId) async {
+    await _db.delete('progress', where: 'anime_id = ? AND episode_id = ?', whereArgs: [animeId, episodeId]);
+  }
+
+  // -----------------------------------------------------------------------
+  // Téléchargements (prompt 8)
+  // -----------------------------------------------------------------------
+
+  Future<void> upsertDownload(Map<String, Object?> row) async {
+    await _db.insert('downloads', row, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<List<Map<String, Object?>>> listDownloads() async =>
+      _db.query('downloads', orderBy: 'updated_at DESC');
+
+  Future<Map<String, Object?>?> getDownload(String id) async {
+    final List<Map<String, Object?>> rows =
+        await _db.query('downloads', where: 'id = ?', whereArgs: [id], limit: 1);
+    return rows.isEmpty ? null : rows.first;
+  }
+
+  Future<Map<String, Object?>?> getDownloadByVersion(String versionId) async {
+    final List<Map<String, Object?>> rows =
+        await _db.query('downloads', where: 'version_id = ?', whereArgs: [versionId], limit: 1);
+    return rows.isEmpty ? null : rows.first;
+  }
+
+  Future<void> deleteDownload(String id) async {
+    await _db.delete('downloads', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // -----------------------------------------------------------------------
+  // Réglages (clé/valeur, persistés)
+  // -----------------------------------------------------------------------
+
+  Future<String?> getSetting(String key) async {
+    final List<Map<String, Object?>> rows =
+        await _db.query('settings', where: 'key = ?', whereArgs: [key], limit: 1);
+    return rows.isEmpty ? null : rows.first['value']?.toString();
+  }
+
+  Future<void> setSetting(String key, String value) async {
+    await _db.insert('settings', {'key': key, 'value': value}, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<void> addSyncHistory(Map<String, Object?> entry) => _db.insert('sync_history', entry);

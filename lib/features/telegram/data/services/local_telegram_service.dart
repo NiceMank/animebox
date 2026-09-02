@@ -67,6 +67,9 @@ class LocalTelegramService extends ChangeNotifier implements TelegramService {
   bool get isRealTelegram => true;
 
   @override
+  TelegramGateway? get mediaGateway => _gateway;
+
+  @override
   String? get apiBaseUrl => null;
 
   // ---------------------------------------------------------------------

@@ -50,6 +50,11 @@ class TdlibTelegramGateway implements TelegramGateway {
   String? _lastError;
   final StreamController<GatewayAuthState> _authController =
       StreamController<GatewayAuthState>.broadcast();
+  final StreamController<GatewayFileSnapshot> _fileUpdates =
+      StreamController<GatewayFileSnapshot>.broadcast();
+
+  @override
+  Stream<GatewayFileSnapshot> get fileUpdates => _fileUpdates.stream;
 
   @override
   GatewayAuthState get authState => _authState;
@@ -216,6 +221,14 @@ class TdlibTelegramGateway implements TelegramGateway {
       await _applyAuthorizationState(
         (update['authorization_state'] as Map<String, dynamic>?)?['@type']?.toString(),
       );
+      return;
+    }
+    if (update['@type'] == 'updateFile') {
+      final Map<String, dynamic>? file = update['file'] as Map<String, dynamic>?;
+      if (file != null) {
+        final GatewayFileSnapshot snapshot = GatewayFileSnapshot.fromTd(file);
+        if (!_fileUpdates.isClosed) _fileUpdates.add(snapshot);
+      }
     }
   }
 
@@ -484,6 +497,73 @@ class TdlibTelegramGateway implements TelegramGateway {
     return messages;
   }
 
+  @override
+  Future<GatewayMessage> getMessage({required int chatId, required int messageId}) async {
+    final Map<String, dynamic> response = await _request('getMessage', {
+      'chat_id': chatId,
+      'message_id': messageId,
+    });
+    final GatewayMessage? message = _messageFromTd(response, chatId);
+    if (message == null) {
+      throw const GatewayError("Cette publication n'est pas un média exploitable.");
+    }
+    return message;
+  }
+
+  @override
+  Future<GatewayFileSnapshot> getFileSnapshot(int fileId) async {
+    final Map<String, dynamic> response = await _request('getFile', {'file_id': fileId});
+    return GatewayFileSnapshot.fromTd(response);
+  }
+
+  @override
+  Future<void> startDownload({
+    required int fileId,
+    required int offset,
+    int limit = 0,
+    bool priority = false,
+  }) async {
+    // La requête `downloadFile` (synchronisé = faux par défaut) revient
+    // dès le lancement ; la progression arrive par `updateFile`. La réponse
+    // finale (ou l'erreur d'annulation) est consommée silencieusement.
+    unawaited(() async {
+      try {
+        await _request('downloadFile', {
+          'file_id': fileId,
+          'chunk_size': kDownloadChunkBytes,
+          'offset': offset,
+          'limit': limit,
+          'priority': priority,
+        });
+      } on GatewayError {
+        // Annulation ou interruption : le suivi (updateFile) s'arrête,
+        // l'état est géré par le téléchargeur.
+      }
+    }());
+  }
+
+  @override
+  Future<void> cancelDownload({required int fileId}) async {
+    try {
+      await _request('cancelDownloadFile', {'file_id': fileId, 'only_if_pending': false});
+    } on GatewayError {
+      // Le téléchargement a pu s'achever entre-temps : non bloquant.
+    }
+  }
+
+  @override
+  Future<void> deleteDownloadedFile({required int fileId}) async {
+    try {
+      await _request('deleteDownloadedFile', {'file_id': fileId});
+    } on GatewayError {
+      // Fichier déjà absent : non bloquant.
+    }
+  }
+
+  /// Granularité des requêtes de téléchargement (multiple de 1024, comme
+  /// l'exige TDLib pour [offset]).
+  static const int kDownloadChunkBytes = 512 * 1024;
+
   GatewayMessage? _messageFromTd(Map<String, dynamic> message, int chatId) {
     final Map<String, dynamic>? content = message['content'] as Map<String, dynamic>?;
     final String contentType = content?['@type']?.toString() ?? '';
@@ -501,6 +581,7 @@ class TdlibTelegramGateway implements TelegramGateway {
     int? duration;
     int? width;
     int? height;
+    int? fileId;
 
     switch (contentType) {
       case 'messageText':
@@ -516,6 +597,7 @@ class TdlibTelegramGateway implements TelegramGateway {
         width = (video?['width'] as num?)?.toInt();
         height = (video?['height'] as num?)?.toInt();
         fileSize = _expectedSize(video?['video'] as Map<String, dynamic>?);
+        fileId = _fileId(video?['video'] as Map<String, dynamic>?);
         break;
       case 'messageAnimation':
         final Map<String, dynamic>? animation = content?['animation'] as Map<String, dynamic>?;
@@ -526,6 +608,7 @@ class TdlibTelegramGateway implements TelegramGateway {
         width = (animation?['width'] as num?)?.toInt();
         height = (animation?['height'] as num?)?.toInt();
         fileSize = _expectedSize(animation?['animation'] as Map<String, dynamic>?);
+        fileId = _fileId(animation?['animation'] as Map<String, dynamic>?);
         break;
       case 'messageVideoNote':
         mediaType = 'video';
@@ -536,6 +619,7 @@ class TdlibTelegramGateway implements TelegramGateway {
         fileName = document?['file_name']?.toString();
         mimeType = document?['mime_type']?.toString();
         fileSize = _expectedSize(document?['document'] as Map<String, dynamic>?);
+        fileId = _fileId(document?['document'] as Map<String, dynamic>?);
         mediaType = (mimeType?.startsWith('video/') ?? false)
             ? 'video'
             : (mimeType?.startsWith('audio/') ?? false)
@@ -549,6 +633,7 @@ class TdlibTelegramGateway implements TelegramGateway {
         mimeType = audio?['mime_type']?.toString();
         duration = (audio?['duration'] as num?)?.toInt();
         fileSize = _expectedSize(audio?['audio'] as Map<String, dynamic>?);
+        fileId = _fileId(audio?['audio'] as Map<String, dynamic>?);
         break;
       case 'messagePhoto':
         mediaType = 'image';
@@ -576,7 +661,13 @@ class TdlibTelegramGateway implements TelegramGateway {
       width: width,
       height: height,
       messageLink: null, // le lien est construit par l'appelant (chat connu)
+      fileId: fileId,
     );
+  }
+
+  int? _fileId(Map<String, dynamic>? file) {
+    final int? id = (file?['id'] as num?)?.toInt();
+    return id == null || id <= 0 ? null : id;
   }
 
   int? _expectedSize(Map<String, dynamic>? file) {

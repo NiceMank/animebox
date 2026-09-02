@@ -5,7 +5,7 @@ class PlaybackSettings {
   const PlaybackSettings({
     this.autoPlayNext = true,
     this.resumeFromLastPosition = true,
-    this.preferredQuality = VideoQuality.fhd,
+    this.preferredQuality = QualityPreference.auto,
     this.subtitlesEnabled = true,
   });
 
@@ -16,11 +16,17 @@ class PlaybackSettings {
   final bool resumeFromLastPosition;
 
   /// Qualité préférée (utilisée à l'ouverture de l'écran de qualité).
-  final VideoQuality preferredQuality;
+  /// Auto = la meilleure qualité réellement disponible.
+  final QualityPreference preferredQuality;
 
   final bool subtitlesEnabled;
 
-  PlaybackSettings copyWith({bool? autoPlayNext, bool? resumeFromLastPosition, VideoQuality? preferredQuality, bool? subtitlesEnabled}) =>
+  PlaybackSettings copyWith({
+    bool? autoPlayNext,
+    bool? resumeFromLastPosition,
+    QualityPreference? preferredQuality,
+    bool? subtitlesEnabled,
+  }) =>
       PlaybackSettings(
         autoPlayNext: autoPlayNext ?? this.autoPlayNext,
         resumeFromLastPosition: resumeFromLastPosition ?? this.resumeFromLastPosition,

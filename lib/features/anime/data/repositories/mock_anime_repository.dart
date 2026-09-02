@@ -4,6 +4,7 @@ import '../models/anime.dart';
 import '../models/library_entry.dart';
 import '../models/playback_progress.dart';
 import '../models/playback_settings.dart';
+import '../models/video_quality.dart';
 import '../models/search_filters.dart';
 import '../mock/mock_data.dart';
 import 'anime_repository.dart';
@@ -146,15 +147,25 @@ class MockAnimeRepository extends ChangeNotifier implements AnimeRepository {
   @override
   Duration? episodeProgress(String animeId, String episodeId) => libraryEntryFor(animeId)?.progressFor(episodeId);
 
+  final Set<String> _completed = <String>{};
+
   @override
-  void recordProgress(String animeId, String episodeId, Duration position) {
+  void recordProgress(
+    String animeId,
+    String episodeId,
+    Duration position, {
+    Duration duration = Duration.zero,
+    bool completed = false,
+  }) {
     final int index = _library.indexWhere((LibraryEntry entry) => entry.anime.id == animeId);
     if (index == -1) return;
 
     final Anime? anime = byId(animeId);
     if (anime == null) return;
 
-    final Duration total = Duration(minutes: anime.episodeDurationMin.toInt());
+    final Duration total = duration > Duration.zero
+        ? duration
+        : Duration(minutes: anime.episodeDurationMin.toInt());
     final Duration clamped = position < Duration.zero
         ? Duration.zero
         : (position > total ? total : position);
@@ -164,6 +175,16 @@ class MockAnimeRepository extends ChangeNotifier implements AnimeRepository {
       progressMap: {...entry.progressMap, episodeId: clamped},
       resumeEpisodeId: episodeId,
     );
+    if (completed) _completed.add('$animeId|$episodeId');
+    notifyListeners();
+  }
+
+  @override
+  bool episodeCompleted(String animeId, String episodeId) => _completed.contains('$animeId|$episodeId');
+
+  @override
+  void setPreferredQuality(QualityPreference preference) {
+    _settings = _settings.copyWith(preferredQuality: preference);
     notifyListeners();
   }
 

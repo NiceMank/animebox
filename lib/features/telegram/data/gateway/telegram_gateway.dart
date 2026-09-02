@@ -81,6 +81,7 @@ class GatewayMessage {
     this.width,
     this.height,
     this.messageLink,
+    this.fileId,
   });
 
   final int messageId;
@@ -100,6 +101,61 @@ class GatewayMessage {
   /// Lien t.me vers la publication — null quand Telegram ne permet pas de
   /// construire un lien (jamais inventé).
   final String? messageLink;
+
+  /// Identifiant TDLib du fichier média (null si la publication n'en a pas).
+  /// Nécessaire au téléchargement/à la lecture via TDLib — jamais inventé.
+  final int? fileId;
+}
+
+/// État instantané d'un fichier TDLib (téléchargement ou cache local).
+///
+/// Toutes les valeurs proviennent de `getFile`/`updateFile` : aucune
+/// progression n'est estimée ni simulée.
+class GatewayFileSnapshot {
+  const GatewayFileSnapshot({
+    required this.fileId,
+    this.expectedBytes,
+    this.receivedBytes = 0,
+    this.prefixBytes = 0,
+    this.localPath,
+    this.isDownloadCompleted = false,
+    this.canBeDownloaded = true,
+  });
+
+  final int fileId;
+
+  /// Taille totale si Telegram l'expose (sinon null — jamais inventée).
+  final int? expectedBytes;
+
+  /// Octets déjà présents localement (fichier partiel compris).
+  final int receivedBytes;
+
+  /// Octets contigus disponibles en tête de fichier (lecture progressive).
+  final int prefixBytes;
+
+  /// Chemin local du fichier (partiel ou complet) — null si absent.
+  final String? localPath;
+
+  /// Le fichier est-il entièrement téléchargé ?
+  final bool isDownloadCompleted;
+
+  /// TDLib autorise-t-il le téléchargement (fichier non restreint) ?
+  final bool canBeDownloaded;
+
+  static GatewayFileSnapshot fromTd(Map<String, dynamic> file) {
+    final Map<String, dynamic> local = (file['local'] as Map<String, dynamic>?) ?? const {};
+    final int? expected = (file['expected_size'] as num?)?.toInt() ??
+        (file['size'] as num?)?.toInt();
+    return GatewayFileSnapshot(
+      fileId: (file['id'] as num).toInt(),
+      expectedBytes: expected != null && expected > 0 ? expected : null,
+      receivedBytes: ((local['downloaded_size'] ?? local['total_downloaded_size']) as num?)?.toInt() ?? 0,
+      prefixBytes: (local['downloaded_prefix_size'] as num?)?.toInt() ?? 0,
+      localPath: (local['path'] as String?)?.isEmpty == true ? null : local['path']?.toString(),
+      isDownloadCompleted: (local['is_downloading_completed'] as bool?) ?? false,
+      canBeDownloaded: (local['can_be_downloaded'] as bool?) ?? true,
+    );
+  }
 }
 
 /// Erreur de passerelle — toujours porteuse d'un message compréhensible.
@@ -193,4 +249,41 @@ abstract class TelegramGateway {
     int limit = 50,
     int? fromMessageId,
   });
+
+  // -------------------------------------------------------------------------
+  // Médias (prompt 8) — téléchargement et lecture via TDLib, en direct.
+  // -------------------------------------------------------------------------
+
+  /// Récupère UNE publication (vérification d'accessibilité réelle).
+  ///
+  /// Lève une [GatewayError] compréhensible si la publication a été
+  /// supprimée ou n'est plus accessible avec le compte connecté.
+  Future<GatewayMessage> getMessage({required int chatId, required int messageId});
+
+  /// État actuel d'un fichier TDLib (progrès, chemin local, complétion).
+  Future<GatewayFileSnapshot> getFileSnapshot(int fileId);
+
+  /// Flux des mises à jour de fichiers TDLib (`updateFile`) — progression
+  /// RÉELLE des téléchargements. Diffusé à tous les abonnés.
+  Stream<GatewayFileSnapshot> get fileUpdates;
+
+  /// Lance (ou poursuit) un téléchargement TDLib.
+  ///
+  /// [offset] doit être un multiple de 1024 (contrainte TDLib) ; la requête
+  /// revient aussitôt, la progression arrive via [fileUpdates]. Ne lève
+  /// qu'en cas de refus immédiat (fichier inaccessible…).
+  Future<void> startDownload({
+    required int fileId,
+    required int offset,
+    int limit = 0,
+    bool priority = false,
+  });
+
+  /// Arrête un téléchargement en cours (le fichier partiel est conservé
+  /// par TDLib : la reprise à l'offset correspondante reste possible).
+  Future<void> cancelDownload({required int fileId});
+
+  /// Supprime la copie locale TDLib d'un fichier COMPLET (après copie vers
+  /// le stockage organisé d'AnimeBox) pour libérer l'espace.
+  Future<void> deleteDownloadedFile({required int fileId});
 }

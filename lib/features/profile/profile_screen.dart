@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../app/router.dart';
+import '../anime/data/models/video_quality.dart';
+import '../anime/data/repositories/anime_repository.dart';
 import '../telegram/data/services/telegram_service.dart';
 import '../telegram/data/models/telegram_user.dart';
 import '../../shared/widgets/primary_button.dart';
@@ -10,9 +12,12 @@ import '../../shared/widgets/status_pill.dart';
 /// Écran Profil — état de la connexion Telegram, accès aux sources et à
 /// la synchronisation, réglages de l'application.
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key, required this.telegramService});
+  const ProfileScreen({super.key, required this.telegramService, this.repository});
 
   final TelegramService telegramService;
+
+  /// Dépôt (réglages de lecture — qualité préférée).
+  final AnimeRepository? repository;
 
   void _comingSoon(BuildContext context, String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -103,6 +108,15 @@ class ProfileScreen extends StatelessWidget {
                         : 'Données locales de démonstration',
                 onTap: () => _showDataModeInfo(context, service),
               ),
+              if (repository != null) ...[
+                const SizedBox(height: 12),
+                _MenuCard(
+                  icon: Icons.high_quality_rounded,
+                  title: 'Qualité préférée',
+                  subtitle: repository!.playbackSettings.preferredQuality.label,
+                  onTap: () => _pickPreferredQuality(context),
+                ),
+              ],
               const SizedBox(height: 12),
               _MenuCard(
                 icon: Icons.privacy_tip_outlined,
@@ -131,6 +145,46 @@ class ProfileScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  /// Sélection de la qualité préférée (Auto = meilleure disponible).
+  Future<void> _pickPreferredQuality(BuildContext context) async {
+    final AnimeRepository? repo = repository;
+    if (repo == null) return;
+    final QualityPreference current = repo.playbackSettings.preferredQuality;
+    final QualityPreference? picked = await showModalBottomSheet<QualityPreference>(
+      context: context,
+      backgroundColor: AppColors.surfaceAlt,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Padding(
+              padding: EdgeInsets.all(14),
+              child: Text('Qualité préférée', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+            for (final QualityPreference preference in QualityPreference.values)
+              ListTile(
+                title: Text(preference.label),
+                subtitle: preference == QualityPreference.auto
+                    ? const Text('Meilleure qualité réellement disponible')
+                    : null,
+                trailing: preference == current
+                    ? const Icon(Icons.check_rounded, color: AppColors.primaryBright)
+                    : null,
+                onTap: () => Navigator.of(context).pop(preference),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (picked != null && picked != current) {
+      repo.setPreferredQuality(picked);
+    }
   }
 
   String _connectionSubtitle(TelegramService service) => switch (service.authState) {

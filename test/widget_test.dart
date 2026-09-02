@@ -173,10 +173,8 @@ void main() {
     await tester.tap(find.byType(EpisodeCard).first);
     await tester.pumpAndSettle();
 
-    // Sélection d'une qualité et d'une langue.
+    // Sélection d'une version (la langue est portée par la version réelle).
     await tester.tap(find.text('720p').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('VOSTFR').first);
     await tester.pumpAndSettle();
 
     // Lecture.
@@ -196,7 +194,8 @@ void main() {
     expect(find.text('Qualité disponible'), findsOneWidget);
   });
 
-  testWidgets('la progression de lecture est enregistrée localement', (WidgetTester tester) async {
+  testWidgets("le lecteur affiche le repli honnête en mode démonstration (aucune fausse lecture)",
+      (WidgetTester tester) async {
     final MockAnimeRepository repository = MockAnimeRepository();
     tester.view.physicalSize = const Size(1080, 2340);
     tester.view.devicePixelRatio = 3.0;
@@ -204,15 +203,13 @@ void main() {
     await tester.pumpWidget(AnimeBoxApp(repository: repository));
     await tester.pumpAndSettle();
 
-    // Solo Leveling S2 E09 (sans progression initiale).
+    // Solo Leveling S2 E09 : ouvrir le lecteur depuis le choix de qualité.
     await tester.tap(find.text('Voir la fiche'));
     await tester.pumpAndSettle();
     await tester.tap(find.byType(EpisodeCard).first);
     await tester.pumpAndSettle();
     await tester.tap(find.byType(EpisodeCard).first);
     await tester.pumpAndSettle();
-    // La liste s'est enrichie (source de la publication) : on défile
-    // jusqu'au bouton de lecture avant d'appuyer.
     await tester.dragUntilVisible(
       find.text('Lire maintenant'),
       find.byType(ListView),
@@ -222,20 +219,39 @@ void main() {
     await tester.tap(find.text('Lire maintenant'));
     await tester.pumpAndSettle();
 
-    expect(repository.episodeProgress('solo-leveling', 'sl-s2e9'), isNull);
+    expect(find.byType(PlayerScreen), findsOneWidget);
+    // Aucun média réel en mode démonstration : l'écran ne simule JAMAIS
+    // une lecture (règle 39) — il propose le repli Telegram réel.
+    expect(
+      find.textContaining('Lecture directe indisponible'),
+      findsWidgets,
+    );
+    // Le libellé de l'épisode reste affiché (top bar).
+    expect(find.textContaining('S02E09'), findsOneWidget);
+  });
 
-    // Lecture simulée : la progression est sauvegardée périodiquement.
-    await tester.tap(find.byKey(const Key('player-toggle-play')));
-    await tester.pump(const Duration(milliseconds: 600));
-    await tester.pump(const Duration(seconds: 3));
-    expect(repository.episodeProgress('solo-leveling', 'sl-s2e9'), greaterThan(Duration.zero));
+  test('la progression réelle est persistée : position, durée, statut terminé', () {
+    final MockAnimeRepository repository = MockAnimeRepository();
+    // Position intermédiaire (comme un vrai lecteur à 12 min 40 / 24 min).
+    repository.recordProgress(
+      'solo-leveling',
+      'sl-s2e9',
+      const Duration(minutes: 12, seconds: 40),
+      duration: const Duration(minutes: 24),
+    );
+    expect(repository.episodeProgress('solo-leveling', 'sl-s2e9'),
+        const Duration(minutes: 12, seconds: 40));
+    expect(repository.episodeCompleted('solo-leveling', 'sl-s2e9'), isFalse);
 
-    await tester.tap(find.byKey(const Key('player-toggle-play')));
-    await tester.pumpAndSettle();
-
-    // Le bouton « Épisodes » ramène à la liste des épisodes.
-    await tester.tap(find.byKey(const Key('player-action-episodes')));
-    await tester.pumpAndSettle();
-    expect(find.byType(EpisodeListScreen), findsOneWidget);
+    // Le lecteur signale la fin : position = durée, statut terminé.
+    repository.recordProgress(
+      'solo-leveling',
+      'sl-s2e9',
+      const Duration(minutes: 24),
+      duration: const Duration(minutes: 24),
+      completed: true,
+    );
+    expect(repository.episodeCompleted('solo-leveling', 'sl-s2e9'), isTrue);
+    // Règle 21 : un épisode terminé reprend du début.
   });
 }

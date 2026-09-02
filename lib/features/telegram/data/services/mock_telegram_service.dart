@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
+import '../gateway/telegram_gateway.dart';
 import '../models/api_exception.dart';
 import '../models/resolved_channel.dart';
 import '../models/source_status.dart';
@@ -62,6 +63,9 @@ class MockTelegramService extends ChangeNotifier implements TelegramService {
 
   @override
   bool get isRealTelegram => false;
+
+  @override
+  TelegramGateway? get mediaGateway => null;
 
   @override
   String? get apiBaseUrl => null;

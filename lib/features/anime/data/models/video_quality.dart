@@ -33,3 +33,37 @@ extension VideoQualityX on VideoQuality {
         _ => null,
       };
 }
+
+/// Préférence de qualité de l'utilisateur (prompt 8, règle 6).
+///
+/// `auto` sélectionne la meilleure qualité réellement disponible.
+enum QualityPreference { auto, uhd, qhd, fhd, hd, sd, low }
+
+extension QualityPreferenceX on QualityPreference {
+  String get label => switch (this) {
+        QualityPreference.auto => 'Auto',
+        QualityPreference.uhd => '2160p',
+        QualityPreference.qhd => '1440p',
+        QualityPreference.fhd => '1080p',
+        QualityPreference.hd => '720p',
+        QualityPreference.sd => '480p',
+        QualityPreference.low => '360p',
+      };
+
+  /// Valeur vidéo correspondante (null pour Auto — dépend du catalogue).
+  VideoQuality? get target => switch (this) {
+        QualityPreference.auto => null,
+        QualityPreference.uhd || QualityPreference.qhd => VideoQuality.fhd,
+        QualityPreference.fhd => VideoQuality.fhd,
+        QualityPreference.hd => VideoQuality.hd,
+        QualityPreference.sd => VideoQuality.sd,
+        QualityPreference.low => VideoQuality.low,
+      };
+
+  static QualityPreference fromName(String? name) {
+    for (final QualityPreference value in QualityPreference.values) {
+      if (value.name == name) return value;
+    }
+    return QualityPreference.auto;
+  }
+}
