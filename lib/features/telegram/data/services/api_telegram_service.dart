@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../gateway/telegram_gateway.dart';
 import '../models/api_exception.dart';
 import '../models/resolved_channel.dart';
 import '../models/source_status.dart';
@@ -65,6 +66,9 @@ class ApiTelegramService extends ChangeNotifier implements TelegramService {
 
   @override
   bool get isBackendApi => true;
+
+  @override
+  TelegramGateway? get mediaGateway => null;
 
   @override
   bool get isRealTelegram => true;

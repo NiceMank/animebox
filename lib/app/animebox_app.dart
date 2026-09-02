@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../core/theme/app_theme.dart';
 import '../features/anime/data/repositories/anime_repository.dart';
@@ -8,7 +9,11 @@ import '../features/anime/data/repositories/local_anime_repository.dart';
 import '../features/anime/data/repositories/mock_anime_repository.dart';
 import '../features/library/services/library_service.dart';
 import '../features/local/data/local_database.dart';
+import '../features/media/services/download_manager.dart';
+import '../features/media/services/media_service.dart';
+import '../features/media/services/storage_checker.dart';
 import '../features/telegram/data/gateway/tdlib_gateway.dart';
+import '../features/telegram/data/gateway/telegram_gateway.dart';
 import '../features/telegram/data/services/api_telegram_service.dart';
 import '../features/telegram/data/services/episode_grouping_service.dart';
 import '../features/telegram/data/services/local_telegram_service.dart';
@@ -41,6 +46,7 @@ class AnimeBoxApp extends StatefulWidget {
     this.libraryService,
     this.sessionService,
     this.database,
+    this.mediaService,
   });
 
   /// Source de données injectée depuis `main()`.
@@ -54,6 +60,9 @@ class AnimeBoxApp extends StatefulWidget {
 
   /// Base locale partagée (mode local réel).
   final LocalDatabase? database;
+
+  /// Couche média injectable pour les tests.
+  final MediaService? mediaService;
 
   /// URL du backend, lue à la compilation (aucun secret).
   static String get apiBaseUrl => const String.fromEnvironment('ANIMEBOX_API_URL');
@@ -87,6 +96,32 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
       widget.libraryService ?? LibraryService(repository: _repository, groupingService: _groupingService);
 
   late final TelegramService _telegramService = widget.telegramService ?? _buildTelegramService();
+
+  late final DownloadManager _downloadManager = DownloadManager(
+    gateway: _telegramService.mediaGateway,
+    database: widget.database,
+    storageChecker: createStorageChecker(),
+    resolveBaseDirectory: _resolveMediaBaseDirectory,
+  );
+
+  late final MediaService _mediaService = widget.mediaService ??
+      MediaService(
+        repository: _repository,
+        downloadManager: _downloadManager,
+        gateway: _telegramService.mediaGateway,
+      );
+
+  Future<String?> _resolveMediaBaseDirectory() async {
+    final LocalDatabase? db = widget.database;
+    if (db == null) return null;
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      return directory.path;
+    } catch (_) {
+      return null;
+    }
+  }
+
 
   TelegramService _buildTelegramService() {
     if (AnimeBoxApp.useBackendApi) {
@@ -123,6 +158,10 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
       // ignore: discarded_futures
       catalog.refreshCatalog();
     }
+    // Restauration des téléchargements persistés (reprise après
+    // redémarrage — règle 13).
+    // ignore: discarded_futures
+    _downloadManager.restorePersisted();
   }
 
   @override
@@ -136,8 +175,9 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
         telegramService: _telegramService,
         groupingService: _groupingService,
         libraryService: _libraryService,
+        mediaService: _mediaService,
       ),
-      onGenerateRoute: AppRouter.onGenerateRoute(_repository, _telegramService),
+      onGenerateRoute: AppRouter.onGenerateRoute(_repository, _telegramService, _mediaService),
     );
   }
 }

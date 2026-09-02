@@ -5,6 +5,7 @@ import '../features/downloads/downloads_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/library/library_screen.dart';
 import '../features/library/services/library_service.dart';
+import '../features/media/services/media_service.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/search/search_screen.dart';
 import '../features/telegram/data/services/episode_grouping_service.dart';
@@ -23,12 +24,16 @@ class HomeShell extends StatefulWidget {
     required this.telegramService,
     required this.groupingService,
     required this.libraryService,
+    this.mediaService,
   });
 
   final AnimeRepository repository;
   final TelegramService telegramService;
   final EpisodeGroupingService groupingService;
   final LibraryService libraryService;
+
+  /// Couche média (téléchargements — null en démonstration).
+  final MediaService? mediaService;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -55,8 +60,14 @@ class _HomeShellState extends State<HomeShell> {
           ),
           SearchScreen(repository: repository),
           LibraryScreen(repository: repository, libraryService: widget.libraryService),
-          DownloadsScreen(onBrowse: () => _select(HomeTab.library)),
-          ProfileScreen(telegramService: widget.telegramService),
+          DownloadsScreen(
+            onBrowse: () => _select(HomeTab.library),
+            mediaService: widget.mediaService,
+          ),
+          ProfileScreen(
+            telegramService: widget.telegramService,
+            repository: repository,
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigation(current: _tab, onSelected: _select),

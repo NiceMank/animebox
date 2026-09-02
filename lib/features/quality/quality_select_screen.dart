@@ -9,24 +9,31 @@ import '../anime/data/repositories/anime_repository.dart';
 import '../anime/data/repositories/catalog_repository.dart';
 import '../../app/router.dart';
 import '../../core/theme/app_colors.dart';
+import '../media/models/download_models.dart';
+import '../media/services/download_manager.dart';
+import '../media/services/media_service.dart';
 import '../../shared/widgets/episode_thumbnail.dart';
-import '../../shared/widgets/language_option.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../../shared/widgets/quality_option.dart';
 
-/// Écran 5 — Choix de la qualité, de la langue et des actions
-/// (Lire maintenant, Télécharger, Ouvrir dans Telegram).
+/// Écran 5 — Choix de la version (qualité/langue RÉELLES) et actions
+/// (Lire, Télécharger, Ouvrir dans Telegram) — prompt 8.
 class QualitySelectScreen extends StatefulWidget {
   const QualitySelectScreen({
     super.key,
     required this.repository,
     required this.animeId,
     required this.episodeId,
+    this.mediaService,
   });
 
   final AnimeRepository repository;
   final String animeId;
   final String episodeId;
+
+  /// Couche média (null en démonstration : actions Telegram réellement
+  /// indisponibles, l'interface le dit honnêtement).
+  final MediaService? mediaService;
 
   @override
   State<QualitySelectScreen> createState() => _QualitySelectScreenState();
@@ -34,22 +41,21 @@ class QualitySelectScreen extends StatefulWidget {
 
 class _QualitySelectScreenState extends State<QualitySelectScreen> {
   late String _selectedQualityId;
-  late String _selectedLanguage;
-
-  /// Options de langue simulées (mock).
-  static const List<(String, String?)> _languageOptions = [
-    ('VF', 'Français'),
-    ('VO', 'Japonais'),
-    ('VOSTFR', 'Sous-titré FR'),
-  ];
 
   @override
   void initState() {
     super.initState();
+    // Qualité par défaut : préférence utilisateur (Auto = meilleure
+    // qualité réellement disponible), sinon la première version.
     final Episode? episode = _episode;
-    final List<EpisodeQuality> available = episode?.availableQualities ?? const [];
-    _selectedQualityId = available.isEmpty ? '' : available.first.id;
-    _selectedLanguage = _languageOptions.first.$1;
+    if (episode == null) {
+      _selectedQualityId = '';
+      return;
+    }
+    _selectedQualityId = selectPreferredQuality(
+      episode,
+      widget.repository.playbackSettings.preferredQuality,
+    ).id;
   }
 
   Episode? get _episode => widget.repository.byId(widget.animeId)?.episodeById(widget.episodeId);
@@ -61,12 +67,6 @@ class _QualitySelectScreenState extends State<QualitySelectScreen> {
     );
   }
 
-  void _mockDownload() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Téléchargement en préparation… (${_selectedQuality?.sizeLabel ?? ''})')),
-    );
-  }
-
   EpisodeQuality? get _selectedQuality {
     for (final EpisodeQuality quality in _episode?.qualities ?? const <EpisodeQuality>[]) {
       if (quality.id == _selectedQualityId) return quality;
@@ -74,8 +74,28 @@ class _QualitySelectScreenState extends State<QualitySelectScreen> {
     return null;
   }
 
-  /// Ouvre la publication d'origine dans Telegram — uniquement si un lien
-  /// valide existe (jamais de lien inventé).
+  // -------------------------------------------------------------------
+  // Téléchargement réel (règles 8/19) via la couche média
+  // -------------------------------------------------------------------
+
+  Future<void> _startDownload(EpisodeQuality quality) async {
+    final MediaService? media = widget.mediaService;
+    final (Season, Episode)? located = widget.repository.byId(widget.animeId)?.locateEpisode(quality.id);
+    final Season? season = located?.$1;
+    final Episode? episode = located?.$2;
+    if (media == null || season == null || episode == null) {
+      _snack('Connectez-vous à Telegram pour télécharger cet épisode.');
+      return;
+    }
+    final DownloadManagerResult result = await media.startDownload(
+      anime: widget.repository.byId(widget.animeId)!,
+      season: season,
+      episode: episode,
+      version: quality,
+    );
+    _snack(result.message ?? (result.ok ? 'Téléchargement lancé.' : 'Téléchargement impossible.'));
+  }
+
   Future<void> _openTelegram() async {
     final EpisodeQuality? quality = _selectedQuality;
     final String? link = quality?.telegramMessageLink;
@@ -83,9 +103,7 @@ class _QualitySelectScreenState extends State<QualitySelectScreen> {
     final Uri uri = Uri.parse(link);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible d\'ouvrir Telegram.')),
-      );
+      _snack("Impossible d'ouvrir Telegram.");
     }
   }
 
@@ -146,14 +164,14 @@ class _QualitySelectScreenState extends State<QualitySelectScreen> {
       episodeNumber: target.$2,
     );
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(ok
-            ? 'Publication déplacée (S${target.$1} · E${target.$2}).'
-            : 'Déplacement impossible pour le moment.'),
-      ),
-    );
+    _snack(ok
+        ? 'Publication déplacée (S${target.$1} · E${target.$2}).'
+        : 'Déplacement impossible pour le moment.');
     if (ok) Navigator.of(context).pop();
+  }
+
+  void _snack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -169,6 +187,7 @@ class _QualitySelectScreenState extends State<QualitySelectScreen> {
     final (Season, Episode)? located = anime.locateEpisode(episode.id);
     final Season? season = located?.$1;
     final List<EpisodeQuality> available = episode.availableQualities;
+    final MediaService? media = widget.mediaService;
 
     return Scaffold(
       appBar: AppBar(
@@ -215,21 +234,18 @@ class _QualitySelectScreenState extends State<QualitySelectScreen> {
           const SizedBox(height: 16),
           const _SectionLabel(title: 'Langue / Sous-titres'),
           const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final (String label, String? subtitle) in _languageOptions)
-                LanguageOption(
-                  label: label,
-                  subtitle: subtitle,
-                  selected: _selectedLanguage == label,
-                  onTap: () => setState(() => _selectedLanguage = label),
-                ),
-            ],
-          ),
+          _RealLanguageCard(quality: _selectedQuality),
           const SizedBox(height: 16),
           _VersionSourceCard(quality: _selectedQuality),
+          if (media != null && _selectedQuality != null) ...[
+            const SizedBox(height: 14),
+            _DownloadStateCard(
+              media: media,
+              quality: _selectedQuality!,
+              onStart: () => _startDownload(_selectedQuality!),
+              onPlay: _openPlayer,
+            ),
+          ],
           const SizedBox(height: 24),
           PrimaryButton(
             label: 'Lire maintenant',
@@ -238,14 +254,9 @@ class _QualitySelectScreenState extends State<QualitySelectScreen> {
           ),
           const SizedBox(height: 10),
           PrimaryButton(
-            label: 'Télécharger',
-            icon: Icons.download_rounded,
-            outlined: true,
-            onTap: _mockDownload,
-          ),
-          const SizedBox(height: 10),
-          PrimaryButton(
-            label: (_selectedQuality?.hasTelegramLink ?? false) ? 'Ouvrir dans Telegram' : 'Aucun lien Telegram disponible',
+            label: (_selectedQuality?.hasTelegramLink ?? false)
+                ? 'Ouvrir dans Telegram'
+                : 'Aucun lien Telegram disponible',
             icon: Icons.send_rounded,
             outlined: true,
             // Désactivé proprement quand aucun lien valide n'existe :
@@ -258,8 +269,233 @@ class _QualitySelectScreenState extends State<QualitySelectScreen> {
   }
 }
 
-/// Carte de traçabilité de la version sélectionnée : canal d'origine,
-/// message Telegram et lien — toutes les publications restent conservées.
+/// Carte langue/sous-titres RÉELLE de la version choisie (règle 7) :
+/// aucune langue n'est inventée — « Langue inconnue » si absente.
+class _RealLanguageCard extends StatelessWidget {
+  const _RealLanguageCard({required this.quality});
+
+  final EpisodeQuality? quality;
+
+  @override
+  Widget build(BuildContext context) {
+    final String language = (quality?.language == null || quality!.language.isEmpty)
+        ? 'Langue inconnue'
+        : quality!.language;
+    final String subtitles = quality?.subtitles ?? '';
+    final bool hasSubtitles = subtitles.isNotEmpty && subtitles != 'Aucun';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.language_rounded, size: 18, color: AppColors.textSecondary),
+          const SizedBox(width: 10),
+          Text(language, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+          if (hasSubtitles) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Sous-titres $subtitles',
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primaryBright),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// État de téléchargement RÉEL de la version choisie + actions
+/// (Télécharger / Pause / Reprendre / Annuler / Lire / Supprimer).
+class _DownloadStateCard extends StatelessWidget {
+  const _DownloadStateCard({
+    required this.media,
+    required this.quality,
+    required this.onStart,
+    required this.onPlay,
+  });
+
+  final MediaService media;
+  final EpisodeQuality quality;
+  final VoidCallback onStart;
+  final VoidCallback onPlay;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: media.downloadManager,
+      builder: (BuildContext context, Widget? _) {
+        final DownloadTask? task = media.downloadManager.taskForVersion(quality.id);
+        if (task == null) {
+          return _actionCard(
+            context,
+            icon: Icons.download_rounded,
+            label: 'Télécharger',
+            subtitle: quality.size > 0 ? 'Taille : ${quality.sizeLabel}' : null,
+            onTap: onStart,
+          );
+        }
+        switch (task.status) {
+          case DownloadStatus.completed:
+            return _actionCard(
+              context,
+              icon: Icons.check_circle_rounded,
+              label: 'Téléchargé',
+              subtitle: 'Lecture hors connexion disponible',
+              onTap: onPlay,
+              actionLabel: 'Supprimer',
+              onAction: () => media.deleteDownload(quality.id),
+            );
+          case DownloadStatus.downloading:
+            return _progressCard(context, task, onPause: () => media.pauseDownload(quality.id));
+          case DownloadStatus.queued:
+            return _actionCard(
+              context,
+              icon: Icons.schedule_rounded,
+              label: 'En attente',
+              subtitle: 'Dans la file de téléchargement',
+              actionLabel: 'Annuler',
+              onAction: () => media.cancelDownload(quality.id),
+            );
+          case DownloadStatus.paused:
+            return _actionCard(
+              context,
+              icon: Icons.pause_circle_rounded,
+              label: 'Téléchargement interrompu',
+              subtitle: _progressLabel(task),
+              onTap: () => media.resumeDownload(quality.id),
+              actionLabel: 'Annuler',
+              onAction: () => media.cancelDownload(quality.id),
+            );
+          case DownloadStatus.failed:
+            return _actionCard(
+              context,
+              icon: Icons.error_outline_rounded,
+              label: 'Échec du téléchargement',
+              subtitle: task.error ?? 'Réessayez.',
+              onTap: task.resumable ? () => media.resumeDownload(quality.id) : onStart,
+              actionLabel: 'Annuler',
+              onAction: () => media.cancelDownload(quality.id),
+            );
+          case DownloadStatus.cancelled:
+            return _actionCard(
+              context,
+              icon: Icons.download_rounded,
+              label: 'Télécharger',
+              subtitle: 'Téléchargement annulé',
+              onTap: onStart,
+            );
+        }
+      },
+    );
+  }
+
+  String _progressLabel(DownloadTask task) {
+    final double? fraction = task.fraction;
+    if (fraction != null) return '${(fraction * 100).round()} %';
+    return 'Reprise possible';
+  }
+
+  Widget _progressCard(BuildContext context, DownloadTask task, {required VoidCallback onPause}) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.downloading_rounded, size: 18, color: AppColors.primaryBright),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  task.fraction == null ? 'Téléchargement en cours' : '${(task.fraction! * 100).round()} %',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Pause',
+                onPressed: onPause,
+                icon: const Icon(Icons.pause_rounded, size: 19, color: AppColors.textSecondary),
+              ),
+              IconButton(
+                tooltip: 'Annuler',
+                onPressed: () => media.cancelDownload(quality.id),
+                icon: const Icon(Icons.close_rounded, size: 19, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: task.fraction,
+              minHeight: 5,
+              backgroundColor: AppColors.surfaceAlt,
+              color: AppColors.primaryBright,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionCard(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    String? subtitle,
+    VoidCallback? onTap,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 19, color: AppColors.primaryBright),
+          const SizedBox(width: 10),
+          Expanded(
+            child: GestureDetector(
+              onTap: onTap,
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                  if (subtitle != null)
+                    Text(subtitle, style: Theme.of(context).textTheme.labelSmall),
+                ],
+              ),
+            ),
+          ),
+          if (actionLabel != null)
+            TextButton(onPressed: onAction, child: Text(actionLabel)),
+        ],
+      ),
+    );
+  }
+}
+
 class _VersionSourceCard extends StatelessWidget {
   const _VersionSourceCard({required this.quality});
 

@@ -10,6 +10,7 @@ class PlaybackProgress {
     required this.position,
     required this.duration,
     required this.savedAt,
+    this.completed = false,
   });
 
   final String animeId;
@@ -17,6 +18,9 @@ class PlaybackProgress {
   final Duration position;
   final Duration duration;
   final DateTime savedAt;
+
+  /// L'épisode a-t-il été regardé jusqu'au bout (donnée réelle) ?
+  final bool completed;
 
   double get fraction {
     if (duration <= Duration.zero) return 0;

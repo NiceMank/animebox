@@ -35,6 +35,7 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
   late List<Anime> _anime;
   late List<LibraryEntry> _library;
   PlaybackSettings _settings = const PlaybackSettings();
+  final Set<String> _completed = <String>{};
   bool _dbReady = false;
 
   /// La base locale est-elle disponible (false → mode mémoire de secours).
@@ -46,6 +47,10 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
     try {
       if (await db.countAnime() == 0) {
         await _seedFromMock(db);
+      }
+      final String? savedPreference = await db.getSetting('preferred_quality');
+      if (savedPreference != null) {
+        _settings = _settings.copyWith(preferredQuality: QualityPreferenceX.fromName(savedPreference));
       }
       await _loadFromDatabase(db);
       _dbReady = true;
@@ -382,12 +387,20 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
   Duration? episodeProgress(String animeId, String episodeId) => libraryEntryFor(animeId)?.progressFor(episodeId);
 
   @override
-  void recordProgress(String animeId, String episodeId, Duration position) {
+  void recordProgress(
+    String animeId,
+    String episodeId,
+    Duration position, {
+    Duration duration = Duration.zero,
+    bool completed = false,
+  }) {
     final int index = _library.indexWhere((LibraryEntry entry) => entry.anime.id == animeId);
     if (index == -1) return;
     final Anime? anime = byId(animeId);
     if (anime == null) return;
-    final Duration total = Duration(minutes: anime.episodeDurationMin.toInt());
+    final Duration total = duration > Duration.zero
+        ? duration
+        : Duration(minutes: anime.episodeDurationMin.toInt());
     final Duration clamped = position < Duration.zero
         ? Duration.zero
         : (position > total ? total : position);
@@ -396,9 +409,29 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
       progressMap: {...entry.progressMap, episodeId: clamped},
       resumeEpisodeId: episodeId,
     );
+    if (completed) _completed.add('$animeId|$episodeId');
     final LocalDatabase? db = database;
     if (db != null) {
-      unawaited(db.saveProgress(animeId, episodeId, clamped.inMilliseconds));
+      unawaited(db.saveProgress(
+        animeId,
+        episodeId,
+        clamped.inMilliseconds,
+        durationMs: total.inMilliseconds,
+        completed: completed,
+      ));
+    }
+    notifyListeners();
+  }
+
+  @override
+  bool episodeCompleted(String animeId, String episodeId) => _completed.contains('$animeId|$episodeId');
+
+  @override
+  void setPreferredQuality(QualityPreference preference) {
+    _settings = _settings.copyWith(preferredQuality: preference);
+    final LocalDatabase? db = database;
+    if (db != null) {
+      unawaited(db.setSetting('preferred_quality', preference.name));
     }
     notifyListeners();
   }
