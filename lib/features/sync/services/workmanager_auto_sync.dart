@@ -58,7 +58,7 @@ class WorkmanagerAutoSyncScheduler implements AutoSyncScheduler {
         kAutoSyncUniqueName,
         kAutoSyncTaskName,
         frequency: interval,
-        existingWorkPolicy: ExistingWorkPolicy.replace,
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.replace,
         constraints: Constraints(networkType: NetworkType.connected),
         backoffPolicy: BackoffPolicy.linear,
         backoffPolicyDelay: const Duration(minutes: 10),
