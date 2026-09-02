@@ -1,7 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Seule permission nécessaire : accès réseau pour Telegram (TDLib).
-         Aucune autre permission n'est demandée à l'installation. -->
+    <!-- Permissions : accès réseau pour Telegram (TDLib).
+         POST_NOTIFICATIONS : demandée À L'EXÉCUTION, au moment opportun
+         (Android 13+), jamais au premier lancement (prompt 9).
+         RECEIVE_BOOT_COMPLETED : les tâches planifiées WorkManager et les
+         alertes sont réarmées automatiquement après un redémarrage. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <application
         android:label="AnimeBox"
         android:name="${applicationName}"

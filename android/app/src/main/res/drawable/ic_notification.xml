@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Icône de notification AnimeBox — ressource vectorielle personnalisée
+  (règle 28 : jamais d'emoji, jamais d'icône générique hors style).
+  Marque « clap de lecture » : silhouette triangulaire de lecture avec
+  la barre caractéristique d'AnimeBox. Monochrome (coloration système).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#FFFFFF">
+    <!-- Barre verticale (repère AnimeBox) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M7,4.5 L9.6,4.5 L9.6,19.5 L7,19.5 Z" />
+    <!-- Triangle « lecture » -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,5 L12,19 L20,12 Z" />
+</vector>

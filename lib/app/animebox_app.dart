@@ -12,6 +12,13 @@ import '../features/local/data/local_database.dart';
 import '../features/media/services/download_manager.dart';
 import '../features/media/services/media_service.dart';
 import '../features/media/services/storage_checker.dart';
+import '../features/notifications/services/notification_center.dart';
+import '../features/notifications/services/notification_service.dart';
+import '../features/notifications/services/notification_service_factory.dart';
+import '../features/notifications/services/notification_settings.dart';
+import '../features/sync/models/sync_frequency.dart';
+import '../features/sync/services/auto_sync_scheduler.dart';
+import '../features/sync/services/auto_sync_scheduler_factory.dart';
 import '../features/telegram/data/gateway/tdlib_gateway.dart';
 import '../features/telegram/data/gateway/telegram_gateway.dart';
 import '../features/telegram/data/services/api_telegram_service.dart';
@@ -47,6 +54,9 @@ class AnimeBoxApp extends StatefulWidget {
     this.sessionService,
     this.database,
     this.mediaService,
+    this.notificationService,
+    this.notificationSettings,
+    this.autoSyncScheduler,
   });
 
   /// Source de données injectée depuis `main()`.
@@ -63,6 +73,15 @@ class AnimeBoxApp extends StatefulWidget {
 
   /// Couche média injectable pour les tests.
   final MediaService? mediaService;
+
+  /// Notifications injectables pour les tests (prompt 9).
+  final NotificationService? notificationService;
+
+  /// Réglages de notification/synchronisation injectables (tests).
+  final NotificationSettings? notificationSettings;
+
+  /// Planificateur d'arrière-plan injectable (tests).
+  final AutoSyncScheduler? autoSyncScheduler;
 
   /// URL du backend, lue à la compilation (aucun secret).
   static String get apiBaseUrl => const String.fromEnvironment('ANIMEBOX_API_URL');
@@ -110,6 +129,29 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
         downloadManager: _downloadManager,
         gateway: _telegramService.mediaGateway,
       );
+
+  // -----------------------------------------------------------------------
+  // Notifications + synchronisation automatique (prompt 9)
+  // -----------------------------------------------------------------------
+
+  /// Clé de navigation racine : le centre de notifications ouvre le bon
+  /// écran au clic (règle 7 — Anime → Saison → Épisode).
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
+  late final NotificationService _notificationService =
+      widget.notificationService ?? createPlatformNotificationService();
+
+  late final NotificationSettings _notificationSettings =
+      widget.notificationSettings ?? NotificationSettings(database: widget.database);
+
+  late final AutoSyncScheduler _autoSyncScheduler =
+      widget.autoSyncScheduler ?? createPlatformAutoSyncScheduler();
+
+  late final NotificationCenter _notificationCenter = NotificationCenter(
+    notifications: _notificationService,
+    settings: _notificationSettings,
+    database: widget.database,
+  );
 
   Future<String?> _resolveMediaBaseDirectory() async {
     final LocalDatabase? db = widget.database;
@@ -162,6 +204,69 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
     // redémarrage — règle 13).
     // ignore: discarded_futures
     _downloadManager.restorePersisted();
+    _wireNotifications();
+  }
+
+  /// Branche le système de notifications (prompt 9) :
+  /// - résumés de synchronisation RÉELS → notifications nouveaux épisodes ;
+  /// - événements RÉELS du téléchargeur → progression / fin / échec ;
+  /// - clics → navigation vers le bon épisode / lecture / reprise ;
+  /// - fréquence de synchronisation automatique restaurée (WorkManager).
+  void _wireNotifications() {
+    _downloadManager.onEvent = _notificationCenter.handleDownloadEvent;
+    _telegramService.onSyncCompleted = _notificationCenter.handleSyncSummary;
+    _notificationSettings.attachScheduler(_autoSyncScheduler);
+
+    _notificationCenter.onOpenEpisode = (String animeId, String seasonId, String episodeId) {
+      final NavigatorState? navigator = _navigatorKey.currentState;
+      if (navigator == null) return;
+      navigator
+        ..pushNamed(AppRoutes.animeDetails, arguments: AnimeIdArgs(animeId))
+        ..pushNamed(
+          AppRoutes.episodeQuality,
+          arguments: EpisodeRouteArgs(animeId: animeId, episodeId: episodeId),
+        );
+    };
+    _notificationCenter.onPlayDownload = (String animeId, String episodeId) {
+      final NavigatorState? navigator = _navigatorKey.currentState;
+      if (navigator == null) return;
+      navigator.pushNamed(
+        AppRoutes.player,
+        arguments: EpisodeRouteArgs(animeId: animeId, episodeId: episodeId),
+      );
+    };
+    _notificationCenter.onResumeDownload = _downloadManager.resume;
+
+    // ignore: discarded_futures
+    _initializeNotificationSystem();
+  }
+
+  Future<void> _initializeNotificationSystem() async {
+    await _notificationService.initialize();
+    _notificationService.setOnTap(
+      (NotificationTap tap) => _notificationCenter.handleNotificationTap(tap.actionId, tap.payload),
+    );
+
+    // Restauration des réglages + fréquence d'arrière-plan (Android
+    // conserve la tâche planifiée, on la ré-arme simplement).
+    await _notificationSettings.load();
+    try {
+      final SyncFrequency frequency = _notificationSettings.syncFrequency;
+      if (frequency != SyncFrequency.disabled) {
+        await _autoSyncScheduler.initialize();
+        await _autoSyncScheduler.applyFrequency(frequency);
+      }
+    } catch (_) {
+      // Planificateur indisponible : la synchronisation manuelle reste.
+    }
+
+    // L'application a-t-elle été ouverte DEPUIS une notification ?
+    final NotificationTap? launchTap = await _notificationService.consumeLaunchTap();
+    if (launchTap != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _notificationCenter.handleNotificationTap(launchTap.actionId, launchTap.payload);
+      });
+    }
   }
 
   @override
@@ -170,6 +275,7 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
       title: 'AnimeBox',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
+      navigatorKey: _navigatorKey,
       home: HomeShell(
         repository: _repository,
         telegramService: _telegramService,
@@ -177,7 +283,13 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
         libraryService: _libraryService,
         mediaService: _mediaService,
       ),
-      onGenerateRoute: AppRouter.onGenerateRoute(_repository, _telegramService, _mediaService),
+      onGenerateRoute: AppRouter.onGenerateRoute(
+        _repository,
+        _telegramService,
+        _mediaService,
+        _notificationSettings,
+        _notificationService,
+      ),
     );
   }
 }

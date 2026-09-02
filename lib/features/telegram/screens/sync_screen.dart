@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formats.dart';
 import '../../../shared/widgets/empty_state.dart';
@@ -7,6 +8,8 @@ import '../../../shared/widgets/primary_button.dart';
 import '../../../shared/widgets/stat_tile.dart';
 import '../../../shared/widgets/sync_history_tile.dart';
 import '../../../shared/widgets/sync_progress_card.dart';
+import '../../notifications/models/notification_models.dart';
+import '../data/models/api_exception.dart';
 import '../data/models/sync_history_entry.dart';
 import '../data/services/telegram_service.dart';
 
@@ -29,19 +32,119 @@ class _SyncScreenState extends State<SyncScreen> {
     widget.service.loadStats().catchError((Object _) {});
   }
 
+  /// Synchronisation MANUELLE (règle 13) : le résumé affiché reprend les
+  /// valeurs RÉELLES de la passe (règle 21) — jamais de « terminé » sans
+  /// synchronisation réelle (règle 32).
   Future<void> _syncNow() async {
     try {
       await widget.service.syncAll();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Synchronisation terminée.')),
-      );
+      final SyncRunSummary? summary = widget.service.lastSyncSummary;
+      if (summary == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Aucune source à synchroniser.')),
+        );
+      } else {
+        _showSyncSummary(context, summary);
+      }
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      _presentSyncError(error);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('La synchronisation a échoué. Réessayez.')),
       );
     }
+  }
+
+  /// Erreurs compréhensibles (règle 25) : session expirée (règle 24),
+  /// absence Internet (règle 23), autres erreurs.
+  void _presentSyncError(ApiException error) {
+    if (error.kind == ApiErrorKind.unauthorized) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Votre session Telegram doit être reconnectée.'),
+          action: SnackBarAction(
+            label: 'Reconnecter Telegram',
+            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.telegramConnect),
+          ),
+        ),
+      );
+      return;
+    }
+    final String message = error.displayMessage;
+    final bool offline = error.kind == ApiErrorKind.network ||
+        error.kind == ApiErrorKind.timeout ||
+        message.toLowerCase().contains('connexion') ||
+        message.toLowerCase().contains('internet');
+    if (offline) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Connexion Internet indisponible — le catalogue local reste accessible.',
+          ),
+        ),
+      );
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// Résumé RÉEL d'une synchronisation manuelle (règle 21).
+  void _showSyncSummary(BuildContext context, SyncRunSummary summary) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceAlt,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (BuildContext context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 22, 24, 30),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    summary.hasErrors ? Icons.sync_problem_rounded : Icons.check_circle_rounded,
+                    size: 24,
+                    color: summary.hasErrors ? AppColors.warning : AppColors.success,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      summary.cancelled ? 'Synchronisation annulée' : 'Synchronisation terminée',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _DetailRow(label: 'Sources analysées', value: '${summary.sourcesAnalyzed}'),
+              _DetailRow(label: 'Nouveaux messages', value: '${summary.newMessages}'),
+              _DetailRow(label: 'Nouveaux épisodes', value: '${summary.newEpisodes}'),
+              _DetailRow(label: 'Nouvelles qualités', value: '${summary.newQualities}'),
+              _DetailRow(label: 'Erreurs', value: '${summary.errors}'),
+              if (summary.errorMessages.isNotEmpty)
+                _DetailRow(label: 'Détail', value: summary.errorMessages.first),
+              const SizedBox(height: 16),
+              PrimaryButton(
+                label: 'Fermer',
+                expanded: false,
+                onTap: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override

@@ -59,8 +59,9 @@ class DownloadManager extends ChangeNotifier {
   final Future<String?> Function() _resolveBaseDirectory;
   final int maxConcurrent;
 
-  /// Sortie d'événements (base des futures notifications — règle 34).
-  final void Function(DownloadEvent)? onEvent;
+  /// Sortie d'événements (notifications du prompt 9 — branchée par
+  /// l'application au démarrage).
+  void Function(DownloadEvent)? onEvent;
 
   final Map<String, DownloadTask> _tasks = <String, DownloadTask>{};
   final Set<String> _active = <String>{};

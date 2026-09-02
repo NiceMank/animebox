@@ -1,7 +1,7 @@
 name: animebox
-description: "AnimeBox — bibliothèque d'animés alimentée par Telegram, 100 % locale (étape 7 : Telegram direct via TDLib, analyse et catalogue sur l'appareil)."
+description: "AnimeBox — bibliothèque d'animés alimentée par Telegram, 100 % locale (étape 9 : notifications locales, synchronisation en arrière-plan, nouveaux épisodes)."
 publish_to: 'none'
-version: 0.7.0+7
+version: 0.9.0+9
 
 environment:
   sdk: ^3.13.0
@@ -21,6 +21,12 @@ dependencies:
   media_kit: ^1.2.6
   media_kit_video: ^2.0.1
   media_kit_libs_video: ^1.0.7
+  # Notifications locales (prompt 9) : alertes nouveaux épisodes,
+  # progression et fin des téléchargements — 100 % sur l'appareil.
+  flutter_local_notifications: ^17.2.4
+  # Tâches périodiques légères (WorkManager) — synchronisation en
+  # arrière-plan quand Android l'autorise (prompt 9).
+  workmanager: ^0.5.2
 
 dev_dependencies:
   flutter_test:

@@ -4,8 +4,11 @@ import '../features/anime/data/repositories/anime_repository.dart';
 import '../features/media/services/media_service.dart';
 import '../features/details/anime_details_screen.dart';
 import '../features/episodes/episode_list_screen.dart';
+import '../features/notifications/services/notification_service.dart';
+import '../features/notifications/services/notification_settings.dart';
 import '../features/player/player_screen.dart';
 import '../features/quality/quality_select_screen.dart';
+import '../features/settings/screens/notification_settings_screen.dart';
 import '../features/telegram/data/services/telegram_service.dart';
 import '../features/telegram/screens/publications_screen.dart';
 import '../features/telegram/screens/source_add_screen.dart';
@@ -47,6 +50,9 @@ abstract final class AppRoutes {
 
   /// Publications récentes d'une source — argument : id (String).
   static const String sourcePublications = '/sources/publications';
+
+  /// Réglages des notifications et de la synchronisation — aucun argument.
+  static const String notificationSettings = '/settings/notifications';
 }
 
 /// Arguments d'une route animé simple.
@@ -77,6 +83,8 @@ abstract final class AppRouter {
     AnimeRepository repository,
     TelegramService telegramService, [
     MediaService? mediaService,
+    NotificationSettings? notificationSettings,
+    NotificationService? notificationService,
   ]) {
     return (RouteSettings settings) {
       switch (settings.name) {
@@ -145,6 +153,17 @@ abstract final class AppRouter {
           return MaterialPageRoute<void>(
             settings: settings,
             builder: (_) => PublicationsScreen(service: telegramService, sourceId: sourceId),
+          );
+        case AppRoutes.notificationSettings:
+          if (notificationSettings == null || notificationService == null) return null;
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => NotificationSettingsScreen(
+              settings: notificationSettings,
+              notifications: notificationService,
+              telegramService: telegramService,
+              repository: repository,
+            ),
           );
         default:
           return null;

@@ -128,9 +128,8 @@ class ProfileScreen extends StatelessWidget {
               _MenuCard(
                 icon: Icons.notifications_none_rounded,
                 title: 'Notifications',
-                subtitle: 'Soyez alerté des nouveaux épisodes',
-                badge: 'Bientôt',
-                onTap: () => _comingSoon(context, 'Notifications'),
+                subtitle: 'Nouveaux épisodes, téléchargements, heures silencieuses',
+                onTap: () => Navigator.of(context).pushNamed(AppRoutes.notificationSettings),
               ),
               const SizedBox(height: 12),
               _MenuCard(
