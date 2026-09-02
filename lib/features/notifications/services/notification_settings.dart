@@ -1,3 +1,7 @@
+// Paramètres publics simples : la forme abrégée (identifiant privé en
+// argument nommé) est impossible — voir NotificationCenter.
+// ignore_for_file: prefer_initializing_formals
+
 import 'package:flutter/foundation.dart';
 
 import '../../local/data/local_database.dart';
@@ -17,8 +21,7 @@ import '../../sync/services/auto_sync_scheduler.dart';
 /// - préférences PAR SOURCE (règle 17) et PAR ANIMÉ (règle 18).
 class NotificationSettings extends ChangeNotifier {
   NotificationSettings({LocalDatabase? database, DateTime Function()? now})
-      : // ignore: prefer_initializing_formals
-        _database = database,
+      : _database = database,
         _now = now ?? DateTime.now;
 
   static const String _keyNewEpisodes = 'notif_new_episodes';

@@ -1,3 +1,7 @@
+// Les paramètres publics portent des noms simples (pas d'identifiant
+// privé en argument nommé) — la forme abrégée est impossible ici.
+// ignore_for_file: prefer_initializing_formals
+
 import '../../local/data/local_database.dart';
 import '../../media/models/download_models.dart';
 import '../models/notification_models.dart';
@@ -27,11 +31,8 @@ class NotificationCenter {
     required NotificationSettings settings,
     LocalDatabase? database,
     DateTime Function()? now,
-  })  : // ignore: prefer_initializing_formals
-        _notifications = notifications,
-        // ignore: prefer_initializing_formals
+  })  : _notifications = notifications,
         _settings = settings,
-        // ignore: prefer_initializing_formals
         _database = database,
         _now = now ?? DateTime.now;
 
