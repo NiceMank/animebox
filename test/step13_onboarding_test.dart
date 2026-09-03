@@ -1,6 +1,8 @@
 // Prompt 13 — Onboarding : 3 écrans exacts, premier lancement uniquement,
 // persistance onboardingCompleted, « Commencer » branché sur le vrai
 // parcours Telegram existant, aucune donnée fictive.
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -154,43 +156,48 @@ void main() {
   });
 
   group('3. Intégration application (§4/§5/§8)', () {
-    testWidgets('8. premier lancement : onboarding affiché à la place de l\'accueil',
-        (WidgetTester tester) async {
+    // NOTE : les tests d'intégration vérifient le CÂBLAGE (ondoarding ↔
+    // app ↔ flow Telegram) avec des préférences injectées maîtrisées ;
+    // la persistance SQL est prouvée séparément (tests 2/3 + test 12) —
+    // la base « :memory: » étant partagée au sein d'un même isolate de
+    // test, elle ne peut pas servir d'état frais fiable ici.
+
+    Future<void> pumpAppWith(
+      WidgetTester tester, {
+      required AppSettings settings,
+      required MockTelegramService telegram,
+    }) async {
       tester.view.physicalSize = const Size(1080, 2340);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.reset);
-
-      final LocalDatabase db = (await LocalDatabase.openInMemory())!;
       await tester.pumpWidget(AnimeBoxApp(
         repository: MockAnimeRepository(),
-        telegramService: MockTelegramService(),
-        database: db,
-        appSettings: AppSettings(database: db),
+        telegramService: telegram,
+        appSettings: settings,
       ));
       await pumpFrames(tester);
+    }
+
+    Future<AppSettings> freshSettings() async {
+      final AppSettings settings = AppSettings(database: null);
+      await settings.ensureLoaded();
+      return settings;
+    }
+
+    testWidgets('8. premier lancement : onboarding affiché à la place de l\'accueil',
+        (WidgetTester tester) async {
+      await pumpAppWith(tester, settings: await freshSettings(), telegram: MockTelegramService());
 
       expect(find.byType(OnboardingScreen), findsOneWidget);
       expect(find.text('Bienvenue sur AnimeBox', findRichText: true), findsOneWidget);
     });
 
-    testWidgets('9. « Commencer » persiste l\'état et lance le flow Telegram (§5)',
+    testWidgets('9. « Commencer » valide l\'état et lance le flow Telegram (§5)',
         (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1080, 2340);
-      tester.view.devicePixelRatio = 3.0;
-      addTearDown(tester.view.reset);
-
-      final LocalDatabase db = (await LocalDatabase.openInMemory())!;
-      final AppSettings settings = AppSettings(database: db);
+      final AppSettings settings = await freshSettings();
       final MockTelegramService telegram = MockTelegramService();
       await telegram.disconnect(); // aucun compte configuré (cas réel §8.10)
-
-      await tester.pumpWidget(AnimeBoxApp(
-        repository: MockAnimeRepository(),
-        telegramService: telegram,
-        database: db,
-        appSettings: settings,
-      ));
-      await pumpFrames(tester);
+      await pumpAppWith(tester, settings: settings, telegram: telegram);
 
       await tester.tap(find.text('Suivant'));
       await pumpFrames(tester);
@@ -200,28 +207,17 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpAndSettle(); // onboarding démonté → settle possible
 
-      // État sauvegardé (§8.6) + application ouverte + vrai parcours
+      // État validé (§8.6) + application ouverte + vrai parcours
       // Telegram poussé au-dessus de l'accueil (§5 — aucun nouvel écran).
-      expect(await db.getSetting('app.onboardingCompleted'), 'true');
+      expect(settings.onboardingCompleted, isTrue);
       expect(find.byType(OnboardingScreen), findsNothing);
       expect(find.byType(TelegramConnectScreen), findsOneWidget);
     });
 
     testWidgets('10. compte Telegram déjà configuré : pas de reconnexion forcée (§5/§8.11)',
         (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1080, 2340);
-      tester.view.devicePixelRatio = 3.0;
-      addTearDown(tester.view.reset);
-
-      final LocalDatabase db = (await LocalDatabase.openInMemory())!;
       final MockTelegramService telegram = MockTelegramService(); // connecté par défaut
-      await tester.pumpWidget(AnimeBoxApp(
-        repository: MockAnimeRepository(),
-        telegramService: telegram,
-        database: db,
-        appSettings: AppSettings(database: db),
-      ));
-      await pumpFrames(tester);
+      await pumpAppWith(tester, settings: await freshSettings(), telegram: telegram);
 
       await tester.tap(find.text('Suivant'));
       await pumpFrames(tester);
@@ -238,46 +234,52 @@ void main() {
 
     testWidgets('11. « Passer » valide sans forcer le parcours Telegram (§5)',
         (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1080, 2340);
-      tester.view.devicePixelRatio = 3.0;
-      addTearDown(tester.view.reset);
-
-      final LocalDatabase db = (await LocalDatabase.openInMemory())!;
+      final AppSettings settings = await freshSettings();
       final MockTelegramService telegram = MockTelegramService();
       await telegram.disconnect();
-      await tester.pumpWidget(AnimeBoxApp(
-        repository: MockAnimeRepository(),
-        telegramService: telegram,
-        database: db,
-        appSettings: AppSettings(database: db),
-      ));
-      await pumpFrames(tester);
+      await pumpAppWith(tester, settings: settings, telegram: telegram);
 
       await tester.tap(find.text('Passer'));
       await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpAndSettle();
 
-      expect(await db.getSetting('app.onboardingCompleted'), 'true');
+      expect(settings.onboardingCompleted, isTrue);
       expect(find.byType(TelegramConnectScreen), findsNothing,
           reason: 'Passer = validation sans imposer la connexion');
       expect(find.byType(OnboardingScreen), findsNothing);
     });
 
-    testWidgets('12. redémarrage après validation : onboarding disparu (§8.7-9)',
+    testWidgets('12. redémarrage réel : préférence DISQUE relue → onboarding disparu (§8.7-9)',
         (WidgetTester tester) async {
+      // Base sur FICHIER TEMPORAIRE réel : persistence véritable entre
+      // deux « sessions » — le test le plus fidèle au §4.
+      final Directory dir = await Directory.systemTemp.createTemp('animebox_step13');
+      addTearDown(() async {
+        if (await dir.exists()) await dir.delete(recursive: true);
+      });
+
+      // Session 1 : l'utilisateur valide l'onboarding, puis ferme l'app.
+      final LocalDatabase firstDb = (await LocalDatabase.open(directoryPath: dir.path))!;
+      final AppSettings first = AppSettings(database: firstDb);
+      await first.ensureLoaded();
+      await first.completeOnboarding();
+      await firstDb.close();
+
+      // Session 2 (redémarrage) : nouvelle base ouverte sur le MÊME fichier.
+      final LocalDatabase secondDb = (await LocalDatabase.open(directoryPath: dir.path))!;
+      addTearDown(() => secondDb.close());
+      final AppSettings second = AppSettings(database: secondDb);
+      await second.ensureLoaded();
+      expect(second.onboardingCompleted, isTrue,
+          reason: 'préférence relue depuis le disque après redémarrage');
+
       tester.view.physicalSize = const Size(1080, 2340);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.reset);
-
-      // Base où l'onboarding a déjà été validé lors d'une session passée.
-      final LocalDatabase db = (await LocalDatabase.openInMemory())!;
-      await db.setSetting('app.onboardingCompleted', 'true');
-
       await tester.pumpWidget(AnimeBoxApp(
         repository: MockAnimeRepository(),
         telegramService: MockTelegramService(),
-        database: db,
-        appSettings: AppSettings(database: db),
+        appSettings: second,
       ));
       await pumpFrames(tester);
 
@@ -285,5 +287,6 @@ void main() {
           reason: 'préférence conservée → plus jamais d\'onboarding');
       expect(find.text('Accueil'), findsOneWidget);
     });
+  });
   });
 }
