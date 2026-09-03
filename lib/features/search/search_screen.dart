@@ -138,11 +138,9 @@ class _TrendingGrid extends StatelessWidget {
 
 /// Liste des résultats de recherche.
 class _ResultsList extends StatelessWidget {
-  const _ResultsList({required this.results, this.onTap, this.showMetadataStatus = false});
+  const _ResultsList({required this.results});
 
   final List<Anime> results;
-  final ValueChanged<Anime>? onTap;
-  final bool showMetadataStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -161,10 +159,7 @@ class _ResultsList extends StatelessWidget {
         final Anime anime = results[index - 1];
         return ResultTile(
           anime: anime,
-          showMetadataStatus: showMetadataStatus,
-          onTap: onTap != null
-              ? () => onTap!(anime)
-              : () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: AnimeIdArgs(anime.id)),
+          onTap: () => Navigator.of(context).pushNamed(AppRoutes.animeDetails, arguments: AnimeIdArgs(anime.id)),
         );
       },
     );
