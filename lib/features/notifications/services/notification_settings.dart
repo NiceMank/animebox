@@ -112,12 +112,13 @@ class NotificationSettings extends ChangeNotifier {
 
   /// Change la fréquence souhaitée : persistée puis appliquée au
   /// planificateur réel (règle 12 — présentée comme une fréquence
-  /// souhaitée, jamais garantie).
-  Future<void> setSyncFrequency(SyncFrequency frequency) async {
+  /// souhaitée, jamais garantie). [wifiOnly] (prompt 12 §10) exige un
+  /// réseau non mesuré — métadonnées seules, jamais de vidéos.
+  Future<void> setSyncFrequency(SyncFrequency frequency, {bool wifiOnly = false}) async {
     _frequency = frequency;
     await _persist(_keyFrequency, frequency.id);
     try {
-      await _scheduler?.applyFrequency(frequency);
+      await _scheduler?.applyFrequency(frequency, wifiOnly: wifiOnly);
     } catch (_) {
       // Planificateur indisponible : la préférence est conservée et la
       // synchronisation manuelle reste disponible.

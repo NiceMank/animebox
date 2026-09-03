@@ -46,8 +46,14 @@ class WorkmanagerAutoSyncScheduler implements AutoSyncScheduler {
     }
   }
 
+  /// Contrainte réseau réellement appliquée — testable sans WorkManager.
+  /// [wifiOnly] = true → réseau NON MESURÉ requis (Wi-Fi réel, §10) ;
+  /// sinon tout réseau connecté convient.
+  static Constraints constraintsFor({bool wifiOnly = false}) =>
+      Constraints(networkType: wifiOnly ? NetworkType.unmetered : NetworkType.connected);
+
   @override
-  Future<void> applyFrequency(SyncFrequency frequency) async {
+  Future<void> applyFrequency(SyncFrequency frequency, {bool wifiOnly = false}) async {
     await initialize();
     try {
       // Une seule tâche planifiée : annulée avant chaque replanification.
@@ -59,7 +65,7 @@ class WorkmanagerAutoSyncScheduler implements AutoSyncScheduler {
         kAutoSyncTaskName,
         frequency: interval,
         existingWorkPolicy: ExistingPeriodicWorkPolicy.replace,
-        constraints: Constraints(networkType: NetworkType.connected),
+        constraints: constraintsFor(wifiOnly: wifiOnly),
         backoffPolicy: BackoffPolicy.linear,
         backoffPolicyDelay: const Duration(minutes: 10),
       );

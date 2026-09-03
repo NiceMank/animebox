@@ -597,6 +597,45 @@ class LocalDatabase {
     await _db.insert('settings', {'key': key, 'value': value}, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
+  // -----------------------------------------------------------------------
+  // Gestion des données (prompt 12 §16/§18)
+  // -----------------------------------------------------------------------
+
+  /// Efface les données locales personnelles (§16) : catalogue, favoris,
+  /// historique de lecture et préférences. Les SOURCES Telegram, les
+  /// téléchargements et la session sont conservés (choix explicite de
+  /// l'écran : l'action « données locales » n'est pas une déconnexion).
+  Future<void> clearLocalData() async {
+    await _db.transaction((Transaction txn) async {
+      await txn.delete('version');
+      await txn.delete('episode');
+      await txn.delete('season');
+      await txn.delete('anime');
+      await txn.delete('favorites');
+      await txn.delete('progress');
+      await txn.delete('notified_episodes');
+      await txn.delete('settings');
+    });
+  }
+
+  /// Réinitialisation complète (§18) : TOUTES les tables sont vidées,
+  /// y compris sources, téléchargements, historique de synchronisation.
+  Future<void> resetEverything() async {
+    await _db.transaction((Transaction txn) async {
+      await txn.delete('notified_episodes');
+      await txn.delete('sync_history');
+      await txn.delete('downloads');
+      await txn.delete('favorites');
+      await txn.delete('progress');
+      await txn.delete('version');
+      await txn.delete('episode');
+      await txn.delete('season');
+      await txn.delete('anime');
+      await txn.delete('sources');
+      await txn.delete('settings');
+    });
+  }
+
   Future<void> addSyncHistory(Map<String, Object?> entry) => _db.insert('sync_history', entry);
 
   Future<List<Map<String, Object?>>> listSyncHistory({int limit = 50}) =>

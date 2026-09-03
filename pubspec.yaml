@@ -39,6 +39,9 @@ flutter:
 
   assets:
     - assets/img/
+    # Version réelle du projet lue à l'exécution (prompt 12 §21/§22 —
+    # sans valeur fictive ni dépendance externe).
+    - pubspec.yaml
 
   fonts:
     - family: Poppins

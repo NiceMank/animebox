@@ -19,12 +19,6 @@ class ProfileScreen extends StatelessWidget {
   /// Dépôt (réglages de lecture — qualité préférée).
   final AnimeRepository? repository;
 
-  void _comingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$feature : disponible dans une prochaine étape.')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -135,9 +129,8 @@ class ProfileScreen extends StatelessWidget {
               _MenuCard(
                 icon: Icons.settings_rounded,
                 title: 'Paramètres',
-                subtitle: 'Application, lecteur, stockage',
-                badge: 'Bientôt',
-                onTap: () => _comingSoon(context, 'Paramètres'),
+                subtitle: 'Application, lecteur, stockage, données',
+                onTap: () => Navigator.of(context).pushNamed(AppRoutes.settings),
               ),
             ],
           ),

@@ -16,6 +16,8 @@ import '../features/notifications/services/notification_center.dart';
 import '../features/notifications/services/notification_service.dart';
 import '../features/notifications/services/notification_service_factory.dart';
 import '../features/notifications/services/notification_settings.dart';
+import '../features/settings/services/app_settings.dart';
+import '../features/settings/services/settings_dependencies.dart';
 import '../features/sync/models/sync_frequency.dart';
 import '../features/sync/services/auto_sync_scheduler.dart';
 import '../features/sync/services/auto_sync_scheduler_factory.dart';
@@ -56,6 +58,7 @@ class AnimeBoxApp extends StatefulWidget {
     this.notificationService,
     this.notificationSettings,
     this.autoSyncScheduler,
+    this.appSettings,
   });
 
   /// Source de données injectée depuis `main()`.
@@ -81,6 +84,9 @@ class AnimeBoxApp extends StatefulWidget {
 
   /// Planificateur d'arrière-plan injectable (tests).
   final AutoSyncScheduler? autoSyncScheduler;
+
+  /// Préférences centrales injectables (prompt 12 — tests).
+  final AppSettings? appSettings;
 
   /// URL du backend, lue à la compilation (aucun secret).
   static String get apiBaseUrl => const String.fromEnvironment('ANIMEBOX_API_URL');
@@ -145,6 +151,20 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
 
   late final AutoSyncScheduler _autoSyncScheduler =
       widget.autoSyncScheduler ?? createPlatformAutoSyncScheduler();
+
+  /// Préférences centrales persistantes (prompt 12 §25/§26).
+  late final AppSettings _appSettings = widget.appSettings ?? AppSettings(database: widget.database);
+
+  /// Dépendances de la section Paramètres (composition des vraies briques).
+  late final SettingsDependencies _settingsDependencies = SettingsDependencies(
+    appSettings: _appSettings,
+    notificationSettings: _notificationSettings,
+    repository: _repository,
+    telegramService: _telegramService,
+    mediaService: _mediaService,
+    storageChecker: createStorageChecker(),
+    database: widget.database,
+  );
 
   late final NotificationCenter _notificationCenter = NotificationCenter(
     notifications: _notificationService,
@@ -247,13 +267,15 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
     );
 
     // Restauration des réglages + fréquence d'arrière-plan (Android
-    // conserve la tâche planifiée, on la ré-arme simplement).
+    // conserve la tâche planifiée, on la ré-arme simplement) — la
+    // contrainte Wi-Fi persistée (prompt 12 §10) est ré-appliquée aussi.
     await _notificationSettings.load();
+    await _appSettings.ensureLoaded();
     try {
       final SyncFrequency frequency = _notificationSettings.syncFrequency;
       if (frequency != SyncFrequency.disabled) {
         await _autoSyncScheduler.initialize();
-        await _autoSyncScheduler.applyFrequency(frequency);
+        await _autoSyncScheduler.applyFrequency(frequency, wifiOnly: _appSettings.syncWifiOnly);
       }
     } catch (_) {
       // Planificateur indisponible : la synchronisation manuelle reste.
@@ -289,6 +311,7 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
         _mediaService,
         _notificationSettings,
         _notificationService,
+        _settingsDependencies,
       ),
     );
   }

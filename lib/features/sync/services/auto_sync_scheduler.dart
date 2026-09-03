@@ -13,7 +13,9 @@ abstract class AutoSyncScheduler {
 
   /// Planifie (ou supprime, si [frequency] est `disabled`) la tâche
   /// périodique. Une même tâche unique est remplacée à chaque appel.
-  Future<void> applyFrequency(SyncFrequency frequency);
+  /// [wifiOnly] (prompt 12 §10) : la tâche exige un réseau non mesuré
+  /// (Wi-Fi réel) lorsqu'il est `true` — métadonnées seules (§10).
+  Future<void> applyFrequency(SyncFrequency frequency, {bool wifiOnly = false});
 
   /// Annule toute synchronisation automatique planifiée.
   Future<void> cancel();
