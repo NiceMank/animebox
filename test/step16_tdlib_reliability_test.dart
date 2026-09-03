@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:animebox/features/telegram/data/gateway/tdlib_gateway.dart';
+import 'package:animebox/features/telegram/data/gateway/telegram_gateway.dart';
 
 /// Fiabilité du démarrage TDLib (régression « connexion muette ») : tout
 /// échec doit devenir un état d'erreur VISIBLE — jamais de boucle
