@@ -82,7 +82,9 @@ abstract final class AppTheme {
     );
 
     return base.copyWith(
-      textTheme: _textTheme(textPrimary: textPrimary, textSecondary: textSecondary),
+      // La famille est appliquée explicitement au textTheme (copyWith
+      // remplace le textTheme de base sans hériter de fontFamily).
+      textTheme: _textTheme(textPrimary: textPrimary, textSecondary: textSecondary).apply(fontFamily: 'Poppins'),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,

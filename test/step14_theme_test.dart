@@ -179,8 +179,8 @@ void main() {
 
     test('les polices et rayons restent identiques (aucun redesign)', () {
       expect(AppTheme.dark.textTheme.bodyLarge?.fontSize, AppTheme.light.textTheme.bodyLarge?.fontSize);
-      expect(AppTheme.dark.fontFamily, 'Poppins');
-      expect(AppTheme.light.fontFamily, 'Poppins');
+      expect(AppTheme.dark.textTheme.bodyLarge?.fontFamily, 'Poppins');
+      expect(AppTheme.light.textTheme.bodyLarge?.fontFamily, 'Poppins');
     });
   });
 

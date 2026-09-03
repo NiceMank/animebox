@@ -462,8 +462,10 @@ class AppSettingsScreen extends StatelessWidget {
     required String message,
     required String confirmLabel,
     required String cancelLabel,
-    Color confirmColor = AppColors.danger,
+    Color? confirmColor,
   }) async {
+    final Color effectiveConfirmColor = confirmColor ?? AppColors.danger;
+
     final bool? ok = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
@@ -474,7 +476,7 @@ class AppSettingsScreen extends StatelessWidget {
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(cancelLabel)),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(confirmLabel, style: TextStyle(color: confirmColor, fontWeight: FontWeight.w700)),
+            child: Text(confirmLabel, style: TextStyle(color: effectiveConfirmColor, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -660,13 +662,13 @@ class _Divider extends StatelessWidget {
 }
 
 class _SettingsTile extends StatelessWidget {
-  _SettingsTile({
+  const _SettingsTile({
     required this.icon,
     required this.title,
     this.onTap,
     this.subtitle,
-    this.iconColor = AppColors.primaryBright,
-    this.titleColor = AppColors.textPrimary,
+    this.iconColor,
+    this.titleColor,
   });
 
   final IconData icon;
@@ -676,8 +678,11 @@ class _SettingsTile extends StatelessWidget {
   /// Action au toucher — null pour une tuile purement informative
   /// (aucun chevron n'est alors affiché : pas de fausse action, §27).
   final VoidCallback? onTap;
-  final Color iconColor;
-  final Color titleColor;
+
+  /// Couleurs optionnelles — null = palette active au moment du build
+  /// (AppColors bleues, permutées au changement de thème).
+  final Color? iconColor;
+  final Color? titleColor;
 
   @override
   Widget build(BuildContext context) {
@@ -687,9 +692,9 @@ class _SettingsTile extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)),
-        child: Icon(icon, size: 20, color: iconColor),
+        child: Icon(icon, size: 20, color: iconColor ?? AppColors.primaryBright),
       ),
-      title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: titleColor)),
+      title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: titleColor ?? AppColors.textPrimary)),
       subtitle: subtitle == null
           ? null
           : Text(subtitle!, style: TextStyle(fontSize: 12, height: 1.4, color: AppColors.textSecondary)),
