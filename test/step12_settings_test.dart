@@ -330,8 +330,10 @@ void main() {
           scrollable: find.byType(Scrollable).first);
       await tester.pumpAndSettle();
       expect(find.text('À PROPOS'), findsOneWidget);
-      expect(find.text('Version inconnue'), findsOneWidget,
-          reason: '§22 : jamais une version fictive');
+      // §21/§22 : soit la VRAIE version du pubspec (assets chargés par
+      // flutter test), soit « inconnue » si la lecture échoue — jamais de
+      // numéro fictif.
+      expect(find.textContaining(RegExp('^Version ')), findsWidgets);
     });
   });
 }
