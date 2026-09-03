@@ -335,13 +335,19 @@ class LocalTelegramService extends ChangeNotifier implements TelegramService {
     String kind = 'channel',
     String? inviteHash,
   }) async {
+    // Règle §8 : une chaîne de caractères n'est JAMAIS considérée comme une
+    // source valide sans vérification réelle — la source est d'abord RÉSOLUE
+    // via Telegram (canal inaccessible/inexistant = ajout refusé), et son
+    // identifiant réel est conservé quand disponible.
+    final ResolvedChannel resolved = await resolveChannel(username);
+    final int? realChatId = resolved.channelId ?? (channelId == null ? null : int.tryParse(channelId));
     final String id = 'src-$username-${DateTime.now().millisecondsSinceEpoch}';
     final Map<String, Object?> row = {
       'id': id,
       'name': name,
-      'username': username,
+      'username': resolved.username.isNotEmpty ? resolved.username : username,
       'kind': kind,
-      'chat_id': channelId == null ? null : int.tryParse(channelId),
+      'chat_id': realChatId,
       'invite_hash': inviteHash,
       'status': 'active',
       'sync_enabled': 1,

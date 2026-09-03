@@ -219,11 +219,15 @@ void main() {
     test('changement de compte : nouveau profil réel, pas de mélange de session', () async {
       await connect();
       expect(service.currentUser?.username, 'compte_a');
+      await addSourceA();
+      await service.syncSource();
       await service.disconnect();
 
       await connect('+33123456789');
       expect(service.currentUser?.username, 'compte_b', reason: 'le nouveau compte est réellement reconnu');
-      expect(service.sources, isNotEmpty, reason: 'les sources locales persistent pour re-synchronisation');
+      expect(service.sources, isNotEmpty,
+          reason: 'les sources locales persistent (données locales conservées, aucun mélange de session)');
+      expect(service.currentUser?.firstName, 'Second');
     });
 
     test('session restaurée au redémarrage (§5/§29)', () async {
