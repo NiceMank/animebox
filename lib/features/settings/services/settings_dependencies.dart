@@ -57,8 +57,8 @@ class SettingsDependencies {
     this.storageChecker,
     this.database,
     this.storageService,
-    VersionReader? versionReader,
-  }) : _versionReader = versionReader;
+    this._versionReader,
+  });
 
   /// Préférences centrales persistantes (langue, thème, Wi-Fi…).
   final AppSettings appSettings;
