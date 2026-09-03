@@ -17,6 +17,15 @@ import 'package:animebox/shared/widgets/carousel_indicator.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  /// Avance le temps de quelques frames SANS attendre la fin des
+  /// animations infinies (pulse discret des illustrations §2 —
+  /// pumpAndSettle n'est pas utilisable tant que l'onboarding est visible).
+  Future<void> pumpFrames(WidgetTester tester, {int times = 3, int millis = 300}) async {
+    for (int i = 0; i < times; i++) {
+      await tester.pump(Duration(milliseconds: millis));
+    }
+  }
+
   group('1. Contenu et préférence (§1/§4)', () {
     test('1. EXACTEMENT 3 écrans avec les titres officiels', () {
       expect(kOnboardingPages.length, 3);
@@ -61,7 +70,7 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         home: OnboardingScreen(onStart: () {}, onSkip: () {}),
       ));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
 
       expect(find.text('Bienvenue sur AnimeBox', findRichText: true), findsOneWidget);
       final CarouselIndicator indicator =
@@ -78,15 +87,15 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         home: OnboardingScreen(onStart: () {}, onSkip: () {}),
       ));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
 
       await tester.tap(find.text('Suivant'));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
       expect(find.text('Tous vos animés au même endroit', findRichText: true), findsOneWidget);
       expect(tester.widget<CarouselIndicator>(find.byType(CarouselIndicator)).index, 1);
 
       await tester.tap(find.text('Suivant'));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
       expect(find.text('Sécurisé & 100 % privé', findRichText: true), findsOneWidget);
       expect(tester.widget<CarouselIndicator>(find.byType(CarouselIndicator)).index, 2);
       expect(find.text('Commencer'), findsOneWidget, reason: 'bouton principal de l\'écran 3 (§2)');
@@ -100,14 +109,14 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         home: OnboardingScreen(onStart: () => started = true, onSkip: () => skipped = true),
       ));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
 
       await tester.tap(find.text('Suivant'));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
       await tester.tap(find.text('Suivant'));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
       await tester.tap(find.text('Commencer'));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
       expect(started, isTrue, reason: '« Commencer » lance le parcours réel (§5)');
       expect(skipped, isFalse);
 
@@ -115,9 +124,9 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         home: OnboardingScreen(onStart: () => started = true, onSkip: () => skipped = true),
       ));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
       await tester.tap(find.text('Passer'));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
       expect(skipped, isTrue);
     });
 
@@ -130,15 +139,15 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         home: OnboardingScreen(onStart: () {}, onSkip: () {}),
       ));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
       expect(find.text('Bienvenue sur AnimeBox', findRichText: true), findsOneWidget);
 
       await tester.tap(find.text('Suivant'));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
       expect(find.text('Tous vos animés au même endroit', findRichText: true), findsOneWidget);
 
       await tester.tap(find.text('Suivant'));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
       expect(find.text('Commencer'), findsOneWidget);
       // Aucune exception Flutter (overflow) n'a été levée — le test passe.
     });
@@ -158,7 +167,7 @@ void main() {
         database: db,
         appSettings: AppSettings(database: db),
       ));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
 
       expect(find.byType(OnboardingScreen), findsOneWidget);
       expect(find.text('Bienvenue sur AnimeBox', findRichText: true), findsOneWidget);
@@ -181,14 +190,15 @@ void main() {
         database: db,
         appSettings: settings,
       ));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
 
       await tester.tap(find.text('Suivant'));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
       await tester.tap(find.text('Suivant'));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
       await tester.tap(find.text('Commencer'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pumpAndSettle(); // onboarding démonté → settle possible
 
       // État sauvegardé (§8.6) + application ouverte + vrai parcours
       // Telegram poussé au-dessus de l'accueil (§5 — aucun nouvel écran).
@@ -211,13 +221,14 @@ void main() {
         database: db,
         appSettings: AppSettings(database: db),
       ));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
 
       await tester.tap(find.text('Suivant'));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
       await tester.tap(find.text('Suivant'));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
       await tester.tap(find.text('Commencer'));
+      await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpAndSettle();
 
       expect(find.byType(TelegramConnectScreen), findsNothing,
@@ -240,9 +251,10 @@ void main() {
         database: db,
         appSettings: AppSettings(database: db),
       ));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
 
       await tester.tap(find.text('Passer'));
+      await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpAndSettle();
 
       expect(await db.getSetting('app.onboardingCompleted'), 'true');
@@ -267,7 +279,7 @@ void main() {
         database: db,
         appSettings: AppSettings(database: db),
       ));
-      await tester.pumpAndSettle();
+      await pumpFrames(tester);
 
       expect(find.byType(OnboardingScreen), findsNothing,
           reason: 'préférence conservée → plus jamais d\'onboarding');
