@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:animebox/app/animebox_app.dart';
+import 'onboarding_helper.dart';
 import 'package:animebox/features/anime/data/repositories/mock_anime_repository.dart';
 import 'package:animebox/features/details/anime_details_screen.dart';
 import 'package:animebox/features/episodes/episode_list_screen.dart';
@@ -13,7 +14,10 @@ Future<void> pumpApp(WidgetTester tester) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(AnimeBoxApp(repository: MockAnimeRepository()));
+  await tester.pumpWidget(AnimeBoxApp(
+    repository: MockAnimeRepository(),
+    appSettings: await completedOnboardingSettings(),
+  ));
   await tester.pumpAndSettle();
 }
 
@@ -200,7 +204,7 @@ void main() {
     tester.view.physicalSize = const Size(1080, 2340);
     tester.view.devicePixelRatio = 3.0;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(AnimeBoxApp(repository: repository));
+    await tester.pumpWidget(AnimeBoxApp(repository: repository, appSettings: await completedOnboardingSettings()));
     await tester.pumpAndSettle();
 
     // Solo Leveling S2 E09 : ouvrir le lecteur depuis le choix de qualité.

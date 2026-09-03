@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:animebox/app/animebox_app.dart';
+import 'onboarding_helper.dart';
 import 'package:animebox/features/anime/data/repositories/mock_anime_repository.dart';
 import 'package:animebox/features/telegram/data/services/mock_telegram_service.dart';
 import 'package:animebox/features/telegram/data/services/telegram_service.dart';
@@ -15,7 +16,11 @@ Future<void> pumpApp(WidgetTester tester, TelegramService service) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(AnimeBoxApp(repository: MockAnimeRepository(), telegramService: service));
+  await tester.pumpWidget(AnimeBoxApp(
+    repository: MockAnimeRepository(),
+    telegramService: service,
+    appSettings: await completedOnboardingSettings(),
+  ));
   await tester.pumpAndSettle();
 }
 

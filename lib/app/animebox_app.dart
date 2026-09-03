@@ -16,6 +16,7 @@ import '../features/notifications/services/notification_center.dart';
 import '../features/notifications/services/notification_service.dart';
 import '../features/notifications/services/notification_service_factory.dart';
 import '../features/notifications/services/notification_settings.dart';
+import '../features/onboarding/onboarding_screen.dart';
 import '../features/settings/services/app_settings.dart';
 import '../features/settings/services/settings_dependencies.dart';
 import '../features/sync/models/sync_frequency.dart';
@@ -297,14 +298,7 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
       navigatorKey: _navigatorKey,
-      home: HomeShell(
-        repository: _repository,
-        telegramService: _telegramService,
-        groupingService: _groupingService,
-        libraryService: _libraryService,
-        mediaService: _mediaService,
-        database: widget.database,
-      ),
+      home: _buildHome(),
       onGenerateRoute: AppRouter.onGenerateRoute(
         _repository,
         _telegramService,
@@ -314,5 +308,56 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
         _settingsDependencies,
       ),
     );
+  }
+
+  /// Écran racine : onboarding au PREMIER lancement uniquement
+  /// (prompt 13 §4 — préférence persistante) sinon l'application normale.
+  Widget _buildHome() {
+    return FutureBuilder<void>(
+      future: _appSettings.ensureLoaded(),
+      builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          // Écran d'attente minimal — aucune donnée fictive affichée.
+          return Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            body: Center(
+              child: Text('AnimeBox', style: Theme.of(context).textTheme.displaySmall),
+            ),
+          );
+        }
+        if (!_appSettings.onboardingCompleted) {
+          return OnboardingScreen(
+            onStart: () => _finishOnboarding(launchTelegramFlow: true),
+            onSkip: () => _finishOnboarding(launchTelegramFlow: false),
+          );
+        }
+        return _homeShell();
+      },
+    );
+  }
+
+  Widget _homeShell() => HomeShell(
+        repository: _repository,
+        telegramService: _telegramService,
+        groupingService: _groupingService,
+        libraryService: _libraryService,
+        mediaService: _mediaService,
+        database: widget.database,
+      );
+
+  /// Fin de l'onboarding (prompt 13 §5) : la préférence est persistée,
+  /// l'application s'ouvre, puis le VRAI parcours Telegram existant est
+  /// lancé — sauf si un compte est déjà configuré (logique respectée).
+  Future<void> _finishOnboarding({required bool launchTelegramFlow}) async {
+    await _appSettings.completeOnboarding();
+    if (!mounted) return;
+    setState(() {});
+    final bool connected = _telegramService.authState == TelegramAuthState.connected;
+    if (launchTelegramFlow && !connected) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _navigatorKey.currentState?.pushNamed(AppRoutes.telegramConnect);
+      });
+    }
   }
 }
