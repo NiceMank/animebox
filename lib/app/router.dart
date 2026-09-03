@@ -8,7 +8,9 @@ import '../features/notifications/services/notification_service.dart';
 import '../features/notifications/services/notification_settings.dart';
 import '../features/player/player_screen.dart';
 import '../features/quality/quality_select_screen.dart';
+import '../features/settings/screens/app_settings_screen.dart';
 import '../features/settings/screens/notification_settings_screen.dart';
+import '../features/settings/services/settings_dependencies.dart';
 import '../features/telegram/data/services/telegram_service.dart';
 import '../features/telegram/screens/publications_screen.dart';
 import '../features/telegram/screens/source_add_screen.dart';
@@ -53,6 +55,9 @@ abstract final class AppRoutes {
 
   /// Réglages des notifications et de la synchronisation — aucun argument.
   static const String notificationSettings = '/settings/notifications';
+
+  /// Paramètres complets de l'application (prompt 12) — aucun argument.
+  static const String settings = '/settings';
 }
 
 /// Arguments d'une route animé simple.
@@ -85,6 +90,7 @@ abstract final class AppRouter {
     MediaService? mediaService,
     NotificationSettings? notificationSettings,
     NotificationService? notificationService,
+    SettingsDependencies? settingsDependencies,
   ]) {
     return (RouteSettings settings) {
       switch (settings.name) {
@@ -164,6 +170,12 @@ abstract final class AppRouter {
               telegramService: telegramService,
               repository: repository,
             ),
+          );
+        case AppRoutes.settings:
+          if (settingsDependencies == null) return null;
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => AppSettingsScreen(dependencies: settingsDependencies),
           );
         default:
           return null;

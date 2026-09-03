@@ -6,6 +6,7 @@ import 'auto_sync_scheduler.dart';
 class InMemoryAutoSyncScheduler implements AutoSyncScheduler {
   bool initialized = false;
   SyncFrequency applied = SyncFrequency.disabled;
+  bool appliedWifiOnly = false;
   int applyCount = 0;
   int cancelCount = 0;
 
@@ -15,9 +16,10 @@ class InMemoryAutoSyncScheduler implements AutoSyncScheduler {
   }
 
   @override
-  Future<void> applyFrequency(SyncFrequency frequency) async {
+  Future<void> applyFrequency(SyncFrequency frequency, {bool wifiOnly = false}) async {
     initialized = true;
     applied = frequency;
+    appliedWifiOnly = wifiOnly;
     applyCount += 1;
   }
 
