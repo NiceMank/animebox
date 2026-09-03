@@ -73,22 +73,25 @@ class TdlibTelegramGateway implements TelegramGateway {
   Future<void> connect() async {
     if (_clientId != null) return;
     final TdPlugin plugin = TdPlugin.instance;
-    await TdPlugin.initialize();
-
-    final int clientId = plugin.tdJsonClientCreate();
-    if (clientId <= 0) {
-      _lastError = 'Impossible de démarrer le client Telegram sur cet appareil.';
-      _setState(GatewayAuthState.error);
-      return;
-    }
-    _clientId = clientId;
-    _running = true;
-    _lastError = null;
-    _setState(GatewayAuthState.connecting);
-    // La boucle de réception tourne tant que le client existe.
-    unawaited(_pumpLoop(plugin));
-
+    // TOUT échec de démarrage (bibliothèque native absente, ABI, paramétrage)
+    // devient une erreur VISIBLE à l'écran — jamais de blocage silencieux
+    // sans réseau (cause fréquente de « la connexion ne fait rien »).
     try {
+      await TdPlugin.initialize();
+
+      final int clientId = plugin.tdJsonClientCreate();
+      if (clientId <= 0) {
+        _lastError = 'Impossible de démarrer le client Telegram sur cet appareil.';
+        _setState(GatewayAuthState.error);
+        return;
+      }
+      _clientId = clientId;
+      _running = true;
+      _lastError = null;
+      _setState(GatewayAuthState.connecting);
+      // La boucle de réception tourne tant que le client existe.
+      unawaited(_pumpLoop(plugin));
+
       // La session restaurée ne doit jamais être lisible en clair :
       // on fournit la clé de chiffrement AVANT tout autre échange.
       if (encryptionKey != null && encryptionKey!.isNotEmpty) {
@@ -107,15 +110,16 @@ class TdlibTelegramGateway implements TelegramGateway {
         'application_version': '1.0.0',
         'database_directory': database,
         'files_directory': files,
-        'use_file_database': true,
-        'use_chat_info_database': true,
-        'use_message_database': false,
-        'use_secret_chats': false,
         'enable_storage_optimizer': true,
         'ignore_file_names': false,
       });
     } on GatewayError catch (error) {
       _lastError = error.message;
+      _setState(GatewayAuthState.error);
+    } catch (_) {
+      // Exception hors protocole (bibliothèque native non chargée, etc.) :
+      // visible, jamais avalée.
+      _lastError = 'Le client Telegram n\'a pas pu démarrer sur cet appareil. Relancez l\'application.';
       _setState(GatewayAuthState.error);
     }
   }
@@ -179,14 +183,23 @@ class TdlibTelegramGateway implements TelegramGateway {
   // ---------------------------------------------------------------------
 
   Future<void> _pumpLoop(TdPlugin plugin) async {
+    int consecutiveFailures = 0;
     while (_running) {
       final int? clientId = _clientId;
       if (clientId == null) return;
       String? raw;
       try {
         raw = plugin.tdJsonClientReceive(clientId, 0.5);
+        consecutiveFailures = 0;
       } catch (_) {
-        // Erreur de plateforme : on laisse le prochain tour réessayer.
+        // Plusieurs échecs natifs de suite = le client est inutilisable :
+        // on le signale au lieu de boucler silencieusement.
+        consecutiveFailures += 1;
+        if (consecutiveFailures >= 3) {
+          _lastError = 'Le client Telegram s\'est interrompu. Relancez l\'application.';
+          _setState(GatewayAuthState.error);
+          return;
+        }
         await Future<void>.delayed(const Duration(milliseconds: 300));
         continue;
       }
@@ -204,7 +217,11 @@ class TdlibTelegramGateway implements TelegramGateway {
         if (extra is String) {
           _pending.remove(extra)?.completeError(error);
         } else {
+          // Erreur générale de TDLib (paramétrage, API invalidée, interdiction
+          // réseau, etc.) : VISIBLE à l'écran, jamais silencieuse — sinon
+          // l'utilisateur attend indéfiniment sans qu'aucun octet ne parte.
           _lastError = error.message;
+          _setState(GatewayAuthState.error);
         }
         continue;
       }

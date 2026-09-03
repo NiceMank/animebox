@@ -184,6 +184,12 @@ class LocalTelegramService extends ChangeNotifier implements TelegramService {
       _authState = TelegramAuthState.error;
       _notify();
       rethrow;
+    } catch (_) {
+      // Tout autre échec (bibliothèque native, etc.) ⟹ visible, jamais muet.
+      _authError = 'Le client Telegram n\'a pas pu démarrer sur cet appareil. Relancez l\'application.';
+      _authState = TelegramAuthState.error;
+      _notify();
+      rethrow;
     }
   }
 
