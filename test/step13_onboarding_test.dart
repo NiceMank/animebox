@@ -249,29 +249,36 @@ void main() {
       expect(find.byType(OnboardingScreen), findsNothing);
     });
 
-    testWidgets('12. redémarrage réel : préférence DISQUE relue → onboarding disparu (§8.7-9)',
-        (WidgetTester tester) async {
-      // Base sur FICHIER TEMPORAIRE réel : persistence véritable entre
-      // deux « sessions » — le test le plus fidèle au §4.
+    // Persistance DISQUE réelle entre deux « sessions » — hors
+    // testWidgets : les accès SQLite réels exigent la boucle async
+    // réelle (test() simple), pas l'horloge factice des widget-tests.
+    test('12. redémarrage : préférence DISQUE relue après fermeture (§8.7-9)', () async {
       final Directory dir = await Directory.systemTemp.createTemp('animebox_step13');
       addTearDown(() async {
         if (await dir.exists()) await dir.delete(recursive: true);
       });
 
-      // Session 1 : l'utilisateur valide l'onboarding, puis ferme l'app.
+      // Session 1 : onboarding validé, application fermée.
       final LocalDatabase firstDb = (await LocalDatabase.open(directoryPath: dir.path))!;
       final AppSettings first = AppSettings(database: firstDb);
       await first.ensureLoaded();
       await first.completeOnboarding();
       await firstDb.close();
 
-      // Session 2 (redémarrage) : nouvelle base ouverte sur le MÊME fichier.
+      // Session 2 : nouvelle ouverture sur le MÊME fichier → relue.
       final LocalDatabase secondDb = (await LocalDatabase.open(directoryPath: dir.path))!;
       addTearDown(() => secondDb.close());
       final AppSettings second = AppSettings(database: secondDb);
       await second.ensureLoaded();
       expect(second.onboardingCompleted, isTrue,
-          reason: 'préférence relue depuis le disque après redémarrage');
+          reason: 'préférence relue depuis le disque après redémarrage réel');
+    });
+
+    testWidgets('13. état restauré « terminé » : l\'app saute l\'onboarding (§8.9)',
+        (WidgetTester tester) async {
+      final AppSettings settings = AppSettings(database: null);
+      await settings.ensureLoaded();
+      await settings.completeOnboarding(); // état restauré « session précédente validée »
 
       tester.view.physicalSize = const Size(1080, 2340);
       tester.view.devicePixelRatio = 3.0;
@@ -279,7 +286,7 @@ void main() {
       await tester.pumpWidget(AnimeBoxApp(
         repository: MockAnimeRepository(),
         telegramService: MockTelegramService(),
-        appSettings: second,
+        appSettings: settings,
       ));
       await pumpFrames(tester);
 
