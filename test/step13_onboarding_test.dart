@@ -288,5 +288,4 @@ void main() {
       expect(find.text('Accueil'), findsOneWidget);
     });
   });
-  });
 }
