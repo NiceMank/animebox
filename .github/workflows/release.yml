@@ -1,7 +1,7 @@
 name: Release
 
-# Publication d'une release de test :
-# - push d'un tag v* (ex. v0.7.0) ;
+# Publication d'une release :
+# - push d'un tag v* (ex. v0.9.0) ;
 # - ou déclenchement manuel (crée/met à jour le tag de version).
 on:
   workflow_dispatch:
@@ -39,20 +39,13 @@ jobs:
       - name: Dépendances
         run: flutter pub get
 
-      - name: Analyse statique + tests (échec → annotations)
+      - name: Analyse statique + tests
         shell: bash
         run: |
           set -o pipefail
-          flutter analyze 2>&1 | tee /tmp/step.log
-          flutter test 2>&1 | tee /tmp/step.log
+          flutter analyze --no-pub
+          flutter test
 
-      - name: Build APK (release, clés debug)
-        shell: bash
-        run: |
-          set -o pipefail
-          flutter build apk --release 2>&1 | tee /tmp/build.log
-
-      # En cas d'échec : log émis en annotations (lisible via l'API).
       - name: Extraire la version (pubspec.yaml)
         id: version
         run: |
@@ -60,6 +53,36 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "Version : $VERSION (tag v$VERSION)"
+
+      - name: Build APK (release, clés debug)
+        shell: bash
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: |
+          set -o pipefail
+          # Identifiants d'application Telegram (my.telegram.org) injectés
+          # par GitHub Secrets : l'APK embarque le client MTProto réel (TDLib).
+          # Secrets absents → valeurs vides → démonstration (aucun réseau).
+          flutter build apk --release \
+            --dart-define=ANIMEBOX_TELEGRAM_API_ID=${TELEGRAM_API_ID} \
+            --dart-define=ANIMEBOX_TELEGRAM_API_HASH=${TELEGRAM_API_HASH} \
+            2>&1 | tee /tmp/build.log
+
+      - name: Diagnostic du build
+        if: failure()
+        shell: bash
+        run: |
+          { awk '/What went wrong:/{f=1} f{print} /^\* Try:/{exit}' /tmp/build.log | head -30
+            grep -E 'error:|Error:' /tmp/build.log | head -10 ; } | cut -c1-380 > /tmp/issues.log || true
+          n=0
+          while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            [ $n -ge 10 ] && break
+            MSG=$(echo "$line" | sed 's/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')
+            echo "::error file=animebox-build::$MSG"
+            n=$((n+1))
+          done < /tmp/issues.log
 
       - name: Préparer l'APK
         run: cp build/app/outputs/flutter-apk/app-release.apk "AnimeBox-v${{ steps.version.outputs.version }}.apk"
@@ -79,22 +102,23 @@ jobs:
           target_commitish: ${{ github.sha }}
           files: AnimeBox-v*.apk
           make_latest: true
+          generate_release_notes: true
           body: |
-            **Build de test automatique** — APK Android signé avec les clés de
-            débogage (installation directe sur un appareil : activer
-            « Installer des applications inconnues », puis ouvrir l'APK).
+            **AnimeBox v${{ steps.version.outputs.version }}** — APK Android signé avec les clés de
+            débogage (installation directe : activer « Installer des applications
+            inconnues », puis ouvrir l'APK).
 
             ## Contenu
-            - Application Flutter Android (mode démonstration intégré :
-              tous les écrans, données mockées, aucun identifiant requis).
-            - Mode **Telegram réel** (TDLib) : disponible à la compilation
-              avec vos identifiants my.telegram.org via `--dart-define`
-              (aucun secret n'est embarqué dans cet APK public).
+            - Application Flutter Android, 100 % locale (aucun serveur distant).
+            - Client **Telegram réel** (TDLib / MTProto) embarqué lorsque les
+              secrets de compilation sont présents.
+            - Logo + écran d'accueil animé, onboarding, thème bleu sombre/clair,
+              bibliothèque, sources Telegram, synchronisation locale, paramètres.
 
-            ## Vérifications passées
+            ## Vérifications
             - `flutter analyze` — 0 issue
-            - `flutter test` — 121 tests
-            - Backend (héritage) : 159 tests pytest + 41 vérifications smoke
+            - `flutter test` — suite complète
+            - APK release construit
 
             Commit : ${{ github.sha }}
             Branch : `${{ github.ref_name }}`
