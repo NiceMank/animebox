@@ -638,7 +638,8 @@ class _SettingsCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
       ),
-      child: Column(children: children),
+      // Material transparent : fond et encre des ListTile restent visibles.
+      child: Material(type: MaterialType.transparency, child: Column(children: children)),
     );
   }
 }

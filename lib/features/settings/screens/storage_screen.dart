@@ -277,7 +277,7 @@ class _StorageScreenState extends State<StorageScreen> {
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
                 ),
-                child: Column(children: [
+                child: Material(type: MaterialType.transparency, child: Column(children: [
                   for (int i = 0; i < tasks.length; i++) ...[
                     if (i > 0) Divider(height: 1, indent: 58, color: AppColors.divider.withValues(alpha: 0.6)),
                     _DownloadRow(
@@ -293,7 +293,7 @@ class _StorageScreenState extends State<StorageScreen> {
                       },
                     ),
                   ],
-                ]),
+                ])),
               ),
               if (_selected.isNotEmpty) ...[
                 const SizedBox(height: 12),
