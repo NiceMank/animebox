@@ -72,19 +72,56 @@ class TdlibTelegramGateway implements TelegramGateway {
   @override
   Future<void> connect() async {
     if (_clientId != null) return;
-    final TdPlugin plugin = TdPlugin.instance;
-    // TOUT échec de démarrage (bibliothèque native absente, ABI, paramétrage)
-    // devient une erreur VISIBLE à l'écran — jamais de blocage silencieux
-    // sans réseau (cause fréquente de « la connexion ne fait rien »).
+    // ------------------------------------------------------------------
+    // Démarrage de la bibliothèque native TDLib.
+    //
+    // Cause racine de la panne « la connexion ne fait rien, l'app
+    // n'utilise même pas les données mobiles » (historique) :
+    //   1. `TdPlugin.instance` AVANT initialisation est un BOUCHON dont
+    //      tdJsonClientCreate() lève UnimplementedError — il ne faut JAMAIS
+    //      capturer l'instance avant d'initialiser ;
+    //   2. sur Android, DynamicLibrary.process() ne voit PAS les symboles
+    //      natifs du plugin : il faut charger la bibliothèque embarquée
+    //      par son NOM ('libtdjson.so').
+    // Sans ces deux garde-fous, aucun client natif ne démarrait : zéro
+    // octet réseau, échec silencieux.
+    // ------------------------------------------------------------------
     try {
-      await TdPlugin.initialize();
-
-      final int clientId = plugin.tdJsonClientCreate();
-      if (clientId <= 0) {
-        _lastError = 'Impossible de démarrer le client Telegram sur cet appareil.';
-        _setState(GatewayAuthState.error);
-        return;
+      // Idempotent : installe le vrai initialiseur FFI à la place du bouchon
+      // (le registrant Dart généré le fait déjà dans l'app ; jamais en test).
+      TdNativePlugin.registerWith();
+    } catch (_) {
+      // Plateforme sans FFI : les tentatives ci-dessous échoueront
+      // proprement et deviendront une erreur visible.
+    }
+    TdPlugin? plugin;
+    int clientId = 0;
+    Object? nativeError;
+    for (final String? libraryName in const <String?>['libtdjson.so', null]) {
+      try {
+        await TdPlugin.initialize(libraryName);
+        final TdPlugin candidate = TdPlugin.instance;
+        final int id = candidate.tdJsonClientCreate();
+        if (id > 0) {
+          plugin = candidate;
+          clientId = id;
+          break;
+        }
+        nativeError = 'td_json_client_create a retourné $id';
+      } catch (error) {
+        nativeError = error;
       }
+    }
+    if (plugin == null) {
+      // Tout échec natif devient une erreur VISIBLE, avec le détail
+      // technique tronqué pour le diagnostic — jamais de blocage muet.
+      _lastError = 'Le moteur Telegram n\'a pas pu démarrer sur cet appareil. '
+          'Détail : ${_shortNativeReason(nativeError)}';
+      _setState(GatewayAuthState.error);
+      return;
+    }
+    // Phase protocole : toute erreur devient également visible à l'écran.
+    try {
       _clientId = clientId;
       _running = true;
       _lastError = null;
@@ -116,12 +153,20 @@ class TdlibTelegramGateway implements TelegramGateway {
     } on GatewayError catch (error) {
       _lastError = error.message;
       _setState(GatewayAuthState.error);
-    } catch (_) {
-      // Exception hors protocole (bibliothèque native non chargée, etc.) :
-      // visible, jamais avalée.
-      _lastError = 'Le client Telegram n\'a pas pu démarrer sur cet appareil. Relancez l\'application.';
+    } catch (error) {
+      // Exception hors protocole : visible, jamais avalée.
+      _lastError = 'Le client Telegram n\'a pas pu démarrer. '
+          'Détail : ${_shortNativeReason(error)}';
       _setState(GatewayAuthState.error);
     }
+  }
+
+  /// Détail technique tronqué (140 caractères) pour le diagnostic d'un
+  /// échec de démarrage — affiché à l'écran, jamais de stack trace brute.
+  String _shortNativeReason(Object? error) {
+    if (error == null) return 'cause inconnue';
+    final String text = error.toString().replaceAll('\n', ' ');
+    return text.length <= 140 ? text : '${text.substring(0, 140)}…';
   }
 
   Future<String> _resolveDirectory(String name) async {

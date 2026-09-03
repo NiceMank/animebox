@@ -176,6 +176,11 @@ class LocalTelegramService extends ChangeNotifier implements TelegramService {
     try {
       await _prepareEncryption();
       await _gateway.connect();
+      // Si le moteur natif n'a pas démarré, SA cause (gateway.lastError)
+      // doit s'afficher — pas le générique « client non démarré ».
+      if (_gateway.authState == GatewayAuthState.error) {
+        throw GatewayError(_gateway.lastError ?? 'Client Telegram non démarré.');
+      }
       await _gateway.requestPhone(phone.trim());
       await _sessionManager.savePhone(phone.trim());
       // L'état `codeRequired` arrive via le flux de la passerelle.
