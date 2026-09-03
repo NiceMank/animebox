@@ -29,13 +29,13 @@ class HeroCard extends StatelessWidget {
         children: [
           PosterImage(asset: anime.backdropAsset, url: anime.backdropUrl, borderRadius: 0, fallbackLabel: anime.title),
           // Voile dégradé pour la lisibilité du texte.
-          const DecoratedBox(
+          DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 stops: [0.0, 0.45, 1.0],
-                colors: [Colors.transparent, Color(0x330A0817), Color(0xF20A0817)],
+                colors: [Colors.transparent, AppColors.background.withValues(alpha: 0.2), AppColors.background.withValues(alpha: 0.95)],
               ),
             ),
           ),

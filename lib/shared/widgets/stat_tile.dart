@@ -16,7 +16,7 @@ class StatTile extends StatelessWidget {
   final String value;
   final IconData? icon;
 
-  /// Accent violet (valeur mise en avant).
+  /// Accent bleu (valeur mise en avant).
   final bool accent;
 
   @override

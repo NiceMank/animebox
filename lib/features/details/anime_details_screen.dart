@@ -75,7 +75,7 @@ class _AnimeDetailsScreenState extends State<AnimeDetailsScreen> {
               TabBar(
                 indicatorSize: TabBarIndicatorSize.tab,
                 indicator: BoxDecoration(
-                  gradient: const LinearGradient(colors: AppColors.primaryGradient),
+                  gradient: LinearGradient(colors: AppColors.primaryGradient),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 labelColor: Colors.white,
@@ -133,13 +133,13 @@ class _AnimeDetailsScreenState extends State<AnimeDetailsScreen> {
           fit: StackFit.expand,
           children: [
             PosterImage(asset: anime.backdropAsset, url: anime.backdropUrl, borderRadius: 0, fallbackLabel: anime.title),
-            const DecoratedBox(
+            DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   stops: [0.35, 0.75, 1.0],
-                  colors: [Colors.transparent, Color(0x660A0817), AppColors.background],
+                  colors: [Colors.transparent, AppColors.background.withValues(alpha: 0.4), AppColors.background],
                 ),
               ),
             ),
@@ -227,7 +227,7 @@ class _MetaChip extends StatelessWidget {
         border: Border.all(color: AppColors.divider),
         borderRadius: BorderRadius.circular(9),
       ),
-      child: Text(label, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+      child: Text(label, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
     );
   }
 }
@@ -321,8 +321,8 @@ class _EpisodesTabState extends State<_EpisodesTab> {
             controller: _searchController,
             onChanged: _applySearch,
             keyboardType: TextInputType.number,
-            style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
-            decoration: const InputDecoration(
+            style: TextStyle(fontSize: 13, color: AppColors.textPrimary),
+            decoration: InputDecoration(
               isDense: true,
               prefixIcon: Icon(Icons.search_rounded, size: 18, color: AppColors.textMuted),
               hintText: 'Rechercher un épisode (ex : 12)',
@@ -348,7 +348,7 @@ class _EpisodesTabState extends State<_EpisodesTab> {
           child: Center(
             child: Text(
               'Épisode $searched — non disponible',
-              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppColors.textMuted),
             ),
           ),
         ));
@@ -356,7 +356,7 @@ class _EpisodesTabState extends State<_EpisodesTab> {
         children.addAll([
           Text(
             '${matches.length} résultat${matches.length > 1 ? 's' : ''}'.toUpperCase(),
-            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textMuted),
           ),
           const SizedBox(height: 10),
           for (final (Season season, Episode episode) in matches) ...[
@@ -370,7 +370,7 @@ class _EpisodesTabState extends State<_EpisodesTab> {
         for (final Season season in seasons) ...[
           Row(
             children: [
-              Text('Saison ${season.number}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+              Text('Saison ${season.number}', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
               const SizedBox(width: 8),
               StatusPill('${season.episodeCount} ép.', color: AppColors.textMuted),
             ],
@@ -393,7 +393,7 @@ class _EpisodesTabState extends State<_EpisodesTab> {
                 },
                 child: Text(
                   'Voir les ${season.episodeCount} épisodes',
-                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.primaryBright),
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.primaryBright),
                 ),
               ),
             ),
@@ -484,14 +484,14 @@ class _DetailsTab extends StatelessWidget {
           onReview: () => _openMetadataReview(context),
         ),
         const SizedBox(height: 12),
-        const Text('Synopsis', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        Text('Synopsis', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         const SizedBox(height: 8),
         Text(
           anime.description.isEmpty ? 'Informations en attente.' : anime.description,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.55),
         ),
         const SizedBox(height: 24),
-        const Text('Informations', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        Text('Informations', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         const SizedBox(height: 6),
         _InfoRow(label: 'Année', value: anime.year > 0 ? '${anime.year}' : '—'),
         _InfoRow(label: 'Durée', value: '${anime.episodeDurationMin} min/ép'),
@@ -582,7 +582,7 @@ class _MetadataStatusBanner extends StatelessWidget {
                 Text(title, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: color)),
                 if (message.isNotEmpty) ...[
                   const SizedBox(height: 3),
-                  Text(message, style: const TextStyle(fontSize: 12, height: 1.4, color: AppColors.textSecondary)),
+                  Text(message, style: TextStyle(fontSize: 12, height: 1.4, color: AppColors.textSecondary)),
                 ],
               ],
             ),

@@ -181,7 +181,7 @@ class _QualitySelectScreenState extends State<QualitySelectScreen> {
     if (anime == null || episode == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text('Épisode introuvable', style: TextStyle(color: AppColors.textMuted))),
+        body: Center(child: Text('Épisode introuvable', style: TextStyle(color: AppColors.textMuted))),
       );
     }
     final (Season, Episode)? located = anime.locateEpisode(episode.id);
@@ -293,14 +293,14 @@ class _RealLanguageCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.language_rounded, size: 18, color: AppColors.textSecondary),
+          Icon(Icons.language_rounded, size: 18, color: AppColors.textSecondary),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               language,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
             ),
           ),
           if (hasSubtitles) ...[
@@ -314,7 +314,7 @@ class _RealLanguageCard extends StatelessWidget {
               child: Text(
                 'Sous-titres $subtitles',
                 maxLines: 1,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primaryBright),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primaryBright),
               ),
             ),
           ],
@@ -428,23 +428,23 @@ class _DownloadStateCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.downloading_rounded, size: 18, color: AppColors.primaryBright),
+              Icon(Icons.downloading_rounded, size: 18, color: AppColors.primaryBright),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   task.fraction == null ? 'Téléchargement en cours' : '${(task.fraction! * 100).round()} %',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                 ),
               ),
               IconButton(
                 tooltip: 'Pause',
                 onPressed: onPause,
-                icon: const Icon(Icons.pause_rounded, size: 19, color: AppColors.textSecondary),
+                icon: Icon(Icons.pause_rounded, size: 19, color: AppColors.textSecondary),
               ),
               IconButton(
                 tooltip: 'Annuler',
                 onPressed: () => media.cancelDownload(quality.id),
-                icon: const Icon(Icons.close_rounded, size: 19, color: AppColors.textSecondary),
+                icon: Icon(Icons.close_rounded, size: 19, color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -489,7 +489,7 @@ class _DownloadStateCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                  Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                   if (subtitle != null)
                     Text(subtitle, style: Theme.of(context).textTheme.labelSmall),
                 ],
@@ -522,20 +522,20 @@ class _VersionSourceCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.send_outlined, size: 17, color: AppColors.textMuted),
+          Icon(Icons.send_outlined, size: 17, color: AppColors.textMuted),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Publication d\'origine',
                   style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   messageId == null ? 'Canal : $channel' : 'Canal : $channel · message #$messageId',
-                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                 ),
               ],
             ),
@@ -557,7 +557,7 @@ class _SectionLabel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        Text(title, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         if (subtitle != null) ...[
           const SizedBox(height: 2),
           Text(subtitle!, style: Theme.of(context).textTheme.labelSmall),
@@ -601,7 +601,7 @@ class _EpisodeSummaryCard extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   season == null ? episode.label : 'Saison ${season!.number} · Épisode ${episode.number.toString().padLeft(2, '0')}',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primaryBright),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primaryBright),
                 ),
                 const SizedBox(height: 3),
                 Text(

@@ -49,7 +49,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     if (service.sourceById(widget.sourceId) == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text('Source introuvable', style: TextStyle(color: AppColors.textMuted))),
+        body: Center(child: Text('Source introuvable', style: TextStyle(color: AppColors.textMuted))),
       );
     }
 
@@ -62,7 +62,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
         if (source == null) {
           return Scaffold(
             appBar: AppBar(),
-            body: const Center(child: Text('Source introuvable', style: TextStyle(color: AppColors.textMuted))),
+            body: Center(child: Text('Source introuvable', style: TextStyle(color: AppColors.textMuted))),
           );
         }
         final bool syncing = source.status == SourceStatus.syncing || _syncing;
@@ -108,7 +108,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.autorenew_rounded, size: 20, color: AppColors.textSecondary),
+                    Icon(Icons.autorenew_rounded, size: 20, color: AppColors.textSecondary),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -168,19 +168,19 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       builder: (BuildContext context) => AlertDialog(
         backgroundColor: AppColors.surfaceAlt,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: const Text('Supprimer cette source ?', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-        content: const Text(
+        title: Text('Supprimer cette source ?', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        content: Text(
           'Les données associées à cette source pourront également être supprimées selon les règles de conservation définies par l\'application.',
           style: TextStyle(fontSize: 13.5, height: 1.5, color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annuler', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+            child: Text('Annuler', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Supprimer', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
+            child: Text('Supprimer', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
           ),
         ],
       ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 
-/// Conteneur avec bordure et lueur violettes (élément décoratif réutilisable).
+/// Conteneur avec bordure et lueur bleues (élément décoratif réutilisable — couleurs actives via AppColors).
 class NeonBox extends StatelessWidget {
   const NeonBox({
     super.key,

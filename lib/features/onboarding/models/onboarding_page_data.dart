@@ -13,7 +13,7 @@ class OnboardingPageData {
   /// Première partie du titre (blanche).
   final String titleTop;
 
-  /// Partie accentuée (violette) du titre — vide si tout est blanc.
+  /// Partie accentuée (bleue) du titre — vide si tout est blanc.
   final String titleAccent;
 
   /// Description principale (fonctionnement réel de l'application).

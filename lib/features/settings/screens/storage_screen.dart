@@ -68,13 +68,13 @@ class _StorageScreenState extends State<StorageScreen> {
       context: context,
       builder: (BuildContext context) => AlertDialog(
         backgroundColor: AppColors.surfaceAlt,
-        title: Text(s.clearCache, style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-        content: Text(s.clearCacheConfirm, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5)),
+        title: Text(s.clearCache, style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+        content: Text(s.clearCacheConfirm, style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5)),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(s.cancel)),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(s.clearCache, style: const TextStyle(color: AppColors.warning, fontWeight: FontWeight.w700)),
+            child: Text(s.clearCache, style: TextStyle(color: AppColors.warning, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -100,13 +100,13 @@ class _StorageScreenState extends State<StorageScreen> {
       context: context,
       builder: (BuildContext context) => AlertDialog(
         backgroundColor: AppColors.surfaceAlt,
-        title: Text(s.deleteDownloadsTitle(count), style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-        content: Text(s.deleteDownloadsMessage(count), style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5)),
+        title: Text(s.deleteDownloadsTitle(count), style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+        content: Text(s.deleteDownloadsMessage(count), style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5)),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(s.cancel)),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(s.delete, style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
+            child: Text(s.delete, style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -169,7 +169,7 @@ class _StorageScreenState extends State<StorageScreen> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary, size: 20),
+                  child: Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary, size: 20),
                 ),
               ),
               const SizedBox(width: 14),
@@ -180,7 +180,7 @@ class _StorageScreenState extends State<StorageScreen> {
                 IconButton(
                   tooltip: s.delete,
                   onPressed: _busy ? null : _confirmDeleteSelected,
-                  icon: const Icon(Icons.delete_forever_rounded, color: AppColors.danger),
+                  icon: Icon(Icons.delete_forever_rounded, color: AppColors.danger),
                 ),
             ]),
             const SizedBox(height: 18),
@@ -196,10 +196,10 @@ class _StorageScreenState extends State<StorageScreen> {
                   border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
                 ),
                 child: Row(children: [
-                  const Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+                  Icon(Icons.warning_amber_rounded, color: AppColors.warning),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(s.lowSpace, style: const TextStyle(fontSize: 13, height: 1.4, color: AppColors.warning)),
+                    child: Text(s.lowSpace, style: TextStyle(fontSize: 13, height: 1.4, color: AppColors.warning)),
                   ),
                 ]),
               ),
@@ -243,8 +243,8 @@ class _StorageScreenState extends State<StorageScreen> {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: _busy ? null : _confirmClearCache,
-                icon: const Icon(Icons.cleaning_services_outlined, size: 18, color: AppColors.warning),
-                label: Text(s.clearCache, style: const TextStyle(color: AppColors.warning)),
+                icon: Icon(Icons.cleaning_services_outlined, size: 18, color: AppColors.warning),
+                label: Text(s.clearCache, style: TextStyle(color: AppColors.warning)),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: AppColors.warning.withValues(alpha: 0.5)),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -261,14 +261,14 @@ class _StorageScreenState extends State<StorageScreen> {
                 padding: const EdgeInsets.all(18),
                 child: Text(s.noDownloads,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
               )
             else ...[
               Padding(
                 padding: const EdgeInsets.only(left: 4, bottom: 8),
                 child: Text(
                   _selected.isEmpty ? s.selectHint : s.selectedCount(_selected.length),
-                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                 ),
               ),
               Container(
@@ -367,7 +367,7 @@ class _SectionLabel extends StatelessWidget {
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.4, color: AppColors.textMuted),
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.4, color: AppColors.textMuted),
       ),
     );
   }
@@ -385,8 +385,8 @@ class _StorageRow extends StatelessWidget {
     return Row(children: [
       Icon(icon, size: 20, color: AppColors.primaryBright),
       const SizedBox(width: 12),
-      Expanded(child: Text(label, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary))),
-      Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+      Expanded(child: Text(label, style: TextStyle(fontSize: 14, color: AppColors.textPrimary))),
+      Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
     ]);
   }
 }
@@ -426,18 +426,18 @@ class _DownloadRow extends StatelessWidget {
       ),
       title: Text(task.animeTitle,
           maxLines: 1, overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
       subtitle: Text(
         'S${task.seasonNumber} · E${task.episodeNumber}'
         '${task.qualityLabel != null ? ' · ${task.qualityLabel}' : ''}'
         '${_statusSuffix(task)}',
-        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
       ),
       trailing: Checkbox(
         value: selected,
         onChanged: (_) => onToggle(),
         activeColor: AppColors.primary,
-        side: const BorderSide(color: AppColors.textMuted),
+        side: BorderSide(color: AppColors.textMuted),
       ),
       onTap: onToggle,
     );

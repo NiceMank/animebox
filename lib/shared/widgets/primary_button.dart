@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 
-/// Bouton principal de l'application (dégradé violet, animation de pression).
+/// Bouton principal de l'application (dégradé bleu, animation de pression).
 class PrimaryButton extends StatefulWidget {
   const PrimaryButton({
     super.key,
@@ -18,7 +18,7 @@ class PrimaryButton extends StatefulWidget {
   final IconData? icon;
   final VoidCallback? onTap;
 
-  /// Variante secondaire (bordure violette sur fond sombre).
+  /// Variante secondaire (bordure bleue sur le fond courant).
   final bool outlined;
   final bool compact;
   final bool expanded;
@@ -50,7 +50,7 @@ class _PrimaryButtonState extends State<PrimaryButton> {
           constraints: BoxConstraints(minHeight: widget.compact ? 42 : 50),
           padding: EdgeInsets.symmetric(horizontal: widget.compact ? 14 : 18, vertical: widget.compact ? 9 : 12),
           decoration: BoxDecoration(
-            gradient: widget.outlined ? null : const LinearGradient(colors: AppColors.primaryGradient),
+            gradient: widget.outlined ? null : LinearGradient(colors: AppColors.primaryGradient),
             color: widget.outlined ? AppColors.surface : null,
             borderRadius: BorderRadius.circular(16),
             border: widget.outlined ? Border.all(color: AppColors.primary.withValues(alpha: 0.5)) : null,

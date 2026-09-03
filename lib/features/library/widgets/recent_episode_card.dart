@@ -39,7 +39,7 @@ class RecentEpisodeCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.fiber_new_rounded, size: 15, color: AppColors.primaryBright),
+                        Icon(Icons.fiber_new_rounded, size: 15, color: AppColors.primaryBright),
                         const SizedBox(width: 5),
                         Expanded(
                           child: Text(
@@ -52,7 +52,7 @@ class RecentEpisodeCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 3),
-                    Text(episodeLabel, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primaryBright)),
+                    Text(episodeLabel, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primaryBright)),
                     const SizedBox(height: 2),
                     Text(
                       episode?.title ?? 'Nouvel épisode disponible',
@@ -64,7 +64,7 @@ class RecentEpisodeCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
+              Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
             ],
           ),
         ),

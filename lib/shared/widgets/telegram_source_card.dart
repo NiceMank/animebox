@@ -62,7 +62,7 @@ class TelegramSourceCard extends StatelessWidget {
                     IconButton(
                       tooltip: 'Paramètres de la source',
                       onPressed: onSettingsTap,
-                      icon: const Icon(Icons.settings_outlined, size: 20, color: AppColors.textMuted),
+                      icon: Icon(Icons.settings_outlined, size: 20, color: AppColors.textMuted),
                     ),
                 ],
               ),
@@ -130,7 +130,7 @@ class _Avatar extends StatelessWidget {
     return Container(
       color: AppColors.surfaceAlt,
       alignment: Alignment.center,
-      child: Text(initials, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primaryBright)),
+      child: Text(initials, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primaryBright)),
     );
   }
 }
@@ -147,7 +147,7 @@ class _MiniStat extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
           const SizedBox(height: 1),
           Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelSmall),
         ],

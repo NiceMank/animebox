@@ -24,18 +24,18 @@ class TelegramPlaceholderSheet {
                 height: 58,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(colors: AppColors.primaryGradient),
+                  gradient: LinearGradient(colors: AppColors.primaryGradient),
                   boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.35), blurRadius: 24)],
                 ),
                 child: const Icon(Icons.send_rounded, color: Colors.white, size: 26),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Connexion Telegram',
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Le lien Telegram sera connecté dans une prochaine étape.\n'
                 'Vous pourrez alors ouvrir directement la publication source.',
                 textAlign: TextAlign.center,

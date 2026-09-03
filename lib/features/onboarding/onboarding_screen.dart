@@ -158,7 +158,7 @@ class _OnboardingPage extends StatelessWidget {
                   TextSpan(text: page.titleTop),
                   TextSpan(
                     text: page.titleAccent,
-                    style: const TextStyle(color: AppColors.primaryBright),
+                    style: TextStyle(color: AppColors.primaryBright),
                   ),
                 ]),
                 textAlign: TextAlign.center,
@@ -176,7 +176,7 @@ class _OnboardingPage extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.only(top: 2),
                         child: Icon(Icons.check_circle_rounded, size: 16, color: AppColors.success),
                       ),

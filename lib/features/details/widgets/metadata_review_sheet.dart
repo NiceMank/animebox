@@ -93,9 +93,9 @@ class _MetadataReviewSheetState extends State<MetadataReviewSheet> {
           children: [
             Row(
               children: [
-                const Icon(Icons.admin_panel_settings_outlined, size: 20, color: AppColors.primaryBright),
+                Icon(Icons.admin_panel_settings_outlined, size: 20, color: AppColors.primaryBright),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Text(
                     'Correction manuelle',
                     style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
@@ -104,7 +104,7 @@ class _MetadataReviewSheetState extends State<MetadataReviewSheet> {
                 IconButton(
                   tooltip: 'Fermer',
                   onPressed: _busy ? null : () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
+                  icon: Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -113,21 +113,21 @@ class _MetadataReviewSheetState extends State<MetadataReviewSheet> {
               'Fiche : ${widget.anime.title}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Candidats proposés',
               style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Associez explicitement la bonne fiche — rien n\'est fait automatiquement.',
               style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
             ),
             const SizedBox(height: 10),
             if (widget.anime.metadataCandidates.isEmpty)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
                 child: Text(
                   'Aucun candidat conservé — utilisez « Actualiser les métadonnées » sur la fiche.',
@@ -170,7 +170,7 @@ class _MetadataReviewSheetState extends State<MetadataReviewSheet> {
             ),
             if (_busy) ...[
               const SizedBox(height: 14),
-              const Center(
+              Center(
                 child: SizedBox(
                   width: 18,
                   height: 18,
@@ -212,7 +212,7 @@ class _CandidateTile extends StatelessWidget {
                   candidate.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 3),
                 Text(
@@ -221,7 +221,7 @@ class _CandidateTile extends StatelessWidget {
                     ?candidate.provider,
                     ?score,
                   ].where((String item) => item.isNotEmpty).join(' · '),
-                  style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                  style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
                 ),
               ],
             ),

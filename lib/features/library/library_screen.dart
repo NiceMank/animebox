@@ -496,8 +496,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
           alignment: Alignment.centerRight,
           child: TextButton.icon(
             onPressed: _confirmClearHistory,
-            icon: const Icon(Icons.delete_sweep_rounded, size: 17, color: AppColors.textSecondary),
-            label: const Text('Effacer l\'historique',
+            icon: Icon(Icons.delete_sweep_rounded, size: 17, color: AppColors.textSecondary),
+            label: Text('Effacer l\'historique',
                 style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
           ),
         ),
@@ -506,7 +506,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             padding: const EdgeInsets.only(top: 10, bottom: 8),
             child: Text(
               day.toUpperCase(),
-              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textMuted),
             ),
           ),
           for (final PlaybackProgress item in grouped[day]!) _HistoryCard(item: item, onTap: () => _openFromHistory(item), itemInfo: _episodeInfo(item.animeId, item.episodeId), anime: widget.repository.byId(item.animeId)),
@@ -534,15 +534,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
       builder: (BuildContext context) => AlertDialog(
         backgroundColor: AppColors.surfaceAlt,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Effacer l\'historique ?', style: TextStyle(color: AppColors.textPrimary, fontSize: 16.5, fontWeight: FontWeight.w800)),
-        content: const Text(
+        title: Text('Effacer l\'historique ?', style: TextStyle(color: AppColors.textPrimary, fontSize: 16.5, fontWeight: FontWeight.w800)),
+        content: Text(
           'Seul l\'historique de visionnage sera effacé. Vos favoris, téléchargements et sources Telegram sont conservés.',
           style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.45),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annuler', style: TextStyle(color: AppColors.textSecondary)),
+            child: Text('Annuler', style: TextStyle(color: AppColors.textSecondary)),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -619,7 +619,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           style: Theme.of(context).textTheme.labelSmall,
                         ),
                         const SizedBox(height: 4),
-                        const Row(
+                        Row(
                           children: [
                             Icon(Icons.check_circle_rounded, size: 13, color: AppColors.primaryBright),
                             SizedBox(width: 4),
@@ -631,7 +631,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  const Icon(Icons.play_arrow_rounded, color: AppColors.textMuted, size: 22),
+                  Icon(Icons.play_arrow_rounded, color: AppColors.textMuted, size: 22),
                 ],
               ),
             ),
@@ -699,13 +699,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           anime.genres.take(2).join(' · '),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted),
+                          style: TextStyle(fontSize: 10.5, color: AppColors.textMuted),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 6),
-                  const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
+                  Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
                 ],
               ),
             ),
@@ -814,10 +814,10 @@ class _HistoryCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(anime?.title ?? item.animeId, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                      Text(anime?.title ?? item.animeId, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                       if (episodeLabel.isNotEmpty) ...[
                         const SizedBox(height: 2),
-                        Text(episodeLabel, style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
+                        Text(episodeLabel, style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
                       ],
                       const SizedBox(height: 5),
                       ClipRRect(
@@ -836,9 +836,9 @@ class _HistoryCard extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('$percent %', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: AppColors.textSecondary)),
+                    Text('$percent %', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: AppColors.textSecondary)),
                     if (item.completed)
-                      const Text('Terminé', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: AppColors.primaryBright)),
+                      Text('Terminé', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: AppColors.primaryBright)),
                   ],
                 ),
               ],
@@ -870,7 +870,7 @@ class _Chip extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: compact ? 11 : 13),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          gradient: selected ? const LinearGradient(colors: AppColors.primaryGradient) : null,
+          gradient: selected ? LinearGradient(colors: AppColors.primaryGradient) : null,
           color: selected ? null : AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: selected ? Colors.transparent : AppColors.divider),
@@ -915,7 +915,7 @@ class _IconToggle extends StatelessWidget {
       icon: Icon(icon, size: 20, color: AppColors.textSecondary),
       style: IconButton.styleFrom(
         backgroundColor: AppColors.surface,
-        side: const BorderSide(color: AppColors.divider),
+        side: BorderSide(color: AppColors.divider),
       ),
     );
   }
@@ -968,7 +968,7 @@ class _SortButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.swap_vert_rounded, size: 16, color: AppColors.textSecondary),
+            Icon(Icons.swap_vert_rounded, size: 16, color: AppColors.textSecondary),
             const SizedBox(width: 6),
             Text('Trier', style: Theme.of(context).textTheme.labelMedium),
           ],

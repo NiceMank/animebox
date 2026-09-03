@@ -37,14 +37,14 @@ class EpisodeThumbnail extends StatelessWidget {
               fit: BoxFit.cover,
               gaplessPlayback: true,
               errorBuilder: (_, _, _) => Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [AppColors.surfaceAlt, AppColors.surface],
                   ),
                 ),
-                child: const Icon(Icons.movie_rounded, color: AppColors.textMuted, size: 22),
+                child: Icon(Icons.movie_rounded, color: AppColors.textMuted, size: 22),
               ),
             ),
             if (durationLabel != null)

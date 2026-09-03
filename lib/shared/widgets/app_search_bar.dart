@@ -36,18 +36,18 @@ class AppSearchBar extends StatelessWidget {
       child: Row(
         children: [
           const SizedBox(width: 10),
-          const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 22),
+          Icon(Icons.search_rounded, color: AppColors.textMuted, size: 22),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
               controller: controller,
               focusNode: focusNode,
               onChanged: onChanged,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14.5),
+              style: TextStyle(color: AppColors.textPrimary, fontSize: 14.5),
               cursorColor: AppColors.primary,
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14),
                 border: InputBorder.none,
                 isCollapsed: true,
               ),
@@ -61,21 +61,21 @@ class AppSearchBar extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  gradient: activeFilterCount > 0 ? const LinearGradient(colors: AppColors.primaryGradient) : null,
+                  gradient: activeFilterCount > 0 ? LinearGradient(colors: AppColors.primaryGradient) : null,
                   color: activeFilterCount > 0 ? null : AppColors.surfaceAlt,
                   borderRadius: BorderRadius.circular(13),
                 ),
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    const Icon(Icons.tune_rounded, color: AppColors.textPrimary, size: 20),
+                    Icon(Icons.tune_rounded, color: AppColors.textPrimary, size: 20),
                     if (activeFilterCount > 0)
                       Positioned(
                         top: 5,
                         right: 5,
                         child: Container(
                           padding: const EdgeInsets.all(3),
-                          decoration: const BoxDecoration(color: AppColors.background, shape: BoxShape.circle),
+                          decoration: BoxDecoration(color: AppColors.background, shape: BoxShape.circle),
                           child: Text(
                             '$activeFilterCount',
                             style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white),

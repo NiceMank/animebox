@@ -191,7 +191,7 @@ class _RemoteSearchBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -234,10 +234,10 @@ class _RemoteSearchBody extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
                 child: Row(
                   children: [
-                    const Icon(Icons.help_outline_rounded, size: 15, color: AppColors.warning),
+                    Icon(Icons.help_outline_rounded, size: 15, color: AppColors.warning),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(message!, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      child: Text(message!, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                     ),
                   ],
                 ),
@@ -275,9 +275,9 @@ class _OfflineResults extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(Icons.cloud_off_rounded, size: 18, color: AppColors.warning),
+              Icon(Icons.cloud_off_rounded, size: 18, color: AppColors.warning),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Hors-ligne — résultats issus des données locales.',
                   style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
@@ -414,9 +414,9 @@ class _ActiveFilterChips extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryBright)),
+                  Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryBright)),
                   const SizedBox(width: 5),
-                  const Icon(Icons.close_rounded, size: 14, color: AppColors.primaryBright),
+                  Icon(Icons.close_rounded, size: 14, color: AppColors.primaryBright),
                 ],
               ),
             ),

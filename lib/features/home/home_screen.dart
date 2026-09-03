@@ -83,7 +83,7 @@ class HomeScreen extends StatelessWidget {
             child: SizedBox(
               height: 240,
               child: favorites.isEmpty
-                  ? const Padding(
+                  ? Padding(
                       padding: EdgeInsets.fromLTRB(20, 10, 20, 0),
                       child: Align(
                         alignment: Alignment.topLeft,
@@ -113,7 +113,7 @@ class HomeScreen extends StatelessWidget {
           ),
           const SliverToBoxAdapter(child: SectionTitle(title: 'Continuer', icon: Icons.play_circle_outline_rounded)),
           if (watching.isEmpty)
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(20, 8, 20, 4),
                 child: Text('Commencez un épisode pour le retrouver ici.', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
@@ -166,9 +166,9 @@ class _CatalogStatusBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.cloud_off_rounded, size: 18, color: AppColors.warning),
+          Icon(Icons.cloud_off_rounded, size: 18, color: AppColors.warning),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Text(
               'Hors-ligne — dernières données connues affichées.',
               style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
@@ -192,7 +192,7 @@ class _CatalogLoading extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const SizedBox(
+        SizedBox(
           width: 16,
           height: 16,
           child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBright),
@@ -229,23 +229,23 @@ class _HomeTopBar extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: AppColors.primaryGradient),
+                      gradient: LinearGradient(colors: AppColors.primaryGradient),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(Icons.movie_filter_rounded, color: Colors.white, size: 22),
                   ),
                   const SizedBox(width: 12),
-                  const Text('AnimeBox', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                  Text('AnimeBox', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                 ],
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'Étape 1 — fondations de l\'application.\n'
                 'La connexion Telegram, la synchronisation des canaux et la lecture arrivent dans les prochaines étapes.',
                 style: TextStyle(fontSize: 13.5, height: 1.5, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 8),
-              const Text('v0.1.0', style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
+              Text('v0.1.0', style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
             ],
           ),
         ),
@@ -262,14 +262,14 @@ class _HomeTopBar extends StatelessWidget {
           IconButton(
             tooltip: 'Menu',
             onPressed: () => _showInfoSheet(context),
-            icon: const Icon(Icons.menu_rounded, color: AppColors.textPrimary),
+            icon: Icon(Icons.menu_rounded, color: AppColors.textPrimary),
           ),
           const SizedBox(width: 4),
           const Expanded(child: _Logo()),
           IconButton(
             tooltip: 'Rechercher',
             onPressed: onSearchTap,
-            icon: const Icon(Icons.search_rounded, color: AppColors.textPrimary),
+            icon: Icon(Icons.search_rounded, color: AppColors.textPrimary),
           ),
         ],
       ),
@@ -285,7 +285,7 @@ class _Logo extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: ShaderMask(
-        shaderCallback: (Rect bounds) => const LinearGradient(colors: AppColors.accentGradient).createShader(bounds),
+        shaderCallback: (Rect bounds) => LinearGradient(colors: AppColors.accentGradient).createShader(bounds),
         child: const Text(
           'ANIMEBOX',
           style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: 1.6, color: Colors.white),

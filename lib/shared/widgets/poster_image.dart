@@ -88,7 +88,7 @@ class _FallbackPoster extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -98,7 +98,7 @@ class _FallbackPoster extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         (label?.isNotEmpty ?? false) ? label![0].toUpperCase() : '?',
-        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: AppColors.textMuted),
+        style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: AppColors.textMuted),
       ),
     );
   }

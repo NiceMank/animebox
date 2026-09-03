@@ -29,7 +29,7 @@ class _TelegramLogoPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final Rect circle = Offset.zero & size;
     final Paint background = Paint()
-      ..shader = const LinearGradient(
+      ..shader = LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [AppColors.primaryBright, AppColors.primary],

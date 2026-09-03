@@ -32,9 +32,9 @@ class SyncProgressCard extends StatelessWidget {
           Row(
             children: [
               if (finished)
-                const Icon(Icons.check_circle_rounded, size: 20, color: AppColors.success)
+                Icon(Icons.check_circle_rounded, size: 20, color: AppColors.success)
               else
-                const SizedBox(
+                SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2.2, color: AppColors.primaryBright),
@@ -53,7 +53,7 @@ class SyncProgressCard extends StatelessWidget {
                 ),
               ),
               if (progress.percent != null)
-                Text('${progress.percent} %', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                Text('${progress.percent} %', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
             ],
           ),
           const SizedBox(height: 14),
@@ -77,11 +77,11 @@ class SyncProgressCard extends StatelessWidget {
             const SizedBox(height: 10),
             Row(
               children: [
-                const Icon(Icons.check_circle_outline_rounded, size: 16, color: AppColors.success),
+                Icon(Icons.check_circle_outline_rounded, size: 16, color: AppColors.success),
                 const SizedBox(width: 6),
                 Text(
                   '$resultEpisodes nouveaux épisodes détectés.',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.success),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.success),
                 ),
               ],
             ),

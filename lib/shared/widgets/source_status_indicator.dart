@@ -4,7 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../features/telegram/data/models/source_status.dart';
 
 /// Pastille de statut d'une source : Actif (vert), Synchronisation
-/// (violet, pulsant), Erreur (rouge), Désactivé (gris).
+/// (bleu, pulsant), Erreur (rouge), Désactivé (gris).
 class SourceStatusIndicator extends StatelessWidget {
   const SourceStatusIndicator({super.key, required this.status, this.labelVisible = true});
 

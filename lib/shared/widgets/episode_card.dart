@@ -78,7 +78,7 @@ class EpisodeCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(colors: AppColors.accentGradient),
+                              gradient: LinearGradient(colors: AppColors.accentGradient),
                               borderRadius: BorderRadius.circular(7),
                             ),
                             child: const Text(
@@ -110,7 +110,7 @@ class EpisodeCard extends StatelessWidget {
                           value: _fraction(context),
                           minHeight: 4,
                           backgroundColor: AppColors.divider,
-                          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                         ),
                       ),
                     ],

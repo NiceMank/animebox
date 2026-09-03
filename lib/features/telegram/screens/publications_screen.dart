@@ -93,12 +93,12 @@ class _PublicationsScreenState extends State<PublicationsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.cloud_off_rounded, size: 44, color: AppColors.textMuted),
+              Icon(Icons.cloud_off_rounded, size: 44, color: AppColors.textMuted),
               const SizedBox(height: 14),
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13.5, height: 1.5, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 13.5, height: 1.5, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 18),
               PrimaryButton(label: 'Réessayer', icon: Icons.refresh_rounded, expanded: false, onTap: _load),
@@ -108,7 +108,7 @@ class _PublicationsScreenState extends State<PublicationsScreen> {
       );
     }
     if (_messages.isEmpty) {
-      return const Center(
+      return Center(
         child: Text('Aucune publication accessible.', style: TextStyle(color: AppColors.textMuted)),
       );
     }
@@ -183,7 +183,7 @@ class _PublicationTile extends StatelessWidget {
                   children: [
                     Text(
                       'Message #${message.messageId}',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primaryBright),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primaryBright),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -206,7 +206,7 @@ class _PublicationTile extends StatelessWidget {
               message.text!,
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13, height: 1.45, color: AppColors.textPrimary),
+              style: TextStyle(fontSize: 13, height: 1.45, color: AppColors.textPrimary),
             ),
           ],
           const SizedBox(height: 10),
@@ -221,7 +221,7 @@ class _PublicationTile extends StatelessWidget {
                 ),
                 child: Text(
                   message.mediaType.label,
-                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
                 ),
               ),
               const SizedBox(width: 8),
@@ -255,7 +255,7 @@ class _PublicationTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Lien Telegram',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
@@ -268,7 +268,7 @@ class _PublicationTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.divider),
                 ),
-                child: SelectableText(link, style: const TextStyle(fontSize: 13, color: AppColors.primaryBright)),
+                child: SelectableText(link, style: TextStyle(fontSize: 13, color: AppColors.primaryBright)),
               ),
               const SizedBox(height: 16),
               PrimaryButton(

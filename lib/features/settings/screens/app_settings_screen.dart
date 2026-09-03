@@ -140,15 +140,15 @@ class AppSettingsScreen extends StatelessWidget {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Padding(
             padding: const EdgeInsets.all(14),
-            child: Text(s.preferredQuality, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+            child: Text(s.preferredQuality, style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
           ),
           for (final QualityPreference preference in QualityPreference.values)
             ListTile(
-              title: Text(preference.label, style: const TextStyle(color: AppColors.textPrimary)),
+              title: Text(preference.label, style: TextStyle(color: AppColors.textPrimary)),
               subtitle: preference == QualityPreference.auto
-                  ? Text(s.autoQualityDetail, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary))
+                  ? Text(s.autoQualityDetail, style: TextStyle(fontSize: 12, color: AppColors.textSecondary))
                   : null,
-              trailing: preference == current ? const Icon(Icons.check_rounded, color: AppColors.primaryBright) : null,
+              trailing: preference == current ? Icon(Icons.check_rounded, color: AppColors.primaryBright) : null,
               onTap: () => Navigator.of(context).pop(preference),
             ),
           const SizedBox(height: 8),
@@ -168,13 +168,13 @@ class AppSettingsScreen extends StatelessWidget {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Padding(
             padding: const EdgeInsets.all(14),
-            child: Text(s.languageLabel, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+            child: Text(s.languageLabel, style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
           ),
           for (final MapEntry<String, String> lang
               in const <String, String>{'fr': 'Français', 'en': 'English'}.entries)
             ListTile(
-              title: Text(lang.value, style: const TextStyle(color: AppColors.textPrimary)),
-              trailing: lang.key == current ? const Icon(Icons.check_rounded, color: AppColors.primaryBright) : null,
+              title: Text(lang.value, style: TextStyle(color: AppColors.textPrimary)),
+              trailing: lang.key == current ? Icon(Icons.check_rounded, color: AppColors.primaryBright) : null,
               onTap: () => Navigator.of(context).pop(lang.key),
             ),
           const SizedBox(height: 8),
@@ -241,17 +241,17 @@ class AppSettingsScreen extends StatelessWidget {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Padding(
             padding: const EdgeInsets.all(14),
-            child: Text(s.syncFrequency, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+            child: Text(s.syncFrequency, style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
           ),
           for (final SyncFrequency frequency in SyncFrequency.values)
             ListTile(
-              title: Text(frequency.label, style: const TextStyle(color: AppColors.textPrimary)),
-              trailing: frequency == current ? const Icon(Icons.check_rounded, color: AppColors.primaryBright) : null,
+              title: Text(frequency.label, style: TextStyle(color: AppColors.textPrimary)),
+              trailing: frequency == current ? Icon(Icons.check_rounded, color: AppColors.primaryBright) : null,
               onTap: () => Navigator.of(context).pop(frequency),
             ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Text(s.syncFrequencyNote, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            child: Text(s.syncFrequencyNote, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
           ),
         ]),
       ),
@@ -327,7 +327,7 @@ class AppSettingsScreen extends StatelessWidget {
   }
 
   // -----------------------------------------------------------------------
-  // APPARENCE (§7 — identité sombre : Sombre/Système, pas de clair générique)
+  // APPARENCE (§7 + prompt 14 §6 — identité bleue : Sombre/Clair/Système)
   // -----------------------------------------------------------------------
 
   List<Widget> _appearanceSection(BuildContext context, SettingsStrings s) {
@@ -336,15 +336,27 @@ class AppSettingsScreen extends StatelessWidget {
       _SectionLabel(s.sectionAppearance),
       _SettingsCard(children: [
         _SettingsTile(
-          icon: Icons.dark_mode_rounded,
+          icon: Icons.palette_rounded,
           title: s.themeLabel,
-          subtitle: '${settings.theme == AppThemeMode.dark ? s.themeDark : s.themeSystem}\n${s.themeNote}',
+          subtitle: '${_themeLabel(settings.theme, s)}\n${s.themeNote}',
           onTap: () => _pickTheme(context, s, settings),
         ),
       ]),
       const SizedBox(height: 18),
     ];
   }
+
+  String _themeLabel(AppThemeMode mode, SettingsStrings s) => switch (mode) {
+        AppThemeMode.dark => s.themeDark,
+        AppThemeMode.light => s.themeLight,
+        AppThemeMode.system => s.themeSystem,
+      };
+
+  IconData _themeIcon(AppThemeMode mode) => switch (mode) {
+        AppThemeMode.dark => Icons.dark_mode_rounded,
+        AppThemeMode.light => Icons.light_mode_rounded,
+        AppThemeMode.system => Icons.brightness_auto_rounded,
+      };
 
   Future<void> _pickTheme(BuildContext context, SettingsStrings s, AppSettings settings) async {
     final AppThemeMode current = settings.theme;
@@ -356,24 +368,18 @@ class AppSettingsScreen extends StatelessWidget {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Padding(
             padding: const EdgeInsets.all(14),
-            child: Text(s.themeLabel, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+            child: Text(s.themeLabel, style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
           ),
-          for (final MapEntry<AppThemeMode, String> entry in <AppThemeMode, String>{
-            AppThemeMode.dark: s.themeDark,
-            AppThemeMode.system: s.themeSystem,
-          }.entries)
+          for (final AppThemeMode mode in AppThemeMode.values)
             ListTile(
-              leading: Icon(
-                entry.key == AppThemeMode.dark ? Icons.dark_mode_rounded : Icons.brightness_auto_rounded,
-                color: AppColors.textSecondary,
-              ),
-              title: Text(entry.value, style: const TextStyle(color: AppColors.textPrimary)),
-              trailing: entry.key == current ? const Icon(Icons.check_rounded, color: AppColors.primaryBright) : null,
-              onTap: () => Navigator.of(context).pop(entry.key),
+              leading: Icon(_themeIcon(mode), color: AppColors.textSecondary),
+              title: Text(_themeLabel(mode, s), style: TextStyle(color: AppColors.textPrimary)),
+              trailing: mode == current ? Icon(Icons.check_rounded, color: AppColors.primaryBright) : null,
+              onTap: () => Navigator.of(context).pop(mode),
             ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Text(s.themeNote, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            child: Text(s.themeNote, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
           ),
         ]),
       ),
@@ -426,14 +432,14 @@ class AppSettingsScreen extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 22, 24, 28),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Row(children: [
+            Row(children: [
               Icon(Icons.privacy_tip_outlined, size: 22, color: AppColors.primaryBright),
               SizedBox(width: 10),
               Text('Confidentialité',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
             ]),
             const SizedBox(height: 14),
-            const Text(
+            Text(
               'Vos sources Telegram et votre catalogue sont traités localement sur votre appareil.\n\n'
               'AnimeBox ne transmet ni votre session Telegram, ni vos messages, ni vos fichiers, ni aucune information privée à un serveur distant.\n\n'
               'La session Telegram est conservée dans un stockage chiffré, propre à cet appareil.\n\n'
@@ -462,8 +468,8 @@ class AppSettingsScreen extends StatelessWidget {
       context: context,
       builder: (BuildContext context) => AlertDialog(
         backgroundColor: AppColors.surfaceAlt,
-        title: Text(title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-        content: Text(message, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5)),
+        title: Text(title, style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+        content: Text(message, style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5)),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(cancelLabel)),
           TextButton(
@@ -590,7 +596,7 @@ class _SettingsHeader extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)),
-          child: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary, size: 20),
+          child: Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary, size: 20),
         ),
       ),
       const SizedBox(width: 14),
@@ -614,7 +620,7 @@ class _SectionLabel extends StatelessWidget {
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w800,
           letterSpacing: 1.4,
@@ -654,7 +660,7 @@ class _Divider extends StatelessWidget {
 }
 
 class _SettingsTile extends StatelessWidget {
-  const _SettingsTile({
+  _SettingsTile({
     required this.icon,
     required this.title,
     this.onTap,
@@ -686,9 +692,9 @@ class _SettingsTile extends StatelessWidget {
       title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: titleColor)),
       subtitle: subtitle == null
           ? null
-          : Text(subtitle!, style: const TextStyle(fontSize: 12, height: 1.4, color: AppColors.textSecondary)),
+          : Text(subtitle!, style: TextStyle(fontSize: 12, height: 1.4, color: AppColors.textSecondary)),
       trailing:
-          onTap == null ? null : const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
+          onTap == null ? null : Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
       onTap: onTap,
     );
   }
@@ -719,10 +725,10 @@ class _SettingsSwitchTile extends StatelessWidget {
         decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)),
         child: Icon(icon, size: 20, color: AppColors.primaryBright),
       ),
-      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+      title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
       subtitle: subtitle == null
           ? null
-          : Text(subtitle!, style: const TextStyle(fontSize: 12, height: 1.4, color: AppColors.textSecondary)),
+          : Text(subtitle!, style: TextStyle(fontSize: 12, height: 1.4, color: AppColors.textSecondary)),
       trailing: Switch(value: value, activeThumbColor: AppColors.primary, onChanged: onChanged),
       onTap: () => onChanged(!value),
     );

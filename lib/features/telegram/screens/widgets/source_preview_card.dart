@@ -26,7 +26,7 @@ class SourcePreviewCard extends StatelessWidget {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: AppColors.primaryGradient),
+              gradient: LinearGradient(colors: AppColors.primaryGradient),
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),

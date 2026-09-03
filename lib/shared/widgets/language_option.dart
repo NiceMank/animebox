@@ -59,7 +59,7 @@ class LanguageOption extends StatelessWidget {
                     ),
                   ),
                   if (subtitle != null)
-                    Text(subtitle!, style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+                    Text(subtitle!, style: TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
                 ],
               ),
             ],

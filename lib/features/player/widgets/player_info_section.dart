@@ -46,7 +46,7 @@ class PlayerInfoSection extends StatelessWidget {
                 children: [
                   Text(
                     episode.label,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primaryBright),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primaryBright),
                   ),
                   const SizedBox(height: 3),
                   Text(
@@ -141,7 +141,7 @@ class _DownloadButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: AppColors.primaryGradient),
+          gradient: LinearGradient(colors: AppColors.primaryGradient),
           borderRadius: BorderRadius.circular(13),
           boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 6))],
         ),

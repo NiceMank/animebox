@@ -105,12 +105,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.cloud_off_rounded, size: 44, color: AppColors.textMuted),
+              Icon(Icons.cloud_off_rounded, size: 44, color: AppColors.textMuted),
               const SizedBox(height: 14),
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13.5, height: 1.5, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 13.5, height: 1.5, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 18),
               PrimaryButton(label: 'Réessayer', icon: Icons.refresh_rounded, expanded: false, onTap: _load),
@@ -222,20 +222,20 @@ class _ConnectBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.link_off_rounded, size: 21, color: AppColors.primaryBright),
+          Icon(Icons.link_off_rounded, size: 21, color: AppColors.primaryBright),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               service.authState == TelegramAuthState.expired
                   ? 'Session expirée. Reconnectez-vous pour accéder à vos sources.'
                   : 'Connectez Telegram pour ajouter des sources.',
-              style: const TextStyle(fontSize: 12.5, height: 1.45, color: AppColors.textPrimary),
+              style: TextStyle(fontSize: 12.5, height: 1.45, color: AppColors.textPrimary),
             ),
           ),
           const SizedBox(width: 8),
           TextButton(
             onPressed: () => Navigator.of(context).pushNamed(AppRoutes.telegramConnect),
-            child: const Text('Connecter', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.primaryBright)),
+            child: Text('Connecter', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.primaryBright)),
           ),
         ],
       ),

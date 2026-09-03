@@ -43,7 +43,7 @@ class QualityOption extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 7),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  gradient: selected ? const LinearGradient(colors: AppColors.primaryGradient) : null,
+                  gradient: selected ? LinearGradient(colors: AppColors.primaryGradient) : null,
                   color: selected ? null : AppColors.surfaceAlt,
                   borderRadius: BorderRadius.circular(10),
                 ),

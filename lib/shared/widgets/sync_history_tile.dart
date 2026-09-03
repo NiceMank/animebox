@@ -63,7 +63,7 @@ class SyncHistoryTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              const Icon(Icons.chevron_right_rounded, size: 19, color: AppColors.textMuted),
+              Icon(Icons.chevron_right_rounded, size: 19, color: AppColors.textMuted),
             ],
           ),
         ),

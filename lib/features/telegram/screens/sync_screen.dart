@@ -117,7 +117,7 @@ class _SyncScreenState extends State<SyncScreen> {
                   Expanded(
                     child: Text(
                       summary.cancelled ? 'Synchronisation annulée' : 'Synchronisation terminée',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
@@ -181,8 +181,8 @@ class _SyncScreenState extends State<SyncScreen> {
                 Center(
                   child: TextButton.icon(
                     onPressed: () => widget.service.cancelSync(),
-                    icon: const Icon(Icons.stop_circle_outlined, size: 17, color: AppColors.warning),
-                    label: const Text(
+                    icon: Icon(Icons.stop_circle_outlined, size: 17, color: AppColors.warning),
+                    label: Text(
                       'Annuler la synchronisation',
                       style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.warning),
                     ),
@@ -248,7 +248,7 @@ class _SyncScreenState extends State<SyncScreen> {
         currentGroup = group;
         widgets.add(Padding(
           padding: const EdgeInsets.only(top: 8, bottom: 8),
-          child: Text(group, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+          child: Text(group, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
         ));
       }
       widgets.add(Padding(
@@ -285,7 +285,7 @@ class _SyncScreenState extends State<SyncScreen> {
                   Expanded(
                     child: Text(
                       entry.success ? 'Synchronisation terminée' : 'Erreur de synchronisation',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                     ),
                   ),
                 ],
@@ -380,10 +380,10 @@ class _DetailRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 150,
-            child: Text(label, style: const TextStyle(fontSize: 12.5, color: AppColors.textMuted)),
+            child: Text(label, style: TextStyle(fontSize: 12.5, color: AppColors.textMuted)),
           ),
           Expanded(
-            child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+            child: Text(value, textAlign: TextAlign.right, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
           ),
         ],
       ),
