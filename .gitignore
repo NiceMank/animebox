@@ -57,3 +57,8 @@ backend/.env
 # Sorties de compilation Android
 android/build/
 android/.gradle/
+
+# Fichiers locaux d'identifiants Telegram (my.telegram.org) — JAMAIS versionnés.
+Api.txt
+*.api.txt
+*_credentials.txt
