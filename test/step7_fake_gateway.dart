@@ -13,8 +13,10 @@ class FakeTelegramGateway implements TelegramGateway {
     Map<int, List<GatewayMessage>>? messages,
     this.failOnNextFetch,
     this.delayPerFetch = Duration.zero,
+    Map<String, GatewayUser>? usersByPhone,
   })  : channels = channels ?? [],
-        messages = messages ?? {};
+        messages = messages ?? {},
+        usersByPhone = usersByPhone ?? {};
 
   /// Si vrai, `checkCode` bascule en `passwordRequired` (compte 2FA).
   bool requirePassword;
@@ -33,6 +35,10 @@ class FakeTelegramGateway implements TelegramGateway {
 
   /// Délai artificiel par page (tests d'annulation).
   Duration delayPerFetch;
+
+  /// Utilisateur retourné par téléphone (test « changement de compte »).
+  final Map<String, GatewayUser> usersByPhone;
+  String? _lastPhone;
 
   GatewayAuthState _state = GatewayAuthState.notConnected;
   final StreamController<GatewayAuthState> _states = StreamController<GatewayAuthState>.broadcast();
@@ -80,6 +86,7 @@ class FakeTelegramGateway implements TelegramGateway {
   @override
   Future<void> requestPhone(String phone) async {
     callLog.add('requestPhone');
+    _lastPhone = phone;
     _set(GatewayAuthState.codeRequired);
   }
 
@@ -104,7 +111,8 @@ class FakeTelegramGateway implements TelegramGateway {
   @override
   Future<GatewayUser?> getMe() async {
     if (_state != GatewayAuthState.connected) return null;
-    return const GatewayUser(firstName: 'Test', lastName: 'AnimeBox', username: 'test_user');
+    return usersByPhone[_lastPhone] ??
+        const GatewayUser(firstName: 'Test', lastName: 'AnimeBox', username: 'test_user');
   }
 
   @override
