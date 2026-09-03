@@ -326,7 +326,7 @@ void main() {
       expect(find.text('Qualité préférée'), findsOneWidget);
 
       // Les sections basses existent dans l'arborescence (scroll jusqu'à elles).
-      await tester.scrollUntilVisible(find.text('À PROPOS'), 240,
+      await tester.scrollUntilVisible(find.text('À propos d\'AnimeBox'), 240,
           scrollable: find.byType(Scrollable).first);
       await tester.pumpAndSettle();
       expect(find.text('À PROPOS'), findsOneWidget);
