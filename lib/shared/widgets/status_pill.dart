@@ -24,7 +24,7 @@ class StatusPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        gradient: filled ? const LinearGradient(colors: AppColors.accentGradient) : null,
+        gradient: filled ? LinearGradient(colors: AppColors.accentGradient) : null,
         color: filled ? null : tone.withValues(alpha: 0.14),
         border: Border.all(color: filled ? Colors.transparent : tone.withValues(alpha: 0.45)),
         borderRadius: BorderRadius.circular(7),

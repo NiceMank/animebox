@@ -77,7 +77,7 @@ class _SeasonChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          gradient: selected ? const LinearGradient(colors: AppColors.primaryGradient) : null,
+          gradient: selected ? LinearGradient(colors: AppColors.primaryGradient) : null,
           color: selected ? null : AppColors.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: selected ? Colors.transparent : AppColors.divider),

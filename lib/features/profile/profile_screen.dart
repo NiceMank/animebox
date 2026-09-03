@@ -44,7 +44,7 @@ class ProfileScreen extends StatelessWidget {
                       height: 92,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: const LinearGradient(colors: AppColors.primaryGradient),
+                        gradient: LinearGradient(colors: AppColors.primaryGradient),
                         boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.35), blurRadius: 30, offset: const Offset(0, 10))],
                       ),
                       child: Center(
@@ -165,7 +165,7 @@ class ProfileScreen extends StatelessWidget {
                     ? const Text('Meilleure qualité réellement disponible')
                     : null,
                 trailing: preference == current
-                    ? const Icon(Icons.check_rounded, color: AppColors.primaryBright)
+                    ? Icon(Icons.check_rounded, color: AppColors.primaryBright)
                     : null,
                 onTap: () => Navigator.of(context).pop(preference),
               ),
@@ -209,7 +209,7 @@ class ProfileScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
                   Icon(Icons.privacy_tip_outlined, size: 22, color: AppColors.primaryBright),
                   SizedBox(width: 10),
@@ -217,7 +217,7 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'Vos sources Telegram et votre catalogue sont traités localement sur votre appareil.\n\n'
                 'AnimeBox ne transmet ni votre session Telegram, ni vos messages, ni vos fichiers, ni aucune information privée à un serveur distant.\n\n'
                 'La session Telegram est conservée dans un stockage chiffré, propre à cet appareil.',
@@ -250,7 +250,7 @@ class ProfileScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
                   Icon(Icons.storage_rounded, size: 22, color: AppColors.primaryBright),
                   SizedBox(width: 10),
@@ -264,7 +264,7 @@ class ProfileScreen extends StatelessWidget {
                     : service.isRealTelegram
                         ? 'Mode local réel : AnimeBox dialogue directement avec Telegram depuis votre appareil (bibliothèque TDLib).\n\nLes messages sont analysés localement et stockés dans la base locale. Aucun serveur intermédiaire.'
                         : 'Cette application utilise les données locales de démonstration (mode simulation).\n\nPour activer la vraie connexion Telegram locale, compilez l\'application avec :\n\nflutter run --dart-define=ANIMEBOX_TELEGRAM_API_ID=… --dart-define=ANIMEBOX_TELEGRAM_API_HASH=…',
-                style: const TextStyle(fontSize: 13, height: 1.55, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 13, height: 1.55, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 18),
               Center(
@@ -339,7 +339,7 @@ class _MenuCard extends StatelessWidget {
                   color: badge == 'Connecté' ? AppColors.success : AppColors.primaryBright,
                 ),
               const SizedBox(width: 6),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
+              Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
             ],
           ),
         ),

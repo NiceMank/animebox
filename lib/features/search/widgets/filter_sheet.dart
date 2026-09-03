@@ -87,7 +87,7 @@ class _FilterSheetState extends State<FilterSheet> {
                   ),
                   TextButton(
                     onPressed: _reset,
-                    child: const Text(
+                    child: Text(
                       'Réinitialiser',
                       style: TextStyle(color: AppColors.textMuted, fontSize: 12.5, fontWeight: FontWeight.w600),
                     ),
@@ -125,17 +125,17 @@ class _FilterSheetState extends State<FilterSheet> {
                           controller: _episodeController,
                           keyboardType: TextInputType.number,
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                          style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
                           cursorColor: AppColors.primary,
                           decoration: InputDecoration(
                             hintText: 'Ex : 8',
-                            hintStyle: const TextStyle(color: AppColors.textMuted),
+                            hintStyle: TextStyle(color: AppColors.textMuted),
                             filled: true,
                             fillColor: AppColors.surface,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.divider)),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.divider)),
-                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary)),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.divider)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.divider)),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.primary)),
                           ),
                         ),
                       ),
@@ -236,7 +236,7 @@ class _FilterSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+        Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
         const SizedBox(height: 10),
         child,
       ],

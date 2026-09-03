@@ -157,7 +157,7 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(top: 14),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w800,
           letterSpacing: 1.2,
@@ -200,7 +200,7 @@ class _TaskCard extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   gradient: task.status == DownloadStatus.completed
-                      ? const LinearGradient(colors: AppColors.primaryGradient)
+                      ? LinearGradient(colors: AppColors.primaryGradient)
                       : null,
                   color: task.status == DownloadStatus.completed ? null : AppColors.surfaceAlt,
                   borderRadius: BorderRadius.circular(12),
@@ -222,12 +222,12 @@ class _TaskCard extends StatelessWidget {
                       task.animeTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       _identityLabel(),
-                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.primaryBright),
+                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.primaryBright),
                     ),
                   ],
                 ),
@@ -249,14 +249,14 @@ class _TaskCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               _progressLabel(),
-              style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
             ),
           ],
           if (task.error != null && task.error!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
               task.error!,
-              style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
             ),
           ],
         ],

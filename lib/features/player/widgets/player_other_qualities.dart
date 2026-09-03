@@ -22,7 +22,7 @@ class PlayerOtherQualities extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Autres qualités disponibles',
           style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
         ),
@@ -59,7 +59,7 @@ class _QualityRow extends StatelessWidget {
         children: [
           Text(
             videoQuality.label,
-            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: AppColors.primaryBright),
+            style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: AppColors.primaryBright),
           ),
           const SizedBox(width: 8),
           Text(
@@ -70,7 +70,7 @@ class _QualityRow extends StatelessWidget {
           IconButton(
             onPressed: onDownload,
             tooltip: 'Télécharger en ${videoQuality.label}',
-            icon: const Icon(Icons.download_rounded, size: 19, color: AppColors.textSecondary),
+            icon: Icon(Icons.download_rounded, size: 19, color: AppColors.textSecondary),
           ),
         ],
       ),

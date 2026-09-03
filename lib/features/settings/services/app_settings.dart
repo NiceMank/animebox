@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 
 import '../../local/data/local_database.dart';
 
-/// Thème de l'interface (§7) — le design AnimeBox est SOMBRE : les biens
-/// proposés sont donc « Sombre » et « Système » (qui suit Android ; le
-/// fond de référence reste sombre). Aucun thème clair générique n'est
-/// inventé (§27).
-enum AppThemeMode { dark, system }
+/// Thème de l'interface (§7, prompt 14 §6/§19) — l'identité BLEUE est
+/// proposée en trois choix : « Sombre » (bleu nuit, défaut), « Clair »
+/// (vrai mode clair : fonds clairs, texte sombre, bleu en accent) et
+/// « Système » (suit Android, sombre ↔ clair).
+enum AppThemeMode { dark, light, system }
 
 /// Service central des préférences (prompt 12 §25/§26).
 ///
@@ -79,7 +79,11 @@ class AppSettings extends ChangeNotifier {
     }
     try {
       _language = await db.getSetting(_keyLanguage) ?? 'fr';
-      _theme = (await db.getSetting(_keyTheme)) == 'system' ? AppThemeMode.system : AppThemeMode.dark;
+      _theme = switch (await db.getSetting(_keyTheme)) {
+        'light' => AppThemeMode.light,
+        'system' => AppThemeMode.system,
+        _ => AppThemeMode.dark,
+      };
       _syncWifiOnly = (await db.getSetting(_keyWifiOnly)) == 'true';
       _autoDownload = (await db.getSetting(_keyAutoDownload)) == 'true';
       _onboardingCompleted = (await db.getSetting(_keyOnboardingCompleted)) == 'true';
@@ -113,7 +117,11 @@ class AppSettings extends ChangeNotifier {
     if (mode == _theme) return;
     _theme = mode;
     notifyListeners();
-    await _persist(_keyTheme, switch (mode) { AppThemeMode.dark => 'dark', AppThemeMode.system => 'system' });
+    await _persist(_keyTheme, switch (mode) {
+      AppThemeMode.dark => 'dark',
+      AppThemeMode.light => 'light',
+      AppThemeMode.system => 'system',
+    });
   }
 
   /// §10 — Wi-Fi uniquement : le planificateur de synchro applique la
@@ -170,10 +178,11 @@ class SettingsStrings {
   String get languageLabel => language == 'en' ? 'Language' : 'Langue';
   String get themeLabel => language == 'en' ? 'Theme' : 'Thème';
   String get themeDark => language == 'en' ? 'Dark' : 'Sombre';
+  String get themeLight => language == 'en' ? 'Light' : 'Clair';
   String get themeSystem => language == 'en' ? 'System' : 'Système';
   String get themeNote => language == 'en'
-      ? 'The AnimeBox identity is dark — System currently follows the dark identity.'
-      : 'L\'identité AnimeBox est sombre — Système suit actuellement l\'identité sombre.';
+      ? 'Blue identity in dark or light — applied instantly, System follows Android.'
+      : 'Identité bleue en sombre ou en clair — appliquée instantanément, Système suit Android.';
 
   String get syncFrequency => language == 'en' ? 'Background sync frequency' : 'Fréquence de synchronisation';
   String get syncFrequencyNote => language == 'en'

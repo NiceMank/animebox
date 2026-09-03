@@ -425,7 +425,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 title: Text(track.label),
                 subtitle: track.language == null ? null : Text(track.language!),
                 trailing: controller.currentSubtitleTrackId == track.id
-                    ? const Icon(Icons.check_rounded, color: AppColors.primaryBright)
+                    ? Icon(Icons.check_rounded, color: AppColors.primaryBright)
                     : null,
                 onTap: () => Navigator.of(context).pop(track.id),
               ),
@@ -433,7 +433,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
               leading: const Icon(Icons.subtitles_off_outlined),
               title: const Text('Désactivés'),
               trailing: controller.currentSubtitleTrackId == null
-                  ? const Icon(Icons.check_rounded, color: AppColors.primaryBright)
+                  ? Icon(Icons.check_rounded, color: AppColors.primaryBright)
                   : null,
               onTap: () => Navigator.of(context).pop(''),
             ),
@@ -561,7 +561,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             if (_phase == _VideoPhase.preparing) ...<Widget>[
-              const SizedBox(
+              SizedBox(
                 width: 30,
                 height: 30,
                 child: CircularProgressIndicator(strokeWidth: 2.4, color: AppColors.primaryBright),
@@ -573,7 +573,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 style: const TextStyle(fontSize: 12.5, color: Colors.white70),
               ),
             ] else if (_phase == _VideoPhase.waitingDownload) ...<Widget>[
-              const Icon(Icons.downloading_rounded, size: 34, color: AppColors.primaryBright),
+              Icon(Icons.downloading_rounded, size: 34, color: AppColors.primaryBright),
               const SizedBox(height: 10),
               Text(
                 'Préparation de la lecture…',
@@ -602,7 +602,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 ),
               ],
             ] else ...<Widget>[
-              const Icon(Icons.videocam_off_outlined, size: 34, color: AppColors.textSecondary),
+              Icon(Icons.videocam_off_outlined, size: 34, color: AppColors.textSecondary),
               const SizedBox(height: 10),
               const Text(
                 'Lecture directe indisponible.',
@@ -744,7 +744,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
           const SizedBox(height: 14),
           Row(
             children: <Widget>[
-              const Icon(Icons.autorenew_rounded, size: 18, color: AppColors.textSecondary),
+              Icon(Icons.autorenew_rounded, size: 18, color: AppColors.textSecondary),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -768,7 +768,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
           ),
           if (next != null) ...<Widget>[
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Prochain épisode',
               style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
             ),

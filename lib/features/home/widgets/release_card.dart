@@ -56,7 +56,7 @@ class ReleaseCard extends StatelessWidget {
                       const SizedBox(height: 6),
                       Text(
                         anime.latestEpisodeShortTag,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primaryBright),
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primaryBright),
                       ),
                       const SizedBox(height: 8),
                       Wrap(

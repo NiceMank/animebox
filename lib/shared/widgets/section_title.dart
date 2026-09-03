@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 
-/// Titre de section avec barre d'accent violette, icône et action optionnelle.
+/// Titre de section avec barre d'accent bleue, icône et action optionnelle.
 class SectionTitle extends StatelessWidget {
   const SectionTitle({super.key, required this.title, this.icon, this.actionLabel, this.onAction});
 
@@ -21,7 +21,7 @@ class SectionTitle extends StatelessWidget {
             width: 4,
             height: 18,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: AppColors.accentGradient),
+              gradient: LinearGradient(colors: AppColors.accentGradient),
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -33,7 +33,7 @@ class SectionTitle extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
             ),
           ),
           if (actionLabel != null)

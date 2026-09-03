@@ -87,7 +87,7 @@ class _VideoControlsState extends State<VideoControls> {
                 width: 62,
                 height: 62,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: AppColors.primaryGradient),
+                  gradient: LinearGradient(colors: AppColors.primaryGradient),
                   shape: BoxShape.circle,
                   boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.45), blurRadius: 22, offset: const Offset(0, 6))],
                 ),
@@ -109,7 +109,7 @@ class _VideoControlsState extends State<VideoControls> {
               width: 44,
               child: Text(
                 formatDuration(widget.position),
-                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
               ),
             ),
             Expanded(
@@ -120,7 +120,7 @@ class _VideoControlsState extends State<VideoControls> {
               child: Text(
                 formatDuration(widget.duration),
                 textAlign: TextAlign.right,
-                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
               ),
             ),
             const SizedBox(width: 6),

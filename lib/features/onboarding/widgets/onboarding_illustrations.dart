@@ -30,7 +30,7 @@ class _CubePainter extends CustomPainter {
     final double w = size.width;
     final Rect hex = Offset.zero & size;
 
-    // Hexagone (contour dégradé violet — identité visuelle du projet).
+    // Hexagone (contour dégradé bleu — identité visuelle du projet).
     final Path hexPath = Path();
     for (int i = 0; i < 6; i++) {
       final double angle = (60 * i - 30) * math.pi / 180;
@@ -45,7 +45,7 @@ class _CubePainter extends CustomPainter {
     hexPath.close();
 
     final Paint fill = Paint()
-      ..shader = const LinearGradient(
+      ..shader = LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: <Color>[AppColors.primaryDark, AppColors.primary],

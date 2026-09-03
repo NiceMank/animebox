@@ -157,7 +157,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 ..._buildAnimeCards(context, settings),
               ],
               const SizedBox(height: 12),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(horizontal: 6),
                 child: Text(
                   'Les vidéos ne sont jamais téléchargées automatiquement : '
@@ -188,7 +188,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.notifications_outlined, color: AppColors.primaryBright, size: 20),
               SizedBox(width: 10),
@@ -201,7 +201,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             ],
           ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'AnimeBox peut vous prévenir lorsqu\'un nouvel épisode est détecté dans vos sources.',
             style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary, height: 1.5),
           ),
@@ -212,7 +212,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
               const SizedBox(width: 12),
               TextButton(
                 onPressed: () => setState(() => _permissionDismissed = true),
-                child: const Text('Plus tard', style: TextStyle(color: AppColors.textSecondary)),
+                child: Text('Plus tard', style: TextStyle(color: AppColors.textSecondary)),
               ),
             ],
           ),
@@ -238,19 +238,19 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       child: Column(
         children: [
           SwitchListTile(
-            secondary: const Icon(Icons.bedtime_outlined, color: AppColors.primaryBright, size: 21),
-            title: const Text('Heures silencieuses',
+            secondary: Icon(Icons.bedtime_outlined, color: AppColors.primaryBright, size: 21),
+            title: Text('Heures silencieuses',
                 style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
             subtitle: Text(
               settings.quietHoursEnabled ? '$start → $end' : 'Désactivées',
-              style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
             ),
             value: settings.quietHoursEnabled,
             activeThumbColor: AppColors.primaryBright,
             onChanged: settings.setQuietHoursEnabled,
           ),
           if (settings.quietHoursEnabled) ...[
-            const Divider(height: 1, color: AppColors.divider),
+            Divider(height: 1, color: AppColors.divider),
             Row(
               children: [
                 Expanded(
@@ -260,7 +260,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                     onTap: () => _pickQuietTime(context, settings, start: true),
                   ),
                 ),
-                const Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.textMuted),
+                Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.textMuted),
                 Expanded(
                   child: _TimeCell(
                     label: 'Fin',
@@ -270,7 +270,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 ),
               ],
             ),
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Text(
                 'Pendant cette période, les alertes sont créées sans son ni '
@@ -319,16 +319,16 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       child: Column(
         children: [
           ListTile(
-            leading: const Icon(Icons.schedule_rounded, color: AppColors.primaryBright, size: 21),
-            title: const Text('Fréquence souhaitée',
+            leading: Icon(Icons.schedule_rounded, color: AppColors.primaryBright, size: 21),
+            title: Text('Fréquence souhaitée',
                 style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
             subtitle: Text(settings.syncFrequency.label,
-                style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
-            trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
+            trailing: Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
             onTap: () => _pickFrequency(context, settings),
           ),
           if (settings.syncFrequency != SyncFrequency.disabled)
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Text(
                 'Android décide de l\'exécution réelle : il peut retarder la '
@@ -362,11 +362,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
               ListTile(
                 title: Text(frequency.label, style: const TextStyle(fontSize: 13.5)),
                 trailing: frequency == settings.syncFrequency
-                    ? const Icon(Icons.check_rounded, color: AppColors.primaryBright)
+                    ? Icon(Icons.check_rounded, color: AppColors.primaryBright)
                     : null,
                 onTap: () => Navigator.of(context).pop(frequency),
               ),
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(20, 4, 20, 14),
               child: Text(
                 'Fréquence souhaitée : le système Android peut modifier ou '
@@ -450,7 +450,7 @@ class _SubTitle extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
       ),
     );
   }
@@ -498,7 +498,7 @@ class _SwitchCard extends StatelessWidget {
           subtitle,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
         ),
         value: value,
         activeThumbColor: AppColors.primaryBright,
@@ -523,11 +523,11 @@ class _TimeCell extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(
           children: [
-            Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+            Text(label, style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
             const SizedBox(height: 4),
             Text(
               value,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
             ),
           ],
         ),

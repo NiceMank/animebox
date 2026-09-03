@@ -79,7 +79,7 @@ class _EpisodeListScreenState extends State<EpisodeListScreen> {
     if (anime == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text('Animé introuvable', style: TextStyle(color: AppColors.textMuted))),
+        body: Center(child: Text('Animé introuvable', style: TextStyle(color: AppColors.textMuted))),
       );
     }
     return ListenableBuilder(
@@ -146,7 +146,7 @@ class _EpisodeListScreenState extends State<EpisodeListScreen> {
                     children: [
                       Text(
                         '${sorted.length} épisode${sorted.length > 1 ? 's' : ''}',
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                       ),
                       const Spacer(),
                       _SortButton(sort: _sort, onChanged: (EpisodeSort sort) => setState(() => _sort = sort)),
@@ -211,13 +211,13 @@ class _Banner extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               PosterImage(asset: anime.backdropAsset, url: anime.backdropUrl, borderRadius: 0, fallbackLabel: anime.title),
-              const DecoratedBox(
+              DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     stops: [0.25, 0.7, 1.0],
-                    colors: [Colors.transparent, Color(0x590A0817), Color(0xF20A0817)],
+                    colors: [Colors.transparent, AppColors.background.withValues(alpha: 0.35), AppColors.background.withValues(alpha: 0.95)],
                   ),
                 ),
               ),
@@ -344,7 +344,7 @@ class _SortButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.swap_vert_rounded, size: 16, color: AppColors.textSecondary),
+            Icon(Icons.swap_vert_rounded, size: 16, color: AppColors.textSecondary),
             const SizedBox(width: 6),
             Text('Trier', style: Theme.of(context).textTheme.labelMedium),
           ],

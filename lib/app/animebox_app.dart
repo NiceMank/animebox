@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../features/anime/data/repositories/anime_repository.dart';
 import '../features/anime/data/repositories/catalog_repository.dart';
@@ -110,7 +112,7 @@ class AnimeBoxApp extends StatefulWidget {
   State<AnimeBoxApp> createState() => _AnimeBoxAppState();
 }
 
-class _AnimeBoxAppState extends State<AnimeBoxApp> {
+class _AnimeBoxAppState extends State<AnimeBoxApp> with WidgetsBindingObserver {
   late final TelegramSessionService _sessionService = widget.sessionService ??
       (kIsWeb ? InMemorySessionService() : SecureSessionService());
 
@@ -212,9 +214,13 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
     return MockTelegramService();
   }
 
+  /// Luminosité de la plateforme (mode « Système ») — suivie en direct.
+  Brightness _platformBrightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Chargement initial du catalogue (non bloquant) en mode backend.
     if (_repository case final CatalogRepository catalog) {
       // ignore: discarded_futures
@@ -292,22 +298,74 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> {
   }
 
   @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Le système (Android) bascule sombre ↔ clair pendant que l'appli
+  /// tourne : en mode « Système », l'interface suit immédiatement (§6).
+  @override
+  void didChangePlatformBrightness() {
+    setState(() {
+      _platformBrightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    });
+  }
+
+  /// Luminosité effective selon le réglage « Thème » persisté.
+  Brightness get _effectiveBrightness => switch (_appSettings.theme) {
+        AppThemeMode.dark => Brightness.dark,
+        AppThemeMode.light => Brightness.light,
+        AppThemeMode.system => _platformBrightness,
+      };
+
+  ThemeMode get _materialThemeMode => switch (_appSettings.theme) {
+        AppThemeMode.dark => ThemeMode.dark,
+        AppThemeMode.light => ThemeMode.light,
+        AppThemeMode.system => ThemeMode.system,
+      };
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'AnimeBox',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
-      navigatorKey: _navigatorKey,
-      home: _buildHome(),
-      onGenerateRoute: AppRouter.onGenerateRoute(
-        _repository,
-        _telegramService,
-        _mediaService,
-        _notificationSettings,
-        _notificationService,
-        _settingsDependencies,
-      ),
+    // Le changement de thème (réglage ou système) reconstruit tout
+    // l'arbre : la palette active est basculée AVANT la construction.
+    return ListenableBuilder(
+      listenable: _appSettings,
+      builder: (BuildContext context, Widget? child) {
+        final Brightness brightness = _effectiveBrightness;
+        AppColors.apply(brightness);
+        _applySystemUiStyle(brightness);
+        return MaterialApp(
+          title: 'AnimeBox',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: _materialThemeMode,
+          navigatorKey: _navigatorKey,
+          home: _buildHome(),
+          onGenerateRoute: AppRouter.onGenerateRoute(
+            _repository,
+            _telegramService,
+            _mediaService,
+            _notificationSettings,
+            _notificationService,
+            _settingsDependencies,
+          ),
+        );
+      },
     );
+  }
+
+  /// Barres système cohérentes avec le thème courant (icônes lisibles et
+  /// barre de navigation dans la surface active).
+  void _applySystemUiStyle(Brightness brightness) {
+    final bool dark = brightness == Brightness.dark;
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+      systemNavigationBarColor: AppColors.bottomBar,
+      systemNavigationBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+    ));
   }
 
   /// Écran racine : onboarding au PREMIER lancement uniquement

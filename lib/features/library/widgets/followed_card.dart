@@ -59,7 +59,7 @@ class FollowedCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(colors: AppColors.accentGradient),
+                              gradient: LinearGradient(colors: AppColors.accentGradient),
                               borderRadius: BorderRadius.circular(7),
                             ),
                             child: const Text(
@@ -81,7 +81,7 @@ class FollowedCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         '${anime.totalEpisodes} / $announced épisodes disponibles',
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primaryBright),
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primaryBright),
                       ),
                     ],
                     const SizedBox(height: 10),
@@ -91,7 +91,7 @@ class FollowedCard extends StatelessWidget {
                         value: available == 0 ? 0 : ((latestEpisode?.number ?? 0) / available).clamp(0, 1),
                         minHeight: 6,
                         backgroundColor: AppColors.divider,
-                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -99,13 +99,13 @@ class FollowedCard extends StatelessWidget {
                       latestEpisode == null ? 'Aucun épisode disponible' : 'Dernier épisode disponible : Épisode ${latestEpisode.number}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 6),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
+              Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
             ],
           ),
         ),

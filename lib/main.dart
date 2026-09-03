@@ -15,8 +15,9 @@ import 'features/local/data/local_database.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Barres système transparentes, dans l'esprit sombre de l'application.
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+  // Barres système au démarrage (thème sombre par défaut ; AnimeBoxApp
+  // les re-synchronise ensuite avec le thème réel — prompt 14 §6).
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
     systemNavigationBarColor: AppColors.bottomBar,

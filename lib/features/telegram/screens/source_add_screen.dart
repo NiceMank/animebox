@@ -134,22 +134,22 @@ class _SourceAddScreenState extends State<SourceAddScreen> {
               if (_error != null) setState(() => _error = null);
             },
             onSubmitted: (_) => _previewSource(),
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 14.5),
+            style: TextStyle(color: AppColors.textPrimary, fontSize: 14.5),
             cursorColor: AppColors.primary,
             decoration: InputDecoration(
               hintText: '@animechannel ou https://t.me/animechannel',
-              hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13.5),
-              prefixIcon: const Icon(Icons.alternate_email_rounded, color: AppColors.primaryBright, size: 20),
+              hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 13.5),
+              prefixIcon: Icon(Icons.alternate_email_rounded, color: AppColors.primaryBright, size: 20),
               filled: true,
               fillColor: AppColors.surface,
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: AppColors.divider),
+                borderSide: BorderSide(color: AppColors.divider),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: AppColors.primary),
+                borderSide: BorderSide(color: AppColors.primary),
               ),
             ),
           ),
@@ -170,10 +170,10 @@ class _SourceAddScreenState extends State<SourceAddScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline_rounded, size: 19, color: AppColors.danger),
+                  Icon(Icons.error_outline_rounded, size: 19, color: AppColors.danger),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(_error!, style: const TextStyle(fontSize: 12.5, height: 1.45, color: AppColors.textPrimary)),
+                    child: Text(_error!, style: TextStyle(fontSize: 12.5, height: 1.45, color: AppColors.textPrimary)),
                   ),
                 ],
               ),
@@ -185,7 +185,7 @@ class _SourceAddScreenState extends State<SourceAddScreen> {
             const SizedBox(height: 10),
             _PreviewCard(channel: _preview!, onAdd: _adding ? null : _addSource, adding: _adding),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'La source sera synchronisée depuis votre compte Telegram connecté.',
               style: TextStyle(fontSize: 11.5, height: 1.45, color: AppColors.textMuted),
             ),
@@ -243,7 +243,7 @@ class _PreviewCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         '${formatCount(channel.memberCount!)} abonnés',
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primaryBright),
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primaryBright),
                       ),
                     ],
                   ],
@@ -258,7 +258,7 @@ class _PreviewCard extends StatelessWidget {
                 ),
                 child: Text(
                   channel.kind.label,
-                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.success),
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.success),
                 ),
               ),
             ],
@@ -269,7 +269,7 @@ class _PreviewCard extends StatelessWidget {
               channel.description!,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12.5, height: 1.45, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 12.5, height: 1.45, color: AppColors.textSecondary),
             ),
           ],
           const SizedBox(height: 16),
@@ -292,7 +292,7 @@ class _ChannelAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Widget fallback = Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(colors: AppColors.primaryGradient),
       ),

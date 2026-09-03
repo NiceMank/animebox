@@ -91,8 +91,8 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
       builder: (BuildContext context) => AlertDialog(
         backgroundColor: AppColors.surfaceAlt,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: const Text('Se déconnecter ?', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-        content: const Text(
+        title: Text('Se déconnecter ?', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        content: Text(
           'La session Telegram sera supprimée de cet appareil. '
           'Vos sources et votre catalogue restent enregistrés localement.',
           style: TextStyle(fontSize: 13.5, height: 1.5, color: AppColors.textSecondary),
@@ -100,11 +100,11 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annuler', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+            child: Text('Annuler', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Se déconnecter', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
+            child: Text('Se déconnecter', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -175,13 +175,13 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
         const SizedBox(height: 18),
         const Center(child: TelegramLogo(size: 86)),
         const SizedBox(height: 22),
-        const Text(
+        Text(
           'Connectez Telegram',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 10),
-        const Text(
+        Text(
           'Connectez votre compte Telegram pour utiliser vos propres sources dans AnimeBox.',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 13.5, height: 1.55, color: AppColors.textSecondary),
@@ -202,12 +202,12 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
 
   List<Widget> _buildPhone(TelegramService service) => [
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Votre numéro de téléphone',
           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Un code de connexion vous sera envoyé via Telegram.',
           style: TextStyle(fontSize: 12.5, height: 1.5, color: AppColors.textSecondary),
         ),
@@ -215,7 +215,7 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
         TextField(
           controller: _phoneController,
           keyboardType: TextInputType.phone,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+          style: TextStyle(color: AppColors.textPrimary, fontSize: 15),
           cursorColor: AppColors.primary,
           decoration: _fieldDecoration('+229 01 23 45 67', Icons.phone_outlined),
         ),
@@ -232,12 +232,12 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
       children: [
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Code Telegram',
           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Saisissez le code reçu dans Telegram.',
           style: TextStyle(fontSize: 12.5, height: 1.5, color: AppColors.textSecondary),
         ),
@@ -247,7 +247,7 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
           keyboardType: TextInputType.number,
           maxLength: 5,
           obscureText: true,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, letterSpacing: 6),
+          style: TextStyle(color: AppColors.textPrimary, fontSize: 18, letterSpacing: 6),
           cursorColor: AppColors.primary,
           decoration: _fieldDecoration('• • • • •', Icons.pin_outlined).copyWith(counterText: ''),
         ),
@@ -261,7 +261,7 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
         Center(
           child: TextButton(
             onPressed: _busy ? null : _sendCode,
-            child: const Text('Renvoyer le code', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryBright)),
+            child: Text('Renvoyer le code', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryBright)),
           ),
         ),
         if (_inlineError != null) ...[
@@ -277,12 +277,12 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
       children: [
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Mot de passe Telegram',
           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Votre compte est protégé par une authentification à deux facteurs.',
           style: TextStyle(fontSize: 12.5, height: 1.5, color: AppColors.textSecondary),
         ),
@@ -292,7 +292,7 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
           obscureText: true,
           autocorrect: false,
           enableSuggestions: false,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+          style: TextStyle(color: AppColors.textPrimary, fontSize: 15),
           cursorColor: AppColors.primary,
           decoration: _fieldDecoration('••••••••', Icons.lock_outline_rounded),
         ),
@@ -312,18 +312,18 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
 
   InputDecoration _fieldDecoration(String hint, IconData icon) => InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+        hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14),
         prefixIcon: Icon(icon, color: AppColors.primaryBright, size: 20),
         filled: true,
         fillColor: AppColors.surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.divider),
+          borderSide: BorderSide(color: AppColors.divider),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.primary),
+          borderSide: BorderSide(color: AppColors.primary),
         ),
       );
 }
@@ -334,7 +334,7 @@ class _ConnectingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -365,7 +365,7 @@ class _InfoRow extends StatelessWidget {
         Icon(icon, size: 17, color: AppColors.primaryBright),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(text, style: const TextStyle(fontSize: 12.5, height: 1.45, color: AppColors.textSecondary)),
+          child: Text(text, style: TextStyle(fontSize: 12.5, height: 1.45, color: AppColors.textSecondary)),
         ),
       ],
     );
@@ -389,15 +389,15 @@ class _ErrorBox extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, size: 19, color: AppColors.danger),
+          Icon(Icons.error_outline_rounded, size: 19, color: AppColors.danger),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(message, style: const TextStyle(fontSize: 12.5, height: 1.45, color: AppColors.textPrimary)),
+            child: Text(message, style: TextStyle(fontSize: 12.5, height: 1.45, color: AppColors.textPrimary)),
           ),
           if (onRetry != null)
             TextButton(
               onPressed: onRetry,
-              child: const Text('Réessayer', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.primaryBright)),
+              child: Text('Réessayer', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.primaryBright)),
             ),
         ],
       ),
@@ -435,7 +435,7 @@ class _AccountView extends StatelessWidget {
                 Text('@${user.username}', style: Theme.of(context).textTheme.bodySmall),
               ],
               const SizedBox(height: 14),
-              const Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.check_circle_outline_rounded, size: 15, color: AppColors.success),
@@ -474,7 +474,7 @@ class _Avatar extends StatelessWidget {
       height: 84,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: const LinearGradient(colors: AppColors.primaryGradient),
+        gradient: LinearGradient(colors: AppColors.primaryGradient),
         boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 24, offset: const Offset(0, 8))],
       ),
       child: Center(
@@ -505,15 +505,15 @@ class _ExpiredView extends StatelessWidget {
                 color: AppColors.warning.withValues(alpha: 0.12),
                 border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
               ),
-              child: const Icon(Icons.timer_off_outlined, size: 40, color: AppColors.warning),
+              child: Icon(Icons.timer_off_outlined, size: 40, color: AppColors.warning),
             ),
             const SizedBox(height: 18),
-            const Text(
+            Text(
               'Session expirée',
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Votre session Telegram a expiré ou a été révoquée.\nReconnectez-vous pour continuer.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, height: 1.5, color: AppColors.textSecondary),

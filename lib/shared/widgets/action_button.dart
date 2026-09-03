@@ -20,7 +20,7 @@ class ActionButton extends StatelessWidget {
   /// État actif (ex. favori déjà coché) — cœur plein.
   final bool active;
 
-  /// Accent violet fort (action principale).
+  /// Accent bleu fort (action principale).
   final bool highlight;
 
   @override
@@ -57,7 +57,7 @@ class ActionButton extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
             ),
           ],
         ),
