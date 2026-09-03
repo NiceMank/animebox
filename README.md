@@ -17,6 +17,7 @@ bibliothèque organisée : détection automatique des titres, saisons, épisodes
 | Accueil, Recherche (6 filtres), Fiche animé, Épisodes, Qualité, Lecteur | ✅ |
 | Bibliothèque complète (Favoris, Suivis, Continuer, Récents, Tous) | ✅ |
 | Sources Telegram : liste, ajout avec vérification d'accessibilité, détails, suppression | ✅ |
+| **Logo AnimeBox** (généré, embarqué) + **écran d'accueil animé** (cube bleu, balayage vers le haut → onboarding) | ✅ |
 | Synchronisation (statistiques, historique, progression, annulation) | ✅ |
 | **Connexion Telegram réelle depuis l'appareil** (numéro → code → 2FA → connecté) | ✅ |
 | **Session restaurée automatiquement** (stockage chiffré TDLib + clé en Keystore) | ✅ |

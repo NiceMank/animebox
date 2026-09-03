@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:animebox/app/animebox_app.dart';
 import 'package:animebox/features/anime/data/repositories/mock_anime_repository.dart';
+import 'package:animebox/features/intro/intro_screen.dart';
 import 'package:animebox/features/local/data/local_database.dart';
 import 'package:animebox/features/onboarding/models/onboarding_page_data.dart';
 import 'package:animebox/features/onboarding/onboarding_screen.dart';
@@ -184,9 +185,19 @@ void main() {
       return settings;
     }
 
+    /// Franchit l'écran d'accueil (balayage vers le haut → onboarding).
+    Future<void> passIntro(WidgetTester tester) async {
+      expect(find.byType(IntroScreen), findsOneWidget,
+          reason: "l'accueil animé précède toujours l'onboarding au premier lancement");
+      await tester.fling(find.byType(IntroScreen), const Offset(0, -120), 800);
+      await pumpFrames(tester);
+      expect(find.byType(IntroScreen), findsNothing);
+    }
+
     testWidgets('8. premier lancement : onboarding affiché à la place de l\'accueil',
         (WidgetTester tester) async {
       await pumpAppWith(tester, settings: await freshSettings(), telegram: MockTelegramService());
+      await passIntro(tester);
 
       expect(find.byType(OnboardingScreen), findsOneWidget);
       expect(find.text('Bienvenue sur AnimeBox', findRichText: true), findsOneWidget);
@@ -198,6 +209,7 @@ void main() {
       final MockTelegramService telegram = MockTelegramService();
       await telegram.disconnect(); // aucun compte configuré (cas réel §8.10)
       await pumpAppWith(tester, settings: settings, telegram: telegram);
+      await passIntro(tester);
 
       await tester.tap(find.text('Suivant'));
       await pumpFrames(tester);
@@ -218,6 +230,7 @@ void main() {
         (WidgetTester tester) async {
       final MockTelegramService telegram = MockTelegramService(); // connecté par défaut
       await pumpAppWith(tester, settings: await freshSettings(), telegram: telegram);
+      await passIntro(tester);
 
       await tester.tap(find.text('Suivant'));
       await pumpFrames(tester);
@@ -238,6 +251,7 @@ void main() {
       final MockTelegramService telegram = MockTelegramService();
       await telegram.disconnect();
       await pumpAppWith(tester, settings: settings, telegram: telegram);
+      await passIntro(tester);
 
       await tester.tap(find.text('Passer'));
       await tester.pump(const Duration(milliseconds: 200));

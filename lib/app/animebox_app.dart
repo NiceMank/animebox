@@ -9,6 +9,7 @@ import '../features/anime/data/repositories/local_anime_repository.dart';
 import '../features/anime/data/repositories/mock_anime_repository.dart';
 import '../features/library/services/library_service.dart';
 import '../features/local/data/local_database.dart';
+import '../features/intro/intro_screen.dart';
 import '../features/media/services/download_manager.dart';
 import '../features/media/services/media_service.dart';
 import '../features/media/services/storage_checker.dart';
@@ -347,8 +348,18 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> with WidgetsBindingObserver {
     ));
   }
 
-  /// Écran racine : onboarding au PREMIER lancement uniquement
-  /// (prompt 13 §4 — préférence persistante) sinon l'application normale.
+  // -----------------------------------------------------------------------
+  // Écran d'accueil + onboarding (premier lancement)
+  // -----------------------------------------------------------------------
+
+  /// Indique que l'écran d'accueil animé a déjà été balayé dans CETTE
+  /// session (onboarding ensuite). En mémoire uniquement : l'accueil
+  /// réapparaît à chaque démarrage tant que l'onboarding n'est pas fini.
+  bool _introSeen = false;
+
+  /// Écran racine : écran d'ACCUEIL animé (logo + cube, balayage vers le
+  /// haut) puis onboarding au PREMIER lancement uniquement (prompt 13 §4 —
+  /// préférence persistante) sinon l'application normale.
   Widget _buildHome() {
     return FutureBuilder<void>(
       future: _appSettings.ensureLoaded(),
@@ -363,6 +374,9 @@ class _AnimeBoxAppState extends State<AnimeBoxApp> with WidgetsBindingObserver {
           );
         }
         if (!_appSettings.onboardingCompleted) {
+          if (!_introSeen) {
+            return IntroScreen(onStart: () => setState(() => _introSeen = true));
+          }
           return OnboardingScreen(
             onStart: () => _finishOnboarding(launchTelegramFlow: true),
             onSkip: () => _finishOnboarding(launchTelegramFlow: false),
