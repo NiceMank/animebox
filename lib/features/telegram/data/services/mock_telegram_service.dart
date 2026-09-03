@@ -69,16 +69,10 @@ class MockTelegramService extends ChangeNotifier implements TelegramService {
   String? _authError;
 
   @override
-  bool get isBackendApi => false;
-
-  @override
   bool get isRealTelegram => false;
 
   @override
   TelegramGateway? get mediaGateway => null;
-
-  @override
-  String? get apiBaseUrl => null;
 
   @override
   TelegramAuthState get authState => _authState;

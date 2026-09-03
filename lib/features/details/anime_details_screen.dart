@@ -7,7 +7,6 @@ import '../anime/data/models/metadata_status.dart';
 import '../anime/data/models/season.dart';
 import '../anime/data/models/video_quality.dart';
 import '../anime/data/repositories/anime_repository.dart';
-import '../anime/data/repositories/catalog_repository.dart';
 import '../../app/router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/empty_state.dart';
@@ -16,7 +15,6 @@ import '../../shared/widgets/favorite_button.dart';
 import '../../shared/widgets/poster_image.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../../shared/widgets/status_pill.dart';
-import 'widgets/metadata_review_sheet.dart';
 
 /// Fiche d'un animé : en-tête visuel, actions (Favoris / Reprendre / Suivre)
 /// et onglets Épisodes / Détails.
@@ -31,14 +29,6 @@ class AnimeDetailsScreen extends StatefulWidget {
 }
 
 class _AnimeDetailsScreenState extends State<AnimeDetailsScreen> {
-  /// Recharge la fiche complète après une action d'administration
-  /// (correction manuelle) : les saisons/épisodes reflètent le backend.
-  Future<void> _refreshDetail() async {
-    if (widget.repository case final CatalogRepository catalog) {
-      await catalog.refreshAnime(widget.animeId);
-      if (mounted) setState(() {});
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +89,7 @@ class _AnimeDetailsScreenState extends State<AnimeDetailsScreen> {
                 );
               },
             ),
-            _DetailsTab(anime: anime, repository: widget.repository, onAnimeChanged: _refreshDetail),
+            _DetailsTab(anime: anime, repository: widget.repository),
           ],
         ),
       ),
@@ -410,27 +400,22 @@ class _EpisodesTabState extends State<_EpisodesTab> {
     );
   }
 }
-/// Onglet Détails : synopsis, fiche technique enrichie par les métadonnées
-/// du catalogue, états d'enrichissement et actions d'administration.
+/// Onglet Détails : synopsis et fiche technique enrichie par les
+/// métadonnées du catalogue local.
 class _DetailsTab extends StatelessWidget {
   const _DetailsTab({
     required this.anime,
     required this.repository,
-    required this.onAnimeChanged,
   });
 
   final Anime anime;
   final AnimeRepository repository;
-  final VoidCallback onAnimeChanged;
 
   static String _formatFollowers(int followers) {
     if (followers >= 1000000) return '${(followers / 1000000).toStringAsFixed(1)} M';
     if (followers >= 1000) return '${(followers / 1000).toStringAsFixed(0)} K';
     return '$followers';
   }
-
-  CatalogRepository? get _catalog =>
-      repository is CatalogRepository ? repository as CatalogRepository : null;
 
   String get _episodeAvailability {
     // « X/24 disponibles » : épisodes réellement publiés sur Telegram
@@ -441,48 +426,13 @@ class _DetailsTab extends StatelessWidget {
     return '$available';
   }
 
-  void _openMetadataReview(BuildContext context) {
-    final CatalogRepository? catalog = _catalog;
-    if (catalog == null) return;
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surfaceAlt,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-      builder: (BuildContext context) => MetadataReviewSheet(
-        anime: anime,
-        catalog: catalog,
-        onAnimeChanged: onAnimeChanged,
-      ),
-    );
-  }
-
-  Future<void> _refreshMetadata(BuildContext context) async {
-    final CatalogRepository? catalog = _catalog;
-    if (catalog == null) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Actualisation des métadonnées…')),
-    );
-    final bool ok = await catalog.refreshAnimeMetadata(anime.id);
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(ok ? 'Métadonnées mises à jour.' : 'Actualisation impossible pour le moment.'),
-      ),
-    );
-    onAnimeChanged();
-  }
-
   @override
   Widget build(BuildContext context) {
     return ListView(
       key: const PageStorageKey<String>('details-tab'),
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 60),
       children: [
-        _MetadataStatusBanner(
-          anime: anime,
-          onReview: () => _openMetadataReview(context),
-        ),
+        _MetadataStatusBanner(anime: anime),
         const SizedBox(height: 12),
         Text('Synopsis', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         const SizedBox(height: 8),
@@ -514,13 +464,6 @@ class _DetailsTab extends StatelessWidget {
           ),
         if (anime.followers > 0) _InfoRow(label: 'Abonnés', value: _formatFollowers(anime.followers)),
         const SizedBox(height: 20),
-        if (_catalog != null)
-          PrimaryButton(
-            label: 'Actualiser les métadonnées',
-            icon: Icons.sync_rounded,
-            outlined: true,
-            onTap: () => _refreshMetadata(context),
-          ),
       ],
     );
   }
@@ -529,22 +472,20 @@ class _DetailsTab extends StatelessWidget {
 /// Bandeau d'état de l'enrichissement : fiche complète, correspondance
 /// incertaine (revue) ou informations en attente (fiche minimale).
 class _MetadataStatusBanner extends StatelessWidget {
-  const _MetadataStatusBanner({required this.anime, this.onReview});
+  const _MetadataStatusBanner({required this.anime});
 
   final Anime anime;
-  final VoidCallback? onReview;
 
   @override
   Widget build(BuildContext context) {
-    final (IconData icon, Color color, String title, String message, String? action) =
+    final (IconData icon, Color color, String title, String message) =
         switch (anime.metadataStatus) {
       MetadataStatus.reviewRequired => (
           Icons.help_outline_rounded,
           AppColors.warning,
-          'Correspondance à vérifier',
-          'Ce titre ressemble à une fiche connue sans certitude. '
-              'Vérifiez la bonne association avant de continuer.',
-          'Corriger',
+          'Correspondance incertaine',
+          'Ce titre ressemble à une fiche connue sans certitude — le '
+              'contenu Telegram reste disponible tel quel.',
         ),
       MetadataStatus.pending || MetadataStatus.notFound => (
           Icons.hourglass_empty_rounded,
@@ -552,16 +493,14 @@ class _MetadataStatusBanner extends StatelessWidget {
           'Informations en attente',
           'Aucune métadonnée fiable pour cette fiche. '
               'Le contenu Telegram reste disponible tel quel.',
-          null,
         ),
       MetadataStatus.ignored => (
           Icons.block_rounded,
           AppColors.textMuted,
-          'Revue fermée',
-          'Cette fiche a été ignorée lors de la correction manuelle.',
-          null,
+          'Fiche minimale',
+          'Cette fiche a été marquée comme ignorée.',
         ),
-      _ => (Icons.check_circle_outline_rounded, AppColors.success, 'Fiche enrichie', '', null),
+      _ => (Icons.check_circle_outline_rounded, AppColors.success, 'Fiche enrichie', ''),
     };
 
     return Container(
@@ -587,11 +526,6 @@ class _MetadataStatusBanner extends StatelessWidget {
               ],
             ),
           ),
-          if (action != null && onReview != null)
-            TextButton(
-              onPressed: onReview,
-              child: Text(action, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
-            ),
         ],
       ),
     );

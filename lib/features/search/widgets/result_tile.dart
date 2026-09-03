@@ -4,17 +4,13 @@ import '../../anime/data/models/anime.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/poster_image.dart';
 
-/// Ligne de résultat de recherche (poster, titre, saison, épisodes, genres).
-///
-/// [showMetadataStatus] active l'affichage de l'état d'enrichissement
-/// (badge « À vérifier » / « Informations en attente ») — pertinent pour
-/// les résultats du catalogue backend, pas pour les données de démonstration.
+/// Ligne de résultat de recherche (poster, titre, saison, épisodes, genres),
+/// enrichie de l'état des métadonnées quand nécessaire (catalogue local).
 class ResultTile extends StatelessWidget {
-  const ResultTile({super.key, required this.anime, required this.onTap, this.showMetadataStatus = false});
+  const ResultTile({super.key, required this.anime, required this.onTap});
 
   final Anime anime;
   final VoidCallback onTap;
-  final bool showMetadataStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +49,7 @@ class ResultTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(anime.episodeMeta, style: Theme.of(context).textTheme.labelSmall),
-                    if (showMetadataStatus && (anime.needsMetadataReview || anime.isMetadataPending)) ...[
+                    if (anime.needsMetadataReview || anime.isMetadataPending) ...[
                       const SizedBox(height: 6),
                       _MetadataBadge(
                         label: anime.needsMetadataReview ? 'À vérifier' : 'Informations en attente',

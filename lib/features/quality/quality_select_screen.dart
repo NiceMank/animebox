@@ -6,7 +6,6 @@ import '../anime/data/models/episode.dart';
 import '../anime/data/models/episode_quality.dart';
 import '../anime/data/models/season.dart';
 import '../anime/data/repositories/anime_repository.dart';
-import '../anime/data/repositories/catalog_repository.dart';
 import '../../app/router.dart';
 import '../../core/theme/app_colors.dart';
 import '../media/models/download_models.dart';
@@ -107,68 +106,6 @@ class _QualitySelectScreenState extends State<QualitySelectScreen> {
     }
   }
 
-  /// Correction manuelle (admin) : reclasser la publication sélectionnée
-  /// dans une autre saison/épisode — sans jamais la supprimer.
-  Future<void> _reassignVersion() async {
-    final EpisodeQuality? quality = _selectedQuality;
-    final AnimeRepository repository = widget.repository;
-    final CatalogRepository? catalog =
-        repository is CatalogRepository ? repository as CatalogRepository : null;
-    if (quality == null || catalog == null) return;
-    final TextEditingController seasonController = TextEditingController();
-    final TextEditingController episodeController = TextEditingController();
-    final (int, int)? target = await showDialog<(int, int)>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        backgroundColor: AppColors.surfaceAlt,
-        title: const Text('Reclasser la publication', style: TextStyle(fontSize: 16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: seasonController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Saison', hintText: '2'),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: episodeController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Épisode', hintText: '8'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Annuler'),
-          ),
-          TextButton(
-            onPressed: () {
-              final int? season = int.tryParse(seasonController.text.trim());
-              final int? episode = int.tryParse(episodeController.text.trim());
-              if (season == null || episode == null) return;
-              Navigator.of(context).pop((season, episode));
-            },
-            child: const Text('Déplacer'),
-          ),
-        ],
-      ),
-    );
-    seasonController.dispose();
-    episodeController.dispose();
-    if (target == null) return;
-    final bool ok = await catalog.reassignVersion(
-      quality.id,
-      seasonNumber: target.$1,
-      episodeNumber: target.$2,
-    );
-    if (!mounted) return;
-    _snack(ok
-        ? 'Publication déplacée (S${target.$1} · E${target.$2}).'
-        : 'Déplacement impossible pour le moment.');
-    if (ok) Navigator.of(context).pop();
-  }
 
   void _snack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
@@ -201,12 +138,6 @@ class _QualitySelectScreenState extends State<QualitySelectScreen> {
           style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700),
         ),
         actions: [
-          if (widget.repository is CatalogRepository)
-            IconButton(
-              tooltip: 'Reclasser la publication',
-              onPressed: _reassignVersion,
-              icon: const Icon(Icons.low_priority_rounded, size: 19),
-            ),
           IconButton(
             tooltip: 'Partager',
             onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
