@@ -140,14 +140,21 @@ class LocalSyncService extends ChangeNotifier {
           ? await _chatById(storedChatId, username)
           : await gateway.resolveChannel(username);
     } on GatewayError catch (error) {
-      return await _fail(sourceId, error.message);
+      return await _fail(sourceId, _syncErrorMessage(error));
     }
 
     // 2. Récupération paginée (nouvelles pages tant que nécessaire).
     final List<GatewayMessage> collected = [];
     int? fromMessageId;
     while (!_cancelRequested) {
-      final List<GatewayMessage> page = await _fetchPage(chat.id!, fromMessageId);
+      final List<GatewayMessage> page;
+      try {
+        page = await _fetchPage(chat.id!, fromMessageId);
+      } on GatewayError catch (error) {
+        // Erreur pendant la lecture (réseau, limite Telegram…) : message
+        // clair, jamais de boucle agressive (règle 24/25).
+        return await _fail(sourceId, _syncErrorMessage(error));
+      }
       if (page.isEmpty) break;
       collected.addAll(page);
       _setState(_stateWith(fetched: collected.length, message: 'Messages récupérés : ${collected.length}'));
@@ -256,6 +263,20 @@ class LocalSyncService extends ChangeNotifier {
       if (chat.id == chatId) return chat;
     }
     return GatewayChat(id: chatId, title: username, username: username);
+  }
+
+  /// Traduit une erreur passerelle en message clair (règles 24/25 du
+  /// prompt 11) — jamais de boucle agressive face à une limite Telegram.
+  String _syncErrorMessage(GatewayError error) {
+    final String text = error.message.toLowerCase();
+    if (error.isFlood ||
+        error.code == 429 ||
+        text.contains('flood_wait') ||
+        text.contains('too many requests') ||
+        text.contains('limite')) {
+      return 'Telegram limite temporairement cette opération. Réessayez dans un instant.';
+    }
+    return error.message;
   }
 
   Future<List<GatewayMessage>> _fetchPage(int chatId, int? fromMessageId) async {

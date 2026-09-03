@@ -230,6 +230,11 @@ class LocalTelegramService extends ChangeNotifier implements TelegramService {
 
   @override
   Future<void> disconnect() async {
+    // Arrête tout travail en cours : synchronisation et tâches Telegram
+    // (règle 6 du prompt 11) — les données locales (catalogue,
+    // téléchargements) sont CONSERVÉES.
+    _sync.cancel();
+    _lastSyncSummary = null;
     try {
       await _gateway.logout();
     } on GatewayError {
