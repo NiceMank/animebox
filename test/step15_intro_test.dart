@@ -23,7 +23,7 @@ void main() {
   }
 
   group('IntroScreen — rendu', () {
-    testWidgets('affiche le titre, le cube, l\\'indication, sans overflow', (WidgetTester tester) async {
+    testWidgets('affiche le titre, le cube, l\'indication, sans overflow', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(360, 640);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -49,14 +49,14 @@ void main() {
   });
 
   group('IntroScreen — démarrage réel (aucune fausse action)', () {
-    testWidgets('appui sur l\\'indication déclenche onStart une seule fois', (WidgetTester tester) async {
+    testWidgets('appui sur l\'indication déclenche onStart une seule fois', (WidgetTester tester) async {
       int calls = 0;
       await tester.pumpWidget(introHost(onStart: () => calls++));
       await pumpFrames(tester, times: 1);
 
       await tester.tap(find.text('Balayer vers le haut'));
       await pumpFrames(tester, times: 1);
-      expect(calls, 1, reason: 'l\\'indication tactile déclenche le démarrage');
+      expect(calls, 1, reason: 'l\'indication tactile déclenche le démarrage');
 
       await tester.tap(find.text('Balayer vers le haut'));
       await pumpFrames(tester, times: 1);
@@ -111,13 +111,13 @@ void main() {
       await pumpFrames(tester);
 
       expect(find.byType(IntroScreen), findsOneWidget,
-          reason: 'premier lancement : l\\'écran d\\'accueil précède l\\'onboarding');
+          reason: 'premier lancement : l\'écran d\'accueil précède l\'onboarding');
       expect(find.byType(OnboardingScreen), findsNothing);
 
       await tester.fling(find.byType(IntroScreen), const Offset(0, -120), 800);
       await pumpFrames(tester);
 
-      expect(find.byType(IntroScreen), findsNothing, reason: 'le balayage amène l\\'onboarding');
+      expect(find.byType(IntroScreen), findsNothing, reason: 'le balayage amène l\'onboarding');
       expect(find.byType(OnboardingScreen), findsOneWidget);
     });
 
