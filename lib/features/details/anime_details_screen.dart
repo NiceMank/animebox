@@ -261,62 +261,155 @@ class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
 ///
 /// Un appui sur un épisode ouvre la liste complète des épisodes de la
 /// saison (écran 4).
-class _EpisodesTab extends StatelessWidget {
+class _EpisodesTab extends StatefulWidget {
   const _EpisodesTab({required this.anime, required this.onEpisodeTap});
 
   final Anime anime;
   final void Function(Season season, Episode episode) onEpisodeTap;
 
   @override
+  State<_EpisodesTab> createState() => _EpisodesTabState();
+}
+
+class _EpisodesTabState extends State<_EpisodesTab> {
+  /// Recherche d'épisode LOCALE dans la fiche (prompt 10 §21) :
+  /// « Épisode 12 » ou « 12 » — jamais de réseau, jamais d'épisode
+  /// inventé (seuls les épisodes détectés réels sont listés).
+  final TextEditingController _searchController = TextEditingController();
+  int? _searchedNumber;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _applySearch(String raw) {
+    setState(() => _searchedNumber = _parseEpisodeNumber(raw));
+  }
+
+  /// Accepte « 12 », « Épisode 12 », « e12 », « ep 12 »… (tolérant).
+  static int? _parseEpisodeNumber(String raw) {
+    final String query = raw.trim().toLowerCase();
+    if (query.isEmpty) return null;
+    final RegExpMatch? match = RegExp(r'(\d{1,4})').firstMatch(query);
+    if (match == null) {
+      return query.isNotEmpty ? -1 : null; // -1 = recherche sans nombre
+    }
+    return int.parse(match.group(1)!);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final Anime anime = widget.anime;
+    final int? searched = _searchedNumber;
     final List<Season> seasons = anime.seasons.reversed.toList();
-    return ListView.builder(
-      key: const PageStorageKey<String>('episodes-tab'),
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 60),
-      itemCount: seasons.length,
-      itemBuilder: (BuildContext context, int index) {
-        final Season season = seasons[index];
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text('Saison ${season.number}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                const SizedBox(width: 8),
-                StatusPill('${season.episodeCount} ép.', color: AppColors.textMuted),
-              ],
+
+    final List<Widget> children = [
+      // Champ de recherche épisode (§21) — uniquement utile si plusieurs
+      // épisodes sont détectés.
+      if (anime.totalEpisodes > 3)
+        Container(
+          height: 42,
+          margin: const EdgeInsets.only(bottom: 14),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: TextField(
+            controller: _searchController,
+            onChanged: _applySearch,
+            keyboardType: TextInputType.number,
+            style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+            decoration: const InputDecoration(
+              isDense: true,
+              prefixIcon: Icon(Icons.search_rounded, size: 18, color: AppColors.textMuted),
+              hintText: 'Rechercher un épisode (ex : 12)',
+              hintStyle: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(vertical: 11),
             ),
-            const SizedBox(height: 10),
-            for (final Episode episode in season.episodes.reversed.take(3)) ...[
-              EpisodeCard(
-                episode: episode,
-                onTap: () => onEpisodeTap(season, episode),
-              ),
-              const SizedBox(height: 8),
+          ),
+        ),
+    ];
+
+    if (searched != null && searched > 0) {
+      // Résultats de recherche : épisodes détectés réels correspondant.
+      final List<(Season, Episode)> matches = [
+        for (final Season season in anime.seasons)
+          for (final Episode episode in season.episodes)
+            if (episode.number == searched) (season, episode),
+      ];
+      if (matches.isEmpty) {
+        // Jamais d'épisode inventé (§20) : on le dit honnêtement.
+        children.add(Padding(
+          padding: const EdgeInsets.symmetric(vertical: 30),
+          child: Center(
+            child: Text(
+              'Épisode $searched — non disponible',
+              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+            ),
+          ),
+        ));
+      } else {
+        children.addAll([
+          Text(
+            '${matches.length} résultat${matches.length > 1 ? 's' : ''}'.toUpperCase(),
+            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 10),
+          for (final (Season season, Episode episode) in matches) ...[
+            EpisodeCard(episode: episode, onTap: () => widget.onEpisodeTap(season, episode)),
+            const SizedBox(height: 8),
+          ],
+        ]);
+      }
+    } else {
+      children.addAll([
+        for (final Season season in seasons) ...[
+          Row(
+            children: [
+              Text('Saison ${season.number}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+              const SizedBox(width: 8),
+              StatusPill('${season.episodeCount} ép.', color: AppColors.textMuted),
             ],
-            if (season.episodes.length > 3) ...[
-              const SizedBox(height: 4),
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    final Episode first = season.episodes.first;
-                    onEpisodeTap(season, first);
-                  },
-                  child: Text(
-                    'Voir les ${season.episodeCount} épisodes',
-                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.primaryBright),
-                  ),
+          ),
+          const SizedBox(height: 10),
+          for (final Episode episode in season.episodes.reversed.take(3)) ...[
+            EpisodeCard(
+              episode: episode,
+              onTap: () => widget.onEpisodeTap(season, episode),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (season.episodes.length > 3) ...[
+            const SizedBox(height: 4),
+            Center(
+              child: TextButton(
+                onPressed: () {
+                  final Episode first = season.episodes.first;
+                  widget.onEpisodeTap(season, first);
+                },
+                child: Text(
+                  'Voir les ${season.episodeCount} épisodes',
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.primaryBright),
                 ),
               ),
-            ],
-            const SizedBox(height: 16),
+            ),
           ],
-        );
-      },
+          const SizedBox(height: 16),
+        ],
+      ]);
+    }
+
+    return ListView(
+      key: const PageStorageKey<String>('episodes-tab'),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 60),
+      children: children,
     );
   }
 }
-
 /// Onglet Détails : synopsis, fiche technique enrichie par les métadonnées
 /// du catalogue, états d'enrichissement et actions d'administration.
 class _DetailsTab extends StatelessWidget {

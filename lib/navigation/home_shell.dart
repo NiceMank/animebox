@@ -5,6 +5,7 @@ import '../features/downloads/downloads_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/library/library_screen.dart';
 import '../features/library/services/library_service.dart';
+import '../features/local/data/local_database.dart';
 import '../features/media/services/media_service.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/search/search_screen.dart';
@@ -25,6 +26,7 @@ class HomeShell extends StatefulWidget {
     required this.groupingService,
     required this.libraryService,
     this.mediaService,
+    this.database,
   });
 
   final AnimeRepository repository;
@@ -34,6 +36,9 @@ class HomeShell extends StatefulWidget {
 
   /// Couche média (téléchargements — null en démonstration).
   final MediaService? mediaService;
+
+  /// Base locale (persistance des préférences d'affichage, prompt 10 §27).
+  final LocalDatabase? database;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -59,7 +64,12 @@ class _HomeShellState extends State<HomeShell> {
             onLibraryTap: () => _select(HomeTab.library),
           ),
           SearchScreen(repository: repository),
-          LibraryScreen(repository: repository, libraryService: widget.libraryService),
+          LibraryScreen(
+            repository: repository,
+            libraryService: widget.libraryService,
+            downloadManager: widget.mediaService?.downloadManager,
+            database: widget.database,
+          ),
           DownloadsScreen(
             onBrowse: () => _select(HomeTab.library),
             mediaService: widget.mediaService,

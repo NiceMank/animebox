@@ -12,21 +12,21 @@ import '../models/playback_settings.dart';
 import '../models/search_filters.dart';
 import '../models/season.dart';
 import '../models/video_quality.dart';
-import '../mock/mock_data.dart';
 import 'anime_repository.dart';
 
 /// Dépôt LOCAL adossé à la base SQLite de l'appareil.
 ///
-/// - démarre immédiatement avec le catalogue de démonstration (aucun
-///   blocage de l'interface) ;
-/// - la base est remplie avec ce catalogue au premier lancement, puis
-///   enrichie par la synchronisation Telegram locale ;
+/// - NE PEUPLE JAMAIS automatiquement la base de données de démonstration
+///   (règle prompt 10 §34) : le catalogue ne contient que les animés
+///   réellement détectés par les sources Telegram de l'utilisateur ; l'état
+///   vide est explicite (§5) ;
+/// - un [seed] explicite sert UNIQUEMENT aux tests et à la démo contrôlée ;
 /// - favoris, progression et catalogue survivent au redémarrage ;
 /// - rien n'est envoyé hors de l'appareil.
 class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
-  LocalAnimeRepository({List<Anime>? seed, this.database}) {
-    _anime = List.of(seed ?? kMockAnime);
-    _library = _defaultLibrary();
+  LocalAnimeRepository({List<Anime>? seed, this.database}) : _explicitSeed = seed {
+    _anime = List.of(seed ?? const []);
+    _library = const [];
     unawaited(_init());
   }
 
@@ -34,23 +34,49 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
   final LocalDatabase? database;
   late List<Anime> _anime;
   late List<LibraryEntry> _library;
+  final List<Anime>? _explicitSeed;
   PlaybackSettings _settings = const PlaybackSettings();
   final Set<String> _completed = <String>{};
+
+  /// Historique réel par clé `animeId|episodeId` (positions, durées,
+  /// statuts et dates de dernière lecture issus de la base — prompt 10).
+  final Map<String, PlaybackProgress> _history = <String, PlaybackProgress>{};
   bool _dbReady = false;
 
   /// La base locale est-elle disponible (false → mode mémoire de secours).
   bool get isDatabaseAvailable => _dbReady;
 
   Future<void> _init() async {
+    await _queueLoad(seedIfEmpty: true);
+  }
+
+  // Chargements SÉRIALISÉS : un chargement n'en écrase jamais un autre en
+  // vol (initialisation, rechargement après synchronisation) — sinon les
+  // mutations intervenant entre-temps (favoris, progression) pourraient
+  // être perdues par course.
+  Future<void>? _loadChain;
+
+  Future<void> _queueLoad({bool seedIfEmpty = false}) {
+    final Future<void> task =
+        (_loadChain ?? Future<void>.value()).then((_) => _loadOnce(seedIfEmpty: seedIfEmpty));
+    _loadChain = task;
+    return task;
+  }
+
+  Future<void> _loadOnce({bool seedIfEmpty = false}) async {
     final LocalDatabase? db = database;
     if (db == null) return;
     try {
-      if (await db.countAnime() == 0) {
-        await _seedFromMock(db);
-      }
-      final String? savedPreference = await db.getSetting('preferred_quality');
-      if (savedPreference != null) {
-        _settings = _settings.copyWith(preferredQuality: QualityPreferenceX.fromName(savedPreference));
+      if (seedIfEmpty) {
+        final String? savedPreference = await db.getSetting('preferred_quality');
+        if (savedPreference != null) {
+          _settings = _settings.copyWith(preferredQuality: QualityPreferenceX.fromName(savedPreference));
+        }
+        // Persistence d'un seed EXPLICITE (tests uniquement) — jamais de
+        // catalogue de démonstration automatique (prompt 10 §34).
+        if (_explicitSeed != null && _explicitSeed.isNotEmpty && await db.countAnime() == 0) {
+          await _persistSeed(db);
+        }
       }
       await _loadFromDatabase(db);
       _dbReady = true;
@@ -62,28 +88,23 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
   }
 
   /// Recharge le catalogue depuis la base (après une synchronisation).
+  /// Retourne quand la base est effectivement lue — les mutations
+  /// ultérieures sont stables.
   Future<void> reloadFromDatabase() async {
-    final LocalDatabase? db = database;
-    if (db == null) return;
-    try {
-      await _loadFromDatabase(db);
-      _dbReady = true;
-      notifyListeners();
-    } catch (_) {
-      _dbReady = false;
-    }
+    await _queueLoad();
   }
 
   // ---------------------------------------------------------------------
-  // Seed initial : le catalogue de démonstration devient persistant
+  // Seed explicite (tests/démo contrôlée) — persiste le seed passé au
+  // constructeur. Jamais appelé sans liste fournie (§34).
   // ---------------------------------------------------------------------
 
-  Future<void> _seedFromMock(LocalDatabase db) async {
+  Future<void> _persistSeed(LocalDatabase db) async {
     final List<Map<String, Object?>> anime = [];
     final List<Map<String, Object?>> seasons = [];
     final List<Map<String, Object?>> episodes = [];
     final List<Map<String, Object?>> versions = [];
-    for (final Anime a in kMockAnime) {
+    for (final Anime a in _anime) {
       anime.add({
         'id': a.id,
         'title': a.title,
@@ -161,7 +182,29 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
     }
 
     final Set<String> favorites = await db.loadFavorites();
-    final Map<String, int> progress = await db.loadProgress();
+    final Map<String, Map<String, Object?>> progressDetails = await db.loadProgressDetails();
+    final Map<String, int> progress = {
+      for (final MapEntry<String, Map<String, Object?>> e in progressDetails.entries)
+        e.key: (e.value['positionMs'] as num?)?.toInt() ?? 0,
+    };
+
+    // Historique réel (dates de dernière lecture issues de la base).
+    _history
+      ..clear()
+      ..addAll({
+        for (final MapEntry<String, Map<String, Object?>> e in progressDetails.entries)
+          e.key: PlaybackProgress(
+            animeId: e.key.substring(0, e.key.indexOf('|')),
+            episodeId: e.key.substring(e.key.indexOf('|') + 1),
+            position: Duration(milliseconds: (e.value['positionMs'] as num?)?.toInt() ?? 0),
+            duration: Duration(milliseconds: (e.value['durationMs'] as num?)?.toInt() ?? 0),
+            savedAt: DateTime.tryParse('${e.value['updatedAt']}') ?? DateTime.fromMillisecondsSinceEpoch(0),
+            completed: e.value['completed'] == true,
+          ),
+      });
+    _completed
+      ..clear()
+      ..addAll([for (final MapEntry<String, Map<String, Object?>> e in progressDetails.entries) if (e.value['completed'] == true) e.key]);
 
     final List<Anime> loaded = [];
     for (final Map<String, Object?> a in animeRows) {
@@ -218,13 +261,20 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
   }
 
   void _rebuildLibrary(Set<String> favorites, Map<String, int> progress) {
-    // Dernière progression par animé (pour « Reprendre »).
+    // « Reprendre » = épisode le plus RÉCEMMENT lu (date réelle de la
+    // base), pas une entrée arbitraire.
     final Map<String, String> resumeByAnime = {};
+    final Map<String, DateTime> lastPlayedAtByAnime = {};
     for (final MapEntry<String, int> item in progress.entries) {
       final int separator = item.key.indexOf('|');
       if (separator == -1) continue;
       final String animeId = item.key.substring(0, separator);
-      resumeByAnime[animeId] = item.key.substring(separator + 1);
+      final DateTime playedAt = _history[item.key]?.savedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final DateTime? best = lastPlayedAtByAnime[animeId];
+      if (best == null || playedAt.isAfter(best)) {
+        lastPlayedAtByAnime[animeId] = playedAt;
+        resumeByAnime[animeId] = item.key.substring(separator + 1);
+      }
     }
     _library = [
       for (final Anime anime in _anime)
@@ -320,7 +370,26 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
   List<Anime> get latestReleases => List.unmodifiable(_anime.where((Anime anime) => anime.latestEpisode != null));
 
   @override
-  List<String> get recentEpisodeIds => const ['solo-leveling', 'jujutsu-kaisen', 'one-piece'];
+  List<String> get recentEpisodeIds {
+    // Nouveautés RÉELLES : animés avec au moins un épisode marqué nouveau
+    // par la synchronisation, du plus récent au plus ancien (date réelle
+    // de la publication Telegram, jamais de liste en dur — prompt 10 §15).
+    final List<MapEntry<String, DateTime>> dated = [];
+    for (final Anime anime in _anime) {
+      DateTime? latest;
+      bool hasNew = false;
+      for (final Season season in anime.seasons) {
+        for (final Episode episode in season.episodes) {
+          if (!episode.isNew) continue;
+          hasNew = true;
+          if (latest == null || episode.date.isAfter(latest)) latest = episode.date;
+        }
+      }
+      if (hasNew) dated.add(MapEntry(anime.id, latest ?? DateTime.fromMillisecondsSinceEpoch(0)));
+    }
+    dated.sort((MapEntry<String, DateTime> a, MapEntry<String, DateTime> b) => b.value.compareTo(a.value));
+    return [for (final MapEntry<String, DateTime> item in dated) item.key];
+  }
 
   @override
   List<Anime> search(String query, {SearchFilters filters = SearchFilters.empty}) {
@@ -405,16 +474,31 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
     final Duration clamped = position < Duration.zero
         ? Duration.zero
         : (position > total ? total : position);
-    // La bibliothèque est mise à jour quand l'entrée existe ; la
-    // progression elle-même (table progress) ne dépend pas d'elle.
+    // La bibliothèque suit la lecture : commencer un épisode ajoute
+    // automatiquement l'animé (prompt 10 §9).
     if (index != -1) {
       final LibraryEntry entry = _library[index];
       _library[index] = entry.copyWith(
         progressMap: {...entry.progressMap, episodeId: clamped},
         resumeEpisodeId: episodeId,
       );
+    } else if (anime != null) {
+      _library.add(LibraryEntry(
+        anime: anime,
+        progressMap: {episodeId: clamped},
+        resumeEpisodeId: episodeId,
+      ));
     }
     if (completed) _completed.add('$animeId|$episodeId');
+    // Historique réel (date réelle de lecture) — prompt 10 §10/§12.
+    _history['$animeId|$episodeId'] = PlaybackProgress(
+      animeId: animeId,
+      episodeId: episodeId,
+      position: clamped,
+      duration: total,
+      savedAt: DateTime.now(),
+      completed: completed || _completed.contains('$animeId|$episodeId'),
+    );
     final LocalDatabase? db = database;
     if (db != null) {
       unawaited(_persistProgress(
@@ -467,21 +551,41 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
 
   @override
   List<PlaybackProgress> progressHistory(String animeId) {
-    final LibraryEntry? entry = libraryEntryFor(animeId);
-    final Anime? anime = byId(animeId);
-    if (entry == null || anime == null) return const [];
-    final Duration total = Duration(minutes: anime.episodeDurationMin.toInt());
-    return [
-      for (final MapEntry<String, Duration> item in entry.progressMap.entries)
-        if (item.value > Duration.zero)
-          PlaybackProgress(
-            animeId: animeId,
-            episodeId: item.key,
-            position: item.value,
-            duration: total,
-            savedAt: DateTime.now(),
-          ),
+    // Données réelles : positions, durées et dates issues de la base.
+    final List<PlaybackProgress> items = [
+      for (final MapEntry<String, PlaybackProgress> item in _history.entries)
+        if (item.value.animeId == animeId && item.value.position > Duration.zero) item.value,
     ];
+    items.sort((PlaybackProgress a, PlaybackProgress b) => b.savedAt.compareTo(a.savedAt));
+    return List.unmodifiable(items);
+  }
+
+  @override
+  List<PlaybackProgress> get watchHistory {
+    final List<PlaybackProgress> items = [
+      for (final PlaybackProgress item in _history.values) if (item.position > Duration.zero || item.completed) item,
+    ];
+    items.sort((PlaybackProgress a, PlaybackProgress b) => b.savedAt.compareTo(a.savedAt));
+    return List.unmodifiable(items);
+  }
+
+  @override
+  void clearWatchHistory() {
+    // Efface uniquement l'historique : ni favoris, ni téléchargements, ni
+    // épisodes, ni sources ne sont touchés (prompt 10 §13).
+    _history.clear();
+    _completed.clear();
+    _library = [
+      for (final LibraryEntry entry in _library)
+        entry.copyWith(progressMap: const {}, resetResume: true),
+    ];
+    final LocalDatabase? db = database;
+    if (db != null) {
+      unawaited(db.deleteAllProgress().catchError((_) {
+        // Base fermée/indisponible : l'état mémoire reste la référence.
+      }));
+    }
+    notifyListeners();
   }
 
   @override
@@ -521,7 +625,11 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
       _library[index] = entry.copyWith(isFavorite: favorite);
     }
     final LocalDatabase? db = database;
-    if (db != null) unawaited(db.setFavorite(animeId, favorite));
+    if (db != null) {
+      unawaited(db.setFavorite(animeId, favorite).catchError((_) {
+        // Base fermée/indisponible : l'état mémoire reste la référence.
+      }));
+    }
     notifyListeners();
   }
 
@@ -542,9 +650,3 @@ class LocalAnimeRepository extends ChangeNotifier implements AnimeRepository {
 
 /// Affiche de secours quand aucun poster n'est connu.
 const String kLocalFallbackPosterAsset = 'assets/img/poster_placeholder.png';
-
-List<LibraryEntry> _defaultLibrary() => [
-      for (final Anime anime in kMockAnime)
-        if (const {'solo-leveling', 'one-piece', 'jujutsu-kaisen', 'demon-slayer'}.contains(anime.id))
-          LibraryEntry(anime: anime, isFavorite: true),
-    ];

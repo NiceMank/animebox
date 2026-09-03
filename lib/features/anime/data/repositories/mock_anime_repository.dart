@@ -208,6 +208,21 @@ class MockAnimeRepository extends ChangeNotifier implements AnimeRepository {
   }
 
   @override
+  List<PlaybackProgress> get watchHistory => [
+        for (final LibraryEntry entry in _library) ...progressHistory(entry.anime.id),
+      ];
+
+  @override
+  void clearWatchHistory() {
+    // Fixture : effacement des progressions, favoris conservés.
+    for (int i = 0; i < _library.length; i++) {
+      _library[i] = _library[i].copyWith(progressMap: const {}, resetResume: true);
+    }
+    _completed.clear();
+    notifyListeners();
+  }
+
+  @override
   PlaybackSettings get playbackSettings => _settings;
 
   @override
