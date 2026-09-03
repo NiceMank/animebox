@@ -39,4 +39,27 @@ void main() {
       expect(source.contains(key), isFalse, reason: '$key est rejeté par les TDLib récents');
     }
   });
+
+  test('démarrage natif : instance après initialisation + lib embarquée nommée', () {
+    // Régression « moteur jamais démarré » : l'instance du plugin ne doit
+    // JAMAIS être capturée avant l'initialisation (bouchon UnimplementedError),
+    // et la bibliothèque Android doit être chargée par son nom.
+    final String source =
+        File('lib/features/telegram/data/gateway/tdlib_gateway.dart').readAsStringSync();
+    expect(source.contains('TdNativePlugin.registerWith()'), isTrue,
+        reason: "le vrai initialiseur FFI doit remplacer le bouchon");
+    expect(source.contains("'libtdjson.so'"), isTrue,
+        reason: 'sur Android, DynamicLibrary.process() ne voit pas les symboles');
+    expect(source.contains('final TdPlugin plugin = TdPlugin.instance'), isFalse,
+        reason: 'capture avant initialisation = bouchon → client jamais démarré');
+  });
+
+  test('la cause réelle du démarrage remonte via requestCode', () {
+    // Si le moteur natif échoue, c'est SON message (gateway.lastError) qui
+    // doit parvenir à l'écran — pas le générique « client non démarré ».
+    final String source =
+        File('lib/features/telegram/data/services/local_telegram_service.dart').readAsStringSync();
+    expect(source.contains('GatewayError(_gateway.lastError'), isTrue,
+        reason: 'la cause du gateway doit être propagée au service');
+  });
 }
