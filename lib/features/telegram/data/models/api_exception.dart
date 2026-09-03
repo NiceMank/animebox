@@ -14,7 +14,7 @@ enum ApiErrorKind {
   unknown,
 }
 
-/// Exception normalisée levée par [ApiTelegramService] (et par le service
+/// Exception normalisée portée par le service Telegram (messages
 /// simulé pour les mêmes codes d'erreur).
 class ApiException implements Exception {
   const ApiException(this.kind, {this.message, this.code});

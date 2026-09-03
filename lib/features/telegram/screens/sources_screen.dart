@@ -148,7 +148,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
                   const SizedBox(width: 10),
                   Flexible(
                     child: Text(
-                      widget.service.isBackendApi ? 'Synchronisées via le backend' : 'Auto-sync toutes les 1 h',
+                      'Auto-sync toutes les 1 h',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.right,

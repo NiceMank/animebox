@@ -27,27 +27,22 @@ enum TelegramAuthState {
 
 /// Contrat du service Telegram.
 ///
-/// Deux implémentations :
-/// - [MockTelegramService] : simulation locale (démo, développement) ;
-/// - [ApiTelegramService] : vrai service, via le backend API (qui porte
-///   les secrets Telegram côté serveur — jamais dans l'application).
+/// Deux implémentations (architecture 100 % LOCALE — aucun backend) :
+/// - [LocalTelegramService] : client MTProto embarqué (TDLib) — l'utilisateur
+///   s'authentifie avec SON compte ; la session chiffrée reste sur l'appareil ;
+/// - [MockTelegramService] : simulation locale (démo, développement),
+///   clairement signalée comme telle à l'écran.
 ///
 /// Les écrans ne dépendent que de cette interface : remplacer
 /// l'implémentation ne modifie aucune interface utilisateur.
 abstract class TelegramService implements Listenable {
-  /// `true` pour le service adossé au backend (informations d'interface).
-  bool get isBackendApi;
-
   /// Passerelle Telegram directe pour les médias (téléchargement/lecture
-  /// via TDLib) — null quand le mode actif n'en dispose pas (mock, backend).
+  /// via TDLib) — null quand le mode actif n'en dispose pas (démo).
   TelegramGateway? get mediaGateway => null;
 
   /// `true` quand le service dialogue RÉELLEMENT avec Telegram depuis
-  /// l'appareil (mode local, TDLib). `false` pour le mock de démonstration.
+  /// l'appareil (client MTProto, TDLib). `false` pour le mock de démonstration.
   bool get isRealTelegram;
-
-  /// Adresse du backend utilisée (null hors mode backend).
-  String? get apiBaseUrl;
 
   // -------------------------------------------------------------------
   // Authentification

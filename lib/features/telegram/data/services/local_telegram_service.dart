@@ -62,16 +62,10 @@ class LocalTelegramService extends ChangeNotifier implements TelegramService {
   }
 
   @override
-  bool get isBackendApi => false;
-
-  @override
   bool get isRealTelegram => true;
 
   @override
   TelegramGateway? get mediaGateway => _gateway;
-
-  @override
-  String? get apiBaseUrl => null;
 
   // ---------------------------------------------------------------------
   // Restauration de session

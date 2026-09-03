@@ -95,11 +95,9 @@ class ProfileScreen extends StatelessWidget {
               _MenuCard(
                 icon: Icons.storage_rounded,
                 title: 'Mode de données',
-                subtitle: service.isBackendApi
-                    ? 'API : ${service.apiBaseUrl}'
-                    : service.isRealTelegram
-                        ? 'Local — Telegram direct (TDLib)'
-                        : 'Données locales de démonstration',
+                subtitle: service.isRealTelegram
+                    ? 'Local — Telegram direct (client MTProto)'
+                    : 'Données locales de démonstration',
                 onTap: () => _showDataModeInfo(context, service),
               ),
               if (repository != null) ...[
@@ -259,11 +257,9 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Text(
-                service.isBackendApi
-                    ? 'Cette application utilise le backend API AnimeBox (mode hérité).\n\nAdresse : ${service.apiBaseUrl}\n\nLes secrets Telegram restent côté serveur ; aucune donnée sensible n\'est stockée sur cet appareil.'
-                    : service.isRealTelegram
-                        ? 'Mode local réel : AnimeBox dialogue directement avec Telegram depuis votre appareil (bibliothèque TDLib).\n\nLes messages sont analysés localement et stockés dans la base locale. Aucun serveur intermédiaire.'
-                        : 'Cette application utilise les données locales de démonstration (mode simulation).\n\nPour activer la vraie connexion Telegram locale, compilez l\'application avec :\n\nflutter run --dart-define=ANIMEBOX_TELEGRAM_API_ID=… --dart-define=ANIMEBOX_TELEGRAM_API_HASH=…',
+                service.isRealTelegram
+                    ? 'Mode local réel : AnimeBox dialogue directement avec Telegram depuis votre appareil (client MTProto embarqué, rattaché au compte que vous connectez).\n\nVotre session Telegram CHIFFRÉE reste sur cet appareil — aucune donnée ne transite par un serveur AnimeBox.'
+                    : 'Cette application utilise les données locales de démonstration (mode simulation).\n\nPour activer la vraie connexion Telegram locale, compilez l\'application avec :\n\nflutter run --dart-define=ANIMEBOX_TELEGRAM_API_ID=… --dart-define=ANIMEBOX_TELEGRAM_API_HASH=…',
                 style: TextStyle(fontSize: 13, height: 1.55, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 18),

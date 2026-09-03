@@ -5,7 +5,7 @@
 Application mobile **Android** (Flutter) qui transforme vos canaux Telegram d'animés en une
 bibliothèque organisée : détection automatique des titres, saisons, épisodes, qualités et langues.
 
-> **Étape actuelle : 7 — Architecture 100 % locale.** L'application dialogue directement avec
+> **Architecture actuelle : 100 % locale, sans AUCUN backend.** L'application dialogue directement avec
 > Telegram (TDLib embarqué), analyse les publications sur l'appareil et stocke le catalogue dans
 > une base SQLite locale. **Aucun serveur n'est requis.**
 
@@ -25,7 +25,6 @@ bibliothèque organisée : détection automatique des titres, saisons, épisodes
 | **Regroupement des qualités** (une fiche épisode, plusieurs versions, références Telegram) | ✅ |
 | **Base locale SQLite** (sources, catalogue, versions, favoris, progression, historique) | ✅ |
 | **Hors-ligne** : catalogue consultable, « Dernière synchronisation » conservée | ✅ |
-| Métadonnées enrichies côté backend (étape 6, mode hérité) | ✅ (mode `--dart-define=ANIMEBOX_API_URL=…`) |
 | Téléchargement réel, streaming, notifications | ⏳ étapes suivantes |
 
 ## Architecture (étape 7 — locale)
@@ -53,7 +52,7 @@ ANIMEBOX (Flutter)
 
 | Workflow | Déclencheur | Contenu |
 | --- | --- | --- |
-| **CI** (`.github/workflows/ci.yml`) | push sur une branche, PR | Backend : 159 tests pytest + 41 vérifications smoke (API mock) · Flutter : `analyze` + 121 tests · Build APK **artefact** de test |
+| **CI** (`.github/workflows/ci.yml`) | push sur une branche, PR | Flutter : `analyze` + tests complets · Build APK **artefact** de test (client MTProto réel si les secrets `ANIMEBOX_TELEGRAM_API_ID/HASH` sont définis) |
 | **Release** (`.github/workflows/release.yml`) | push d'un tag `v*` (ou manuel) | Vérifications complètes + build APK + **GitHub Release** publiée avec l'APK en pièce jointe |
 
 Le wrapper Gradle est versionné (`android/gradlew`, `gradle-wrapper.jar`) : aucune installation
@@ -68,19 +67,16 @@ flutter pub get
 # Mode démonstration (aucun identifiant) : données mockées, tous les écrans.
 flutter run
 
-# Mode RÉEL local : Telegram direct depuis l'appareil.
+# Mode RÉEL local : Telegram direct depuis l'appareil (client MTProto).
 # Obtenez api_id / api_hash sur https://my.telegram.org (compte développeur),
 # puis lancez avec :
 flutter run \
   --dart-define=ANIMEBOX_TELEGRAM_API_ID=123456 \
   --dart-define=ANIMEBOX_TELEGRAM_API_HASH=abcdef0123456789...
 
-# Mode backend hérité (étapes 1-6), optionnel :
-flutter run --dart-define=ANIMEBOX_API_URL=http://10.0.2.2:8000
-
 # Vérifications
 flutter analyze          # 0 issue
-flutter test             # 121 tests (modèles, moteur, services, écrans)
+flutter test             # modèles, moteur, services, écrans
 flutter build apk --debug
 flutter build web
 ```
@@ -96,19 +92,12 @@ flutter build web
 5. Bibliothèque : les épisodes détectés apparaissent (versions multiples regroupées,
    « Ouvrir dans Telegram » renvoie vers la publication d'origine quand le lien existe).
 
-## Backend (héritage des étapes 1-6 — conservé pour référence et tests)
+## Aucun backend Telegram (décision d'architecture)
 
-Le dossier `backend/` (FastAPI + moteur Python + tests 159/159 + smoke_test 41/41) reste dans le
-dépôt : il a servi de référence pour le port Dart du moteur d'analyse et reste utilisable via
-`--dart-define=ANIMEBOX_API_URL=…`. Le fonctionnement normal de l'application n'en dépend plus.
-
-```bash
-cd backend
-pip install -r requirements.txt
-TELEGRAM_MOCK=1 uvicorn app.main:app --host 0.0.0.0 --port 8000
-python3 smoke_test.py        # 41 vérifications
-python3 -m pytest tests -q   # 159 tests
-```
+L'ancien mode « serveur API » (étapes 1-6 — FastAPI + Telethon, session utilisateur hébergée
+sur un serveur) a été **entièrement supprimé** : il est incompatible avec l'exigence de
+confidentialité (« aucune session utilisateur Telegram ne quitte l'appareil »). Le moteur
+d'analyse a été porté en Dart : l'application est autonome, du scan des messages au catalogue.
 
 ## Confidentialité
 

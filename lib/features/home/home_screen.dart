@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../anime/data/models/anime.dart';
 import '../anime/data/models/library_entry.dart';
 import '../anime/data/repositories/anime_repository.dart';
-import '../anime/data/repositories/catalog_repository.dart';
 import '../../app/router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/anime_card.dart';
@@ -15,9 +14,9 @@ import 'widgets/release_card.dart';
 /// Écran d'accueil : carousel, nouveaux épisodes, mes animés, continuer.
 ///
 /// Les sections ne sont JAMAIS codées en dur dans l'interface : elles sont
-/// alimentées par le dépôt (catalogue backend en mode API, données de
-/// démonstration sinon). Le dépôt étant un [Listenable], l'écran réagit aux
-/// chargements, à la mise à jour des métadonnées et au passage hors-ligne.
+/// alimentées par le dépôt du catalogue local (base de l'appareil — démo si
+/// aucun identifiant Telegram). Le dépôt étant un [Listenable], l'écran
+/// réagit aux chargements et à la mise à jour des métadonnées.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
@@ -42,24 +41,13 @@ class HomeScreen extends StatelessWidget {
               repository.libraryEntries.where((LibraryEntry entry) => entry.isFavorite).toList();
           final List<LibraryEntry> watching =
               repository.libraryEntries.where((LibraryEntry entry) => entry.hasProgress).toList();
-          final CatalogRepository? catalog = repository is CatalogRepository ? repository as CatalogRepository : null;
-
           return CustomScrollView(
             key: const PageStorageKey<String>('home-scroll'),
             slivers: [
               SliverToBoxAdapter(child: _HomeTopBar(onSearchTap: onSearchTap)),
-              if (catalog != null) SliverToBoxAdapter(child: _CatalogStatusBanner(catalog: catalog)),
               SliverToBoxAdapter(child: HeroCarousel(repository: repository)),
               const SliverToBoxAdapter(child: SectionTitle(title: 'Nouveaux épisodes', icon: Icons.local_fire_department_rounded)),
-              if (catalog != null && catalog.isLoadingCatalog && releases.isEmpty)
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    child: _CatalogLoading(),
-                  ),
-                )
-              else
-                SliverToBoxAdapter(
+              SliverToBoxAdapter(
                   child: SizedBox(
                     height: 160,
                     child: ListView.separated(
@@ -146,66 +134,7 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-/// Bandeau d'état du catalogue : récupération en cours, hors-ligne
-/// (dernières données connues) ou actualisation impossible.
-class _CatalogStatusBanner extends StatelessWidget {
-  const _CatalogStatusBanner({required this.catalog});
-
-  final CatalogRepository catalog;
-
-  @override
-  Widget build(BuildContext context) {
-    if (!catalog.isOffline) return const SizedBox.shrink();
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-      padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceAlt,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.45)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.cloud_off_rounded, size: 18, color: AppColors.warning),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Hors-ligne — dernières données connues affichées.',
-              style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
-            ),
-          ),
-          TextButton(
-            onPressed: () => catalog.refreshCatalog(),
-            child: const Text('Réessayer', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Indicateur de récupération du catalogue (premier chargement).
-class _CatalogLoading extends StatelessWidget {
-  const _CatalogLoading();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 16,
-          height: 16,
-          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBright),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          'Récupération du catalogue…',
-          style: Theme.of(context).textTheme.labelSmall,
-        ),
-      ],
-    );
-  }
-}
+/// Barre supérieure de l'accueil (logo + loupe).
 class _HomeTopBar extends StatelessWidget {
   const _HomeTopBar({required this.onSearchTap});
 
@@ -240,12 +169,12 @@ class _HomeTopBar extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Text(
-                'Étape 1 — fondations de l\'application.\n'
-                'La connexion Telegram, la synchronisation des canaux et la lecture arrivent dans les prochaines étapes.',
+                'Bibliothèque d\'animés 100 % locale, alimentée par VOTRE compte Telegram '
+                '(client MTProto embarqué — aucune session ne transite par un serveur tiers).',
                 style: TextStyle(fontSize: 13.5, height: 1.5, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 8),
-              Text('v0.1.0', style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
+              Text('v0.9.0', style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
             ],
           ),
         ),
