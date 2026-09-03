@@ -1,114 +1,150 @@
-# AnimeBox
+# AnimeBox 📺
 
 [![CI](https://github.com/NiceMank/animebox/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/NiceMank/animebox/actions/workflows/ci.yml)
 
-Application mobile **Android** (Flutter) qui transforme vos canaux Telegram d'animés en une
-bibliothèque organisée : détection automatique des titres, saisons, épisodes, qualités et langues.
+**Votre bibliothèque d'animés, alimentée par vos propres canaux Telegram.**
 
-> **Architecture actuelle : 100 % locale, sans AUCUN backend.** L'application dialogue directement avec
-> Telegram (TDLib embarqué), analyse les publications sur l'appareil et stocke le catalogue dans
-> une base SQLite locale. **Aucun serveur n'est requis.**
+AnimeBox est une application **Android** (Flutter) qui transforme les chaînes Telegram
+de partage d'animés en un catalogue propre et organisé : titres, saisons, épisodes,
+qualités et langues détectés automatiquement — le tout **100 % sur votre appareil**.
 
-## État du projet
+> 🔒 **Zéro serveur. Zéro backend.** L'application parle directement à Telegram
+> (TDLib embarqué), analyse les publications localement et stocke le catalogue dans
+> une base SQLite sur le téléphone. Aucune donnée ne transite par un serveur tiers.
+
+---
+
+## ✨ Fonctionnalités
 
 | Fonctionnalité | État |
 | --- | --- |
+| Écran d'accueil animé (logo, cube 3D, balayage vers le haut) + onboarding | ✅ |
 | Navigation basse persistante (Accueil / Recherche / Bibliothèque / Téléchargements / Profil) | ✅ |
-| Accueil, Recherche (6 filtres), Fiche animé, Épisodes, Qualité, Lecteur | ✅ |
+| Accueil, Recherche (6 filtres), Fiche animé, Épisodes, Sélecteur de qualité, Lecteur (libmpv : MKV, sous-titres, pistes audio) | ✅ |
 | Bibliothèque complète (Favoris, Suivis, Continuer, Récents, Tous) | ✅ |
-| Sources Telegram : liste, ajout avec vérification d'accessibilité, détails, suppression | ✅ |
-| **Logo AnimeBox** (généré, embarqué) + **écran d'accueil animé** (cube bleu, balayage vers le haut → onboarding) | ✅ |
-| Synchronisation (statistiques, historique, progression, annulation) | ✅ |
-| **Connexion Telegram réelle depuis l'appareil** (numéro → code → 2FA → connecté) | ✅ |
-| **Session restaurée automatiquement** (stockage chiffré TDLib + clé en Keystore) | ✅ |
-| **Récupération paginée** (50 messages/page) + **synchronisation incrémentale** (curseur) | ✅ |
-| **Moteur d'analyse local** (port Dart du moteur : titre, saison, épisode, qualité, langue) | ✅ |
-| **Regroupement des qualités** (une fiche épisode, plusieurs versions, références Telegram) | ✅ |
-| **Base locale SQLite** (sources, catalogue, versions, favoris, progression, historique) | ✅ |
-| **Hors-ligne** : catalogue consultable, « Dernière synchronisation » conservée | ✅ |
-| Téléchargement réel, streaming, notifications | ⏳ étapes suivantes |
+| Thème personnalisable | ✅ |
+| **Connexion Telegram réelle** (numéro → code → 2FA) via MTProto | ✅ |
+| **Session restaurée automatiquement** — base TDLib chiffrée, clé dans le Keystore Android | ✅ |
+| Sources Telegram : ajout avec vérification d'accessibilité, détails, suppression | ✅ |
+| **Moteur d'analyse local** : détection titre, saison, épisode, qualité, langue | ✅ |
+| **Regroupement des qualités** : une fiche épisode, plusieurs versions liées à Telegram | ✅ |
+| **Synchronisation paginée + incrémentale** (seuls les nouveaux messages) | ✅ |
+| **Base SQLite locale** (sources, catalogue, versions, favoris, progression, historique) | ✅ |
+| **Mode hors-ligne** : catalogue consultable, date de dernière synchronisation | ✅ |
+| Notifications locales (nouveaux épisodes) + synchronisation en arrière-plan (WorkManager) | ✅ |
+| Téléchargement réel des vidéos, streaming | ⏳ prochaines étapes |
 
-## Architecture (étape 7 — locale)
+## 🏗️ Architecture
 
 ```
-TÉLÉPHONE
-   ↓
+TÉLÉPHONE (aucun serveur distant)
+   │
+   ▼
 ANIMEBOX (Flutter)
    ├─ TdlibTelegramGateway ──► TDLib embarqué (libtdjson.so) ──► serveurs Telegram
-   │      connect / code / 2FA / canaux / messages paginés
-   ├─ LocalSyncService : messages → RuleBasedAnalyzer (moteur Dart)
-   │      → classement → LocalDatabase (SQLite : sources, anime, saisons,
-   │        épisodes, versions, favoris, progression, historique)
-   └─ LocalAnimeRepository : catalogue affiché dans l'application
+   │      connexion · code · 2FA · canaux · messages paginés
+   │
+   ├─ LocalSyncService
+   │      messages → RuleBasedAnalyzer (moteur Dart)
+   │      → classement → LocalDatabase (SQLite)
+   │        sources · animés · saisons · épisodes · versions
+   │        favoris · progression · historique
+   │
+   └─ LocalAnimeRepository ──► catalogue affiché dans l'application
 ```
 
-- **Aucun serveur distant** : ni Vercel, ni API, ni proxy, ni stockage central. La session
-  Telegram, les messages et le catalogue restent sur l'appareil.
-- **Session sensible** : la base de session de TDLib est chiffrée (clé générée et conservée
-  dans le stockage sécurisé Android — Keystore), jamais dans les préférences classiques.
-- **Identifiants d'application** (my.telegram.org) : fournis à la compilation uniquement,
-  jamais codés en dur, jamais journalisés, jamais envoyés.
+**Principes non négociables**
 
-## Intégration continue & releases (GitHub Actions)
+- 🔐 La session Telegram **ne quitte jamais l'appareil** : base de session chiffrée,
+  clé générée et conservée dans le stockage sécurisé Android (Keystore).
+- 🔑 Les identifiants d'application (`api_id` / `api_hash` de
+  [my.telegram.org](https://my.telegram.org)) sont injectés **à la compilation
+  uniquement** — jamais codés en dur, jamais journalisés, jamais dans le dépôt.
+- 🚫 Aucun proxy, aucune API maison, aucun stockage central. L'ancien backend
+  a été entièrement supprimé du projet.
 
-| Workflow | Déclencheur | Contenu |
-| --- | --- | --- |
-| **CI** (`.github/workflows/ci.yml`) | push sur une branche, PR | Flutter : `analyze` + tests complets · Build APK **artefact** de test (client MTProto réel si les secrets `ANIMEBOX_TELEGRAM_API_ID/HASH` sont définis) |
-| **Release** (`.github/workflows/release.yml`) | push d'un tag `v*` (ou manuel) | Vérifications complètes + build APK + **GitHub Release** publiée avec l'APK en pièce jointe |
+## 🚀 Installation (APK)
 
-Le wrapper Gradle est versionné (`android/gradlew`, `gradle-wrapper.jar`) : aucune installation
-locale n'est nécessaire pour compiler. L'APK publié est signé avec les clés de débogage
-(installable pour tester, pas pour le Play Store). Pour publier : `git tag v0.7.1 && git push origin v0.7.1`.
+1. Allez dans **Actions** → dernier run vert sur `main` → artefact **AnimeBox-APK**
+   (ou dans **Releases** si un tag `v*` a été publié).
+2. Téléchargez et dézippez l'artefact, transférez l'APK sur le téléphone.
+3. **Désinstallez toute version précédente** (signature de débogage différente à
+   chaque build — Android bloque la mise à jour directe par mesure de sécurité).
+4. Installez l'APK, ouvrez AnimeBox.
 
-## Lancer l'application
+**Première connexion Telegram** : Profil → *Connexion Telegram* → numéro au format
+international (**+…**) → code reçu par Telegram → (mot de passe 2FA si activé) → connecté.
+
+## 🛠️ Développement
 
 ```bash
 flutter pub get
 
-# Mode démonstration (aucun identifiant) : données mockées, tous les écrans.
+# Mode démonstration (aucun identifiant requis) : données mockées, tous les écrans.
 flutter run
 
-# Mode RÉEL local : Telegram direct depuis l'appareil (client MTProto).
-# Obtenez api_id / api_hash sur https://my.telegram.org (compte développeur),
-# puis lancez avec :
+# Mode RÉEL : client MTProto direct depuis l'appareil.
+# api_id / api_hash : https://my.telegram.org (section API development tools).
 flutter run \
   --dart-define=ANIMEBOX_TELEGRAM_API_ID=123456 \
   --dart-define=ANIMEBOX_TELEGRAM_API_HASH=abcdef0123456789...
 
 # Vérifications
 flutter analyze          # 0 issue
-flutter test             # modèles, moteur, services, écrans
+flutter test             # 254 tests : modèles, moteur, services, écrans, fiabilité TDLib
 flutter build apk --debug
-flutter build web
 ```
 
-## Test réel (compte Telegram de test)
+Le wrapper Gradle est versionné (`android/gradlew`, `gradle-wrapper.jar`) : aucune
+installation locale supplémentaire n'est nécessaire pour compiler.
 
-1. `flutter run` avec vos `--dart-define` (voir plus haut).
-2. Profil → **Connexion Telegram** → numéro → code reçu → (2FA le cas échéant) → Connecté.
-3. **Mes sources** → ajouter `@username` (ou un lien `t.me/…`) → aperçu → Ajouter.
-   Un canal inaccessible affiche « Ce canal n'est pas accessible avec ce compte Telegram. »
-4. **Synchroniser maintenant** : récupération paginée → analyse locale → catalogue mis à jour.
-   Les synchronisations suivantes sont incrémentales (seuls les nouveaux messages).
-5. Bibliothèque : les épisodes détectés apparaissent (versions multiples regroupées,
-   « Ouvrir dans Telegram » renvoie vers la publication d'origine quand le lien existe).
+## 🔄 Intégration continue & releases
 
-## Aucun backend Telegram (décision d'architecture)
+| Workflow | Déclencheur | Contenu |
+| --- | --- | --- |
+| **CI** (`.github/workflows/ci.yml`) | push sur branche, PR, `main` | `flutter analyze` + suite de tests complète + build **APK en artefact** (client MTProto réel via les secrets `ANIMEBOX_TELEGRAM_API_ID` / `ANIMEBOX_TELEGRAM_API_HASH`) |
+| **Release** (`.github/workflows/release.yml`) | tag `v*` (ou manuel) | Vérifications + APK publié en **GitHub Release** |
 
-L'ancien mode « serveur API » (étapes 1-6 — FastAPI + Telethon, session utilisateur hébergée
-sur un serveur) a été **entièrement supprimé** : il est incompatible avec l'exigence de
-confidentialité (« aucune session utilisateur Telegram ne quitte l'appareil »). Le moteur
-d'analyse a été porté en Dart : l'application est autonome, du scan des messages au catalogue.
+Les APK sont signés avec les clés de débogage : installables pour tester,
+pas destinés au Play Store. Publier une release :
 
-## Confidentialité
+```bash
+git tag v0.9.1 && git push origin v0.9.1
+```
 
-Vos sources Telegram et votre catalogue sont traités localement sur votre appareil. AnimeBox ne
-transmet ni votre session Telegram, ni vos messages, ni vos fichiers, ni aucune information
-privée à un serveur distant (la section « Confidentialité » des réglages l'explique dans
-l'application elle-même).
+## 🔐 Permissions Android
 
-## Permissions Android
+Seule la permission `INTERNET` est demandée (requise pour Telegram). Aucune autre
+permission n'est sollicitée à l'installation ; celles qui deviendraient nécessaires
+(ex. stockage pour les futurs téléchargements) seront demandées au moment voulu.
 
-Seule la permission `INTERNET` est demandée (requise pour Telegram). Aucune autre permission
-n'est sollicitée à l'installation ; les permissions éventuellement nécessaires au futur
-téléchargement seront demandées au moment où elles deviendront nécessaires.
+## 📁 Structure du projet
+
+```
+lib/
+├── main.dart                  # Point d'entrée
+├── app/  core/  navigation/  shared/
+└── features/
+    ├── intro/                 # Écran d'accueil animé (logo, balayage)
+    ├── onboarding/            # Premier lancement
+    ├── home/  search/  library/  downloads/  profile/
+    ├── details/  episodes/  quality/  player/  media/
+    ├── telegram/              # Gateway TDLib, connexion, sources
+    ├── sync/  local/  analyzer/   # Moteur d'analyse + base SQLite
+    ├── settings/  notifications/
+android/                       # Projet Android (wrapper Gradle versionné)
+assets/                        # Logo, visuels, polices Poppins
+test/                          # Suite de tests (step1 → step16)
+.github/workflows/             # CI + Release
+```
+
+## 🗺️ Feuille de route
+
+- [ ] Téléchargement réel des vidéos (avec progression et reprise)
+- [ ] Streaming direct depuis Telegram
+- [ ] Notifications enrichies (fin de téléchargement)
+- [ ] Publication signée (clé de release) pour mises à jour en douceur
+
+---
+
+*AnimeBox — vos canaux Telegram, votre bibliothèque, votre appareil. C'est tout.*
