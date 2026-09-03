@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:animebox/app/animebox_app.dart';
+import 'onboarding_helper.dart';
 import 'package:animebox/core/utils/formats.dart';
 import 'package:animebox/features/anime/data/repositories/mock_anime_repository.dart';
 import 'package:animebox/features/library/library_screen.dart';
@@ -142,6 +143,7 @@ void main() {
       await tester.pumpWidget(AnimeBoxApp(
         repository: MockAnimeRepository(),
         telegramService: telegramService ?? MockTelegramService(clock: () => DateTime(2024, 5, 12, 10, 0)),
+        appSettings: await completedOnboardingSettings(),
       ));
       await tester.pumpAndSettle();
     }
@@ -276,7 +278,10 @@ void main() {
       tester.view.physicalSize = const Size(1080, 2340);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(AnimeBoxApp(repository: MockAnimeRepository()));
+      await tester.pumpWidget(AnimeBoxApp(
+        repository: MockAnimeRepository(),
+        appSettings: await completedOnboardingSettings(),
+      ));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Bibliothèque'));
       await tester.pumpAndSettle();

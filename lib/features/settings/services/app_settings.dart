@@ -36,6 +36,7 @@ class AppSettings extends ChangeNotifier {
   static const String _keyTheme = 'app.theme';
   static const String _keyWifiOnly = 'sync.wifiOnly';
   static const String _keyAutoDownload = 'downloads.auto';
+  static const String _keyOnboardingCompleted = 'app.onboardingCompleted';
 
   String _language = 'fr';
   AppThemeMode _theme = AppThemeMode.dark;
@@ -44,6 +45,10 @@ class AppSettings extends ChangeNotifier {
   /// Téléchargement automatique (§11) — OFF par défaut ; la structure du
   /// réglage est prête et persistée, rien n'est téléchargé sans action.
   bool _autoDownload = false;
+
+  /// Onboarding terminé (prompt 13 §4) — affiché au premier lancement
+  /// uniquement ; cette préférence survit au redémarrage.
+  bool _onboardingCompleted = false;
 
   bool _loaded = false;
 
@@ -61,6 +66,9 @@ class AppSettings extends ChangeNotifier {
   /// Téléchargement automatique (OFF par défaut, §11).
   bool get autoDownload => _autoDownload;
 
+  /// Onboarding déjà validé (prompt 13 §4).
+  bool get onboardingCompleted => _onboardingCompleted;
+
   bool get loaded => _loaded;
 
   Future<void> _load() async {
@@ -74,6 +82,7 @@ class AppSettings extends ChangeNotifier {
       _theme = (await db.getSetting(_keyTheme)) == 'system' ? AppThemeMode.system : AppThemeMode.dark;
       _syncWifiOnly = (await db.getSetting(_keyWifiOnly)) == 'true';
       _autoDownload = (await db.getSetting(_keyAutoDownload)) == 'true';
+      _onboardingCompleted = (await db.getSetting(_keyOnboardingCompleted)) == 'true';
       _loaded = true;
       notifyListeners();
     } catch (_) {
@@ -121,6 +130,15 @@ class AppSettings extends ChangeNotifier {
     _autoDownload = value;
     notifyListeners();
     await _persist(_keyAutoDownload, '$value');
+  }
+
+  /// Marque l'onboarding comme terminé (prompt 13 §4/§5) — persistant :
+  /// l'onboarding ne réapparaît plus après fermeture/redémarrage.
+  Future<void> completeOnboarding() async {
+    if (_onboardingCompleted) return;
+    _onboardingCompleted = true;
+    notifyListeners();
+    await _persist(_keyOnboardingCompleted, 'true');
   }
 
   // Note : la fréquence de synchronisation reste centralisée dans
