@@ -36,16 +36,14 @@ abstract class StorageService {
 
 /// Implémentation de production : fichiers réels sur l'appareil.
 class DeviceStorageService implements StorageService {
-  DeviceStorageService({
-    required Directory? cacheDirectory,
-    Future<int?> Function()? freeBytesOf,
-  })  : _cacheDirectory = cacheDirectory,
-        _freeBytesOf = freeBytesOf;
+  DeviceStorageService({required this.cacheDirectory, this.freeBytesOf});
 
   /// Dossier cache réel de l'application — null s'il est inaccessible
   /// (les tailles associées s'affichent alors « inconnues », §12).
-  final Directory? _cacheDirectory;
-  final Future<int?> Function()? _freeBytesOf;
+  final Directory? cacheDirectory;
+
+  /// Mesure de l'espace libre du volume (StatFs — null toléré).
+  final Future<int?> Function()? freeBytesOf;
 
   late List<String> _downloadPaths = const [];
 
@@ -81,7 +79,7 @@ class DeviceStorageService implements StorageService {
     // Cache applicatif (§12) — calcul sans bloquer l'interface (§35).
     int? cacheTotal = 0;
     try {
-      final Directory? cacheDir = _cacheDirectory;
+      final Directory? cacheDir = cacheDirectory;
       if (cacheDir != null && await cacheDir.exists()) {
         await for (final FileSystemEntity entity in cacheDir.list(recursive: true)) {
           if (entity is File) {
@@ -97,7 +95,8 @@ class DeviceStorageService implements StorageService {
       cacheTotal = null;
     }
 
-    final int? free = _freeBytesOf == null ? null : await _freeBytesOf!();
+    final Future<int?> Function()? freeBytesOf = this.freeBytesOf;
+    final int? free = freeBytesOf == null ? null : await freeBytesOf();
     return StorageSnapshot(downloadsBytes: totalDownloads, cacheBytes: cacheTotal, freeBytes: free);
   }
 
@@ -105,7 +104,7 @@ class DeviceStorageService implements StorageService {
   Future<int> clearCache() async {
     int freed = 0;
     try {
-      final Directory? cacheDir = _cacheDirectory;
+      final Directory? cacheDir = cacheDirectory;
       if (cacheDir == null || !await cacheDir.exists()) return 0;
       await for (final FileSystemEntity entity in cacheDir.list()) {
         try {

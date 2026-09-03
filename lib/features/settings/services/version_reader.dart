@@ -9,7 +9,8 @@ class VersionReader {
 
   final AssetBundle _bundle;
 
-  const VersionReader({AssetBundle? bundle}) : _bundle = bundle ?? rootBundle;
+  /// Non-const : [rootBundle] n'est pas une constante de compilation.
+  VersionReader({AssetBundle? bundle}) : _bundle = bundle ?? rootBundle;
 
   /// Extrait `x.y.z` (+build) du contenu d'un pubspec — logique pure,
   /// testable sans Flutter.

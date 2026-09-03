@@ -57,8 +57,8 @@ class SettingsDependencies {
     this.storageChecker,
     this.database,
     this.storageService,
-    this.versionReader = const VersionReader(),
-  });
+    VersionReader? versionReader,
+  }) : _versionReader = versionReader;
 
   /// Préférences centrales persistantes (langue, thème, Wi-Fi…).
   final AppSettings appSettings;
@@ -83,8 +83,11 @@ class SettingsDependencies {
   /// Service de stockage injecté (tests) — sinon dossier cache réel.
   final StorageService? storageService;
 
-  /// Lecteur de la version RÉELLE du projet (§21/§22).
-  final VersionReader versionReader;
+  /// Lecteur de la version RÉELLE du projet (§21/§22) — injectable en
+  /// test, sinon bundle racine de l'application.
+  final VersionReader? _versionReader;
+
+  VersionReader get versionReader => _versionReader ?? VersionReader();
 
   /// Service « Données » branché sur les vraies briques de l'écran.
   DataCareService buildDataCareService() => DataCareService(
@@ -107,7 +110,7 @@ class SettingsDependencies {
           if (checker == null) return null;
           try {
             final docs = await getApplicationDocumentsDirectory();
-            return checker.freeBytes(docs.path);
+            return await checker.freeBytes(docs.path);
           } catch (_) {
             return null;
           }

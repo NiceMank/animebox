@@ -19,7 +19,7 @@ enum AppThemeMode { dark, system }
 /// SANS les dupliquer : il n'enregistre que les préférences propres aux
 /// paramètres généraux (langue, thème, Wi-Fi, gestion interne).
 class AppSettings extends ChangeNotifier {
-  AppSettings({LocalDatabase? database}) : _database = database {
+  AppSettings({this.database}) {
     _loadFuture = _load();
   }
 
@@ -29,7 +29,8 @@ class AppSettings extends ChangeNotifier {
   /// dépendants (contrainte Wi-Fi de la synchro au démarrage, §10).
   Future<void> ensureLoaded() => _loadFuture;
 
-  final LocalDatabase? _database;
+  /// Base locale injectable (tests) — persistance des préférences.
+  final LocalDatabase? database;
 
   static const String _keyLanguage = 'app.language';
   static const String _keyTheme = 'app.theme';
@@ -63,7 +64,7 @@ class AppSettings extends ChangeNotifier {
   bool get loaded => _loaded;
 
   Future<void> _load() async {
-    final LocalDatabase? db = _database;
+    final LocalDatabase? db = database;
     if (db == null) {
       _loaded = true;
       return;
@@ -82,7 +83,7 @@ class AppSettings extends ChangeNotifier {
 
   Future<void> _persist(String key, String value) async {
     try {
-      await _database?.setSetting(key, value);
+      await database?.setSetting(key, value);
     } catch (_) {
       // Stockage inaccessible (§28) : l'état mémoire reste, l'écran
       // affiche déjà un message compréhensible via [AppSettingsError].

@@ -44,21 +44,20 @@ class DataCareResult {
 /// - [resetEverything] : TOUT (§18) + suppression des fichiers vidéo +
 ///   déconnexion Telegram.
 class DataCareService {
-  DataCareService({
-    LocalDatabase? database,
-    DownloadPurger? downloads,
-    TelegramSignOut? telegram,
-  })  : _database = database,
-        _downloads = downloads,
-        _telegram = telegram;
+  DataCareService({this.database, this.downloads, this.telegram});
 
-  final LocalDatabase? _database;
-  final DownloadPurger? _downloads;
-  final TelegramSignOut? _telegram;
+  /// Base locale (purge RÉELLE des tables).
+  final LocalDatabase? database;
+
+  /// Fichiers téléchargés à supprimer (§18).
+  final DownloadPurger? downloads;
+
+  /// Session Telegram à révoquer (§18).
+  final TelegramSignOut? telegram;
 
   /// §16 — Effacement des données locales (sans déconnexion ni fichiers).
   Future<DataCareResult> eraseLocalData() async {
-    final LocalDatabase? db = _database;
+    final LocalDatabase? db = database;
     if (db == null) {
       return const DataCareResult(success: false, error: 'stockage-inaccessible');
     }
@@ -77,7 +76,7 @@ class DataCareService {
     int removed = 0;
 
     // 1) Suppression des téléchargements connus (base + fichiers).
-    final DownloadPurger? downloads = _downloads;
+    final DownloadPurger? downloads = this.downloads;
     if (downloads != null) {
       final List<String> versionIds = List<String>.of(downloads.downloadVersionIds());
       for (final String versionId in versionIds) {
@@ -91,7 +90,7 @@ class DataCareService {
     }
 
     // 2) Purge complète de la base locale.
-    final LocalDatabase? db = _database;
+    final LocalDatabase? db = database;
     try {
       await db?.resetEverything();
     } catch (e) {
@@ -100,7 +99,7 @@ class DataCareService {
 
     // 3) Déconnexion Telegram (session révoquée — §18).
     bool signedOut = false;
-    final TelegramSignOut? telegram = _telegram;
+    final TelegramSignOut? telegram = this.telegram;
     if (telegram != null) {
       try {
         await telegram.disconnect();
