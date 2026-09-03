@@ -51,6 +51,11 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
       // L'état `codeRequired` arrive via le service : l'interface réagit.
     } on ApiException catch (error) {
       setState(() => _inlineError = error.displayMessage);
+    } catch (_) {
+      // Tout échec matérialisé À L'ÉCRAN (jamais muet) : le message du
+      // service détaille la cause quand il le connaît.
+      setState(() => _inlineError = widget.service.authError ??
+          'Échec de l\'envoi du code. Réessayez dans quelques instants.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -66,6 +71,8 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
       // `connected` ou `passwordRequired` : portés par le service.
     } on ApiException catch (error) {
       setState(() => _inlineError = error.displayMessage);
+    } catch (_) {
+      setState(() => _inlineError = widget.service.authError ?? 'Vérification impossible. Réessayez.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -80,6 +87,8 @@ class _TelegramConnectScreenState extends State<TelegramConnectScreen> {
       await widget.service.requestPassword(_passwordController.text);
     } on ApiException catch (error) {
       setState(() => _inlineError = error.displayMessage);
+    } catch (_) {
+      setState(() => _inlineError = widget.service.authError ?? 'Vérification impossible. Réessayez.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
